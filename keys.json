@@ -1,12 +1,12 @@
 {
   "versao": "2.0",
-  "ultima_atualizacao": 1730000000,
+  "ultima_atualizacao": 1790010317,
   "keys": {
-    "COLE_O_HASH_DA_KEY_DE_TESTE": {
-      "nome": "Teste",
+    "53d6139143ca40dc64bd0bdb110932cb5c54f6022a144a6b6b2e78b9a853afca": {
+      "nome": "simiao",
       "nivel": "admin",
-      "criada": 0,
-      "expira": 99999999999,
+      "criada": 1790010308,
+      "expira": 1792602308,
       "status": "ativa",
       "max_usos": -1,
       "usos": 0
