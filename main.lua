@@ -1,5 +1,5 @@
 -- ============================================================
--- SAILENT AUTO GARI v6.4 — VOO SUAVE + KEY SHA256
+-- SAILENT AUTO GARI v6.4 — VOO SUAVE + KEY NOVA
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local HttpService = game:GetService("HttpService")
 local lp = Players.LocalPlayer
 
 -- ============================================================
--- CONFIG — LINK DO GITHUB (CORRETO COM HÍFEN)
+-- CONFIG — LINK DO GITHUB
 -- ============================================================
 local GITHUB_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SAVE_FILE = "sailent_key_salva.txt"
@@ -33,8 +33,8 @@ local C = {
 	Yellow = Color3.fromRGB(255,200,80),
 	Blue = Color3.fromRGB(80,160,240),
 	Purple = Color3.fromRGB(180,120,255),
-	Black = Color3.fromRGB(10, 10, 15),
 	Cyan = Color3.fromRGB(80,220,240),
+	Black = Color3.fromRGB(10, 10, 15),
 }
 
 local function Tween(o, p, t)
@@ -63,7 +63,7 @@ local function GetPrompt(item)
 end
 
 -- ============================================================
--- SHA-256
+-- SHA-256 (para o sistema de key)
 -- ============================================================
 local function sha256(msg)
 	local K = {
@@ -129,7 +129,7 @@ local function GetHWID()
 end
 
 -- ============================================================
--- ARQUIVOS
+-- SISTEMA DE KEY
 -- ============================================================
 local function TemKeySalva()
 	local dados
@@ -157,28 +157,20 @@ end
 
 local function LimparKeySalva()
 	pcall(function()
-		if delfile and isfile and isfile(SAVE_FILE) then
-			delfile(SAVE_FILE)
-		end
+		if delfile and isfile and isfile(SAVE_FILE) then delfile(SAVE_FILE) end
 	end)
 end
 
--- ============================================================
--- SISTEMA DE KEY
--- ============================================================
 local function BaixarKeys()
 	local ok, resultado = pcall(function()
 		return game:HttpGet(GITHUB_URL, true)
 	end)
-	if not ok or not resultado or resultado == "" then
-		return nil, "Erro ao baixar keys"
-	end
+	if not ok or not resultado then return nil, "Erro ao baixar" end
+
 	local ok2, dados = pcall(function()
 		return HttpService:JSONDecode(resultado)
 	end)
-	if not ok2 or not dados then
-		return nil, "Erro no JSON"
-	end
+	if not ok2 or not dados then return nil, "Erro no JSON" end
 	return dados
 end
 
@@ -187,14 +179,13 @@ local function ValidarKey(key)
 
 	local hashKey = sha256(key)
 	local dados, erro = BaixarKeys()
-	if not dados then return false, erro or "Erro de conexão" end
+	if not dados then return false, erro end
 	if not dados.keys then return false, "Keys não encontradas" end
 
-	-- procura primeiro pelo hash (novo), senão pelo texto (compatibilidade)
+	-- procura pelo hash (novo) ou pelo texto (compatibilidade)
 	local info = dados.keys[hashKey] or dados.keys[key]
 	if not info then return false, "Key inválida" end
 	if info.status ~= "ativa" then return false, "Key bloqueada" end
-
 	if info.expira and tonumber(info.expira) and os.time() > tonumber(info.expira) then
 		return false, "Key expirada"
 	end
@@ -208,7 +199,7 @@ local function ValidarKey(key)
 end
 
 -- ============================================================
--- ABRIR AUTO GARI
+-- FUNÇÃO QUE ABRE O AUTO GARI
 -- ============================================================
 local function AbrirAutoGari(infoKey)
 	infoKey = infoKey or {nome = "Cliente", nivel = "normal"}
@@ -435,24 +426,14 @@ local function AbrirAutoGari(infoKey)
 	end
 
 	local lixosUsados = {}
-	local lixosFalhados = {}
 
 	local function GetLixosContainer()
-		local caminhos = {
-			{"Construcoes","SistemaGari","Lixos"},
-			{"SistemaGari","Lixos"},
-			{"Lixos"},
-		}
-		for _, c in ipairs(caminhos) do
-			local w = workspace
-			local ok = true
-			for _, n in ipairs(c) do
-				w = w:FindFirstChild(n)
-				if not w then ok = false; break end
-			end
-			if ok and w then return w end
+		local w = workspace
+		for _, n in ipairs({"Construcoes","SistemaGari","Lixos"}) do
+			w = w:FindFirstChild(n)
+			if not w then return nil end
 		end
-		return nil
+		return w
 	end
 
 	local function GetCaminhao()
@@ -464,17 +445,13 @@ local function AbrirAutoGari(infoKey)
 		if not cam then return nil end
 		local body = cam:FindFirstChild("Body")
 		if not body then return nil end
-		local p = body:FindFirstChild("Proximitikk")
-		if p then return p end
-		return body:FindFirstChildWhichIsA("BasePart", true)
+		return body:FindFirstChild("Proximitikk")
 	end
 
 	local function TemLixoNaMao()
 		if not lp.Character then return false end
 		for _, o in ipairs(lp.Character:GetChildren()) do
-			if o:IsA("Tool") and (o.Name == "Lixo" or o.Name:lower():find("lixo")) then
-				return true
-			end
+			if o:IsA("Tool") and o.Name == "Lixo" then return true end
 		end
 		return false
 	end
@@ -484,25 +461,21 @@ local function AbrirAutoGari(infoKey)
 		if not cont then return nil end
 		local hrp = GetHRP()
 		if not hrp then return nil end
-
 		local disp = {}
 		for _, lixo in ipairs(cont:GetChildren()) do
-			if lixo:IsA("BasePart") and not lixosUsados[lixo] and not lixosFalhados[lixo] then
+			if lixo:IsA("BasePart") and not lixosUsados[lixo] then
 				table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 			end
 		end
-
 		if #disp == 0 then
 			TocarSom("reset")
 			lixosUsados = {}
-			lixosFalhados = {}
 			for _, lixo in ipairs(cont:GetChildren()) do
 				if lixo:IsA("BasePart") then
 					table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 				end
 			end
 		end
-
 		table.sort(disp, function(a, b) return a.dist < b.dist end)
 		if #disp > 0 then return disp[1].lixo end
 		return nil
@@ -567,8 +540,8 @@ local function AbrirAutoGari(infoKey)
 	SG.Parent = CoreGui
 
 	local Main = Instance.new("Frame")
-	Main.Size = UDim2.new(0, 400, 0, 620)
-	Main.Position = UDim2.new(0.5, -200, 0.5, -310)
+	Main.Size = UDim2.new(0, 400, 0, 640)
+	Main.Position = UDim2.new(0.5, -200, 0.5, -320)
 	Main.BackgroundColor3 = C.BG
 	Main.BorderSizePixel = 0
 	Main.Parent = SG
@@ -642,7 +615,7 @@ local function AbrirAutoGari(infoKey)
 	TTitle.TextColor3 = C.Text
 	TTitle.BackgroundTransparency = 1
 	TTitle.Position = UDim2.new(0, 55, 0, 0)
-	TTitle.Size = UDim2.new(0, 140, 1, 0)
+	TTitle.Size = UDim2.new(0, 160, 1, 0)
 	TTitle.TextXAlignment = Enum.TextXAlignment.Left
 	TTitle.Parent = TB
 
@@ -987,11 +960,7 @@ local function AbrirAutoGari(infoKey)
 									gariCount.coletados += 1
 									lixosUsados[lixo] = true
 									TocarSom("coletou")
-								else
-									lixosFalhados[lixo] = true
 								end
-							else
-								lixosFalhados[lixo] = true
 							end
 						end
 					end
@@ -1012,7 +981,7 @@ local function AbrirAutoGari(infoKey)
 	end)
 
 	Sec("🚶 MODO DE MOVIMENTO", C.Cyan)
-	Stat("A pé pega o lixo normalmente. Voo é mais rápido e ignora obstáculos.", C.Sub)
+	Stat("A pé pega o lixo normal. Voo é mais rápido e ignora obstáculos.", C.Sub)
 
 	local setVooAtivo
 	setVooAtivo = Toggle("✈️ Voo Suave (ignora obstáculos)", Config.vooAtivo, function(s)
@@ -1022,6 +991,7 @@ local function AbrirAutoGari(infoKey)
 	end)
 
 	Sec("✈️ AJUSTES DE VOO", C.Cyan)
+
 	CriarSlider(Content, 20, 300, Config.vooVelocidade, function(v)
 		Config.vooVelocidade = v
 	end, "✈️ Velocidade de voo", C.Cyan)
@@ -1090,7 +1060,7 @@ local function AbrirAutoGari(infoKey)
 		uiAberta = true
 		Main.Visible = true
 		Main.Size = UDim2.new(0, 0, 0, 0)
-		Tween(Main, {Size = UDim2.new(0, 400, 0, 620)}, 0.25)
+		Tween(Main, {Size = UDim2.new(0, 400, 0, 640)}, 0.25)
 		FloatBtn.Text = "✕"
 		Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15)
 	end
@@ -1124,7 +1094,7 @@ local function AbrirAutoGari(infoKey)
 			Tween(Main, {Size = UDim2.new(0, 400, 0, 56)}, 0.25)
 			MinBtn.Text = "+"
 		else
-			Tween(Main, {Size = UDim2.new(0, 400, 0, 620)}, 0.25)
+			Tween(Main, {Size = UDim2.new(0, 400, 0, 640)}, 0.25)
 			MinBtn.Text = "−"
 		end
 	end)
@@ -1165,7 +1135,7 @@ local function AbrirUIKey()
 	MS.Parent = KeyFrame
 
 	local Titulo = Instance.new("TextLabel")
-	Titulo.Text = "🔐 SAILENT KEY SYSTEM"
+	Titulo.Text = "🔐 SAILENT GERAL KEY"
 	Titulo.Font = Enum.Font.GothamBold
 	Titulo.TextSize = 20
 	Titulo.TextColor3 = C.Text
@@ -1300,7 +1270,7 @@ local function AbrirUIKey()
 			SGScreen:Destroy()
 			AbrirAutoGari(info)
 		else
-			Status.Text = "Status: ❌ " .. tostring(info or "Erro")
+			Status.Text = "Status: ❌ " .. (info or "Erro")
 			Status.TextColor3 = C.Red
 		end
 	end)
