@@ -1,5 +1,5 @@
 -- ============================================================
--- SAILENT AUTO GARI v7.3 — PC + MOBILE + VOO SUAVE
+-- SAILENT AUTO GARI v7.5 — LEVE E SEM TRAVAMENTO
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -9,41 +9,34 @@ local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
-local GuiService = game:GetService("GuiService")
 local lp = Players.LocalPlayer
 
--- ============================================================
--- CONFIG
--- ============================================================
 local GITHUB_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SAVE_FILE = "sailent_key_salva.txt"
 local CACHE_FILE = "sailent_keys_cache.json"
 local CONFIG_FILE = "sailent_gari_config.txt"
 local KEY_DURACAO_LOCAL = 24 * 60 * 60
 local CACHE_DURACAO = 6 * 60 * 60
-local SCRIPT_VERSION = "7.3"
+local SCRIPT_VERSION = "7.5"
 
--- ============================================================
--- DETECÇÃO DE MOBILE
--- ============================================================
 local IS_MOBILE = UserInput.TouchEnabled and not UserInput.KeyboardEnabled
-local IS_TABLET = IS_MOBILE and workspace.CurrentCamera.ViewportSize.X >= 700
 
-for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI"}) do
-	if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+-- Limpa UIs antigas
+for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoading"}) do
+	pcall(function()
+		if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+	end)
 end
 
 local C = {
 	BG = Color3.fromRGB(12,12,18),
 	Card = Color3.fromRGB(25,25,35),
-	CardHover = Color3.fromRGB(35,35,48),
 	Accent = Color3.fromRGB(80,220,120),
 	Text = Color3.fromRGB(240,240,245),
 	Sub = Color3.fromRGB(150,150,165),
 	Green = Color3.fromRGB(80,220,120),
 	Red = Color3.fromRGB(230,70,80),
 	Yellow = Color3.fromRGB(255,200,80),
-	Blue = Color3.fromRGB(80,160,240),
 	Purple = Color3.fromRGB(180,120,255),
 	Black = Color3.fromRGB(10, 10, 15),
 	Gold = Color3.fromRGB(255,215,0),
@@ -51,16 +44,10 @@ local C = {
 }
 
 -- ============================================================
--- UTILS
+-- UTILITÁRIOS
 -- ============================================================
-local function Tween(o, p, t)
-	local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p)
-	tw:Play()
-	return tw
-end
-
-local function Log(msg)
-	print("[Sailent] " .. tostring(msg))
+local function Log(m)
+	pcall(function() print("[Sailent] " .. tostring(m)) end)
 end
 
 local function GetHRP()
@@ -78,18 +65,25 @@ local function GetPrompt(item)
 	return item:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
-local function FormatarTempo(seg)
-	seg = math.floor(seg)
-	local h = math.floor(seg / 3600)
-	local m = math.floor((seg % 3600) / 60)
-	local s = seg % 60
-	if h > 0 then return string.format("%dh %dm %ds", h, m, s) end
-	if m > 0 then return string.format("%dm %ds", m, s) end
-	return string.format("%ds", s)
+local function FormatarTempo(s)
+	s = math.floor(s or 0)
+	local h = math.floor(s/3600)
+	local m = math.floor((s%3600)/60)
+	local ss = s%60
+	if h > 0 then return string.format("%dh %dm %ds", h, m, ss) end
+	if m > 0 then return string.format("%dm %ds", m, ss) end
+	return string.format("%ds", ss)
+end
+
+local function Tween(o, p, t)
+	if not o or not o.Parent then return end
+	local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p)
+	tw:Play()
+	return tw
 end
 
 -- ============================================================
--- SHA-256
+-- SHA-256 (mantido)
 -- ============================================================
 local function sha256(msg)
 	local K = {
@@ -104,17 +98,13 @@ local function sha256(msg)
 	}
 	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
 	local function rrot(x,n) return (x >> n) | (x << (32-n)) & 0xffffffff end
-	local function pad(s)
-		local l = #s * 8
-		s = s .. "\128"
-		while #s % 64 ~= 56 do s = s .. "\0" end
-		for i = 7, 0, -1 do s = s .. string.char((l >> (i*8)) & 0xff) end
-		return s
-	end
 	local function uint32(x) return x & 0xffffffff end
-	local padded = pad(msg)
-	for ci = 0, (#padded / 64) - 1 do
-		local chunk = padded:sub(ci*64+1, ci*64+64)
+	local s = msg .. "\128"
+	local l = #msg * 8
+	while #s % 64 ~= 56 do s = s .. "\0" end
+	for i = 7, 0, -1 do s = s .. string.char((l >> (i*8)) & 0xff) end
+	for ci = 0, (#s / 64) - 1 do
+		local chunk = s:sub(ci*64+1, ci*64+64)
 		local w = {}
 		for i = 1, 16 do
 			local b1,b2,b3,b4 = chunk:byte((i-1)*4+1, i*4)
@@ -154,7 +144,6 @@ local function GetHWID()
 	pcall(function() parts[#parts+1] = tostring(game.PlaceId) end)
 	pcall(function() parts[#parts+1] = tostring(game.JobId) end)
 	pcall(function() parts[#parts+1] = gethwid and gethwid() or "" end)
-	pcall(function() parts[#parts+1] = game:GetService("RbxAnalyticsService"):GetClientId() end)
 	cachedHwid = sha256(table.concat(parts, "|")):sub(1, 32)
 	return cachedHwid
 end
@@ -162,7 +151,7 @@ end
 -- ============================================================
 -- ARQUIVOS
 -- ============================================================
-local function SafeReadFile(path)
+local function ReadFile(path)
 	local ok, data = pcall(function()
 		if isfile and isfile(path) and readfile then return readfile(path) end
 	end)
@@ -170,11 +159,11 @@ local function SafeReadFile(path)
 	return nil
 end
 
-local function SafeWriteFile(path, content)
+local function WriteFile(path, content)
 	pcall(function() if writefile then writefile(path, content) end end)
 end
 
-local function SafeDeleteFile(path)
+local function DeleteFile(path)
 	pcall(function() if delfile and isfile and isfile(path) then delfile(path) end end)
 end
 
@@ -182,7 +171,7 @@ end
 -- SISTEMA DE KEY
 -- ============================================================
 local function TemKeySalva()
-	local dados = SafeReadFile(SAVE_FILE)
+	local dados = ReadFile(SAVE_FILE)
 	if not dados then return nil end
 	local key, expira, hwid = dados:match("([^|]+)|(%d+)|(.*)")
 	if key and expira then
@@ -193,46 +182,60 @@ local function TemKeySalva()
 end
 
 local function SalvarKey(key)
-	local hwid = GetHWID()
-	SafeWriteFile(SAVE_FILE, key .. "|" .. (os.time() + KEY_DURACAO_LOCAL) .. "|" .. hwid)
+	WriteFile(SAVE_FILE, key .. "|" .. (os.time() + KEY_DURACAO_LOCAL) .. "|" .. GetHWID())
 end
 
-local function LimparKeySalva() SafeDeleteFile(SAVE_FILE) end
+local function LimparKeySalva() DeleteFile(SAVE_FILE) end
 
 local function BaixarKeys()
-	local cache = SafeReadFile(CACHE_FILE)
+	local cache = ReadFile(CACHE_FILE)
 	if cache then
 		local ok, dados = pcall(function() return HttpService:JSONDecode(cache) end)
 		if ok and dados and dados._cached_at and (os.time() - dados._cached_at) < CACHE_DURACAO then
-			return dados, true
+			return dados
 		end
 	end
-	local ok, resultado = pcall(function() return game:HttpGet(GITHUB_URL, true) end)
-	if not ok or not resultado or resultado == "" then
+
+	-- HttpGet com timeout via task.spawn
+	local resultado = nil
+	local terminou = false
+	task.spawn(function()
+		pcall(function() resultado = game:HttpGet(GITHUB_URL, true) end)
+		terminou = true
+	end)
+
+	local t0 = tick()
+	while not terminou and tick() - t0 < 8 do
+		task.wait(0.1)
+	end
+
+	if not terminou or not resultado or resultado == "" then
 		if cache then
-			local ok2, dados = pcall(function() return HttpService:JSONDecode(cache) end)
-			if ok2 and dados then return dados, true end
+			local ok, dados = pcall(function() return HttpService:JSONDecode(cache) end)
+			if ok and dados then return dados end
 		end
-		return nil, "Erro ao baixar keys"
+		return nil, "Timeout/sem conexão"
 	end
-	local ok2, dados = pcall(function() return HttpService:JSONDecode(resultado) end)
-	if not ok2 or not dados then
+
+	local ok, dados = pcall(function() return HttpService:JSONDecode(resultado) end)
+	if not ok or not dados then
 		if cache then
-			local ok3, dados2 = pcall(function() return HttpService:JSONDecode(cache) end)
-			if ok3 and dados2 then return dados2, true end
+			local ok2, d2 = pcall(function() return HttpService:JSONDecode(cache) end)
+			if ok2 and d2 then return d2 end
 		end
-		return nil, "Erro no JSON"
+		return nil, "JSON inválido"
 	end
+
 	dados._cached_at = os.time()
-	SafeWriteFile(CACHE_FILE, HttpService:JSONEncode(dados))
-	return dados, false
+	WriteFile(CACHE_FILE, HttpService:JSONEncode(dados))
+	return dados
 end
 
 local function ValidarKey(key)
 	if not key or key == "" then return false, "Key vazia" end
 	local hashKey = sha256(key)
 	local dados, erro = BaixarKeys()
-	if not dados then return false, erro or "Erro de conexão" end
+	if not dados then return false, erro or "Sem conexão" end
 	if not dados.keys then return false, "Keys não encontradas" end
 	local info = dados.keys[hashKey] or dados.keys[key]
 	if not info then return false, "Key inválida" end
@@ -242,18 +245,54 @@ local function ValidarKey(key)
 	end
 	local meuHwid = GetHWID()
 	if info.hwid and info.hwid ~= "" and info.hwid ~= meuHwid then
-		return false, "Key vinculada a outro dispositivo"
+		return false, "Key de outro dispositivo"
 	end
 	if info.max_usos and info.max_usos > 0 then
 		if (info.usos or 0) >= info.max_usos then
-			return false, "Limite de usos atingido"
+			return false, "Limite atingido"
 		end
 	end
 	return true, info, hashKey
 end
 
 -- ============================================================
--- ABRIR AUTO GARI
+-- UI DE CARREGAMENTO
+-- ============================================================
+local function CriarLoading(txt)
+	local SG = Instance.new("ScreenGui")
+	SG.Name = "SailentLoading"
+	SG.ResetOnSpawn = false
+	SG.IgnoreGuiInset = true
+	SG.Parent = CoreGui
+
+	local F = Instance.new("Frame")
+	F.Size = UDim2.new(0, 260, 0, 90)
+	F.Position = UDim2.new(0.5, -130, 0.5, -45)
+	F.BackgroundColor3 = C.BG
+	F.BorderSizePixel = 0
+	F.Parent = SG
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = F
+	local s = Instance.new("UIStroke")
+	s.Color = C.Green
+	s.Thickness = 2
+	s.Parent = F
+
+	local L = Instance.new("TextLabel")
+	L.Text = txt or "⏳ Carregando..."
+	L.Font = Enum.Font.GothamBold
+	L.TextSize = 14
+	L.TextColor3 = C.Text
+	L.BackgroundTransparency = 1
+	L.Size = UDim2.new(1, 0, 1, 0)
+	L.Parent = F
+
+	return SG
+end
+
+-- ============================================================
+-- ABRIR AUTO GARI (construção leve)
 -- ============================================================
 local function AbrirAutoGari(infoKey)
 	infoKey = infoKey or {nome = "Cliente", nivel = "normal"}
@@ -261,7 +300,6 @@ local function AbrirAutoGari(infoKey)
 	local Config = {
 		velocidade = 100,
 		noclip = false,
-		autoGari = false,
 		somAtivo = true,
 		vooAtivo = false,
 		vooVelocidade = 80,
@@ -269,28 +307,29 @@ local function AbrirAutoGari(infoKey)
 		vooSuavidade = 3,
 	}
 
+	-- carrega config
+	do
+		local str = ReadFile(CONFIG_FILE)
+		if str then
+			for linha in str:gmatch("[^\n]+") do
+				local k, v = linha:match("([^=]+)=(.+)")
+				if k and v then
+					if v == "true" then v = true
+					elseif v == "false" then v = false
+					elseif tonumber(v) then v = tonumber(v) end
+					Config[k] = v
+				end
+			end
+		end
+	end
+
 	local function SalvarConfig()
 		local str = ""
 		for k, v in pairs(Config) do
 			str = str .. k .. "=" .. tostring(v) .. "\n"
 		end
-		SafeWriteFile(CONFIG_FILE, str)
+		WriteFile(CONFIG_FILE, str)
 	end
-
-	local function CarregarConfig()
-		local str = SafeReadFile(CONFIG_FILE)
-		if not str then return end
-		for linha in str:gmatch("[^\n]+") do
-			local k, v = linha:match("([^=]+)=(.+)")
-			if k and v then
-				if v == "true" then v = true
-				elseif v == "false" then v = false
-				elseif tonumber(v) then v = tonumber(v) end
-				Config[k] = v
-			end
-		end
-	end
-	CarregarConfig()
 
 	local function TocarSom(tipo)
 		if not Config.somAtivo then return end
@@ -299,39 +338,34 @@ local function AbrirAutoGari(infoKey)
 			s.Parent = SoundService
 			if tipo == "coletou" then s.SoundId = "rbxassetid://4612375230"
 			elseif tipo == "entregou" then s.SoundId = "rbxassetid://4612384334"
-			elseif tipo == "reset" then s.SoundId = "rbxassetid://6042053626"
-			elseif tipo == "travou" then s.SoundId = "rbxassetid://6042053626" end
+			elseif tipo == "reset" then s.SoundId = "rbxassetid://6042053626" end
 			s.Volume = 0.5
 			s:Play()
-			task.delay(2, function() s:Destroy() end)
+			task.delay(2, function() pcall(function() s:Destroy() end) end)
 		end)
 	end
 
 	-- ============================================================
-	-- SISTEMA DE VOO SUAVE
+	-- VOO
 	-- ============================================================
-	local BodyVelocityVoo = nil
-	local BodyGyroVoo = nil
-	local voando = false
+	local BodyVel = nil
+	local BodyGy = nil
 
 	local function IniciarVoo()
 		local hrp = GetHRP()
-		if not hrp then return false end
-
-		-- limpa
-		if hrp:FindFirstChild("SailentVooVel") then hrp.SailentVooVel:Destroy() end
-		if hrp:FindFirstChild("SailentVooGyro") then hrp.SailentVooGyro:Destroy() end
-
-		-- BodyVelocity (movimento suave)
+		if not hrp then return end
+		pcall(function()
+			local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
+			local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
+		end)
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "SailentVooVel"
 		bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 		bv.Velocity = Vector3.zero
 		bv.P = 1250
 		bv.Parent = hrp
-		BodyVelocityVoo = bv
+		BodyVel = bv
 
-		-- BodyGyro (mantém orientação estável)
 		local bg = Instance.new("BodyGyro")
 		bg.Name = "SailentVooGyro"
 		bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
@@ -339,141 +373,105 @@ local function AbrirAutoGari(infoKey)
 		bg.D = 100
 		bg.CFrame = hrp.CFrame
 		bg.Parent = hrp
-		BodyGyroVoo = bg
-
-		-- desativa física de queda do Humanoid
-		local hum = GetHum()
-		if hum then
-			hum.PlatformStand = false
-		end
-
-		voando = true
-		return true
+		BodyGy = bg
 	end
 
 	local function PararVoo()
-		voando = false
-		local hrp = GetHRP()
-		if hrp then
-			local bv = hrp:FindFirstChild("SailentVooVel")
-			if bv then bv:Destroy() end
-			local bg = hrp:FindFirstChild("SailentVooGyro")
-			if bg then bg:Destroy() end
-		end
-		BodyVelocityVoo = nil
-		BodyGyroVoo = nil
+		pcall(function()
+			local hrp = GetHRP()
+			if hrp then
+				local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
+				local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
+			end
+		end)
+		BodyVel = nil
+		BodyGy = nil
 	end
 
-	-- ============================================================
-	-- VOAR ATÉ (suave, com desaceleração)
-	-- ============================================================
 	local function VoarAte(posAlvo, timeout, distParada)
 		if not posAlvo then return false end
 		local hrp = GetHRP()
-		local hum = GetHum()
-		if not hrp or not hum then return false end
+		if not hrp then return false end
+		if not BodyVel or not BodyVel.Parent then IniciarVoo() end
 
 		timeout = timeout or 30
 		distParada = distParada or 5
+		local vel = Config.vooVelocidade or 80
+		local alt = Config.vooAltura or 12
+		local suav = Config.vooSuavidade or 3
 
-		-- garante que o voo está ativo
-		if not BodyVelocityVoo or not BodyVelocityVoo.Parent then
-			IniciarVoo()
-		end
-
-		local velocidadeVoo = Config.vooVelocidade or 80
-		local alturaVoo = Config.vooAltura or 12
-		local suavidade = Config.vooSuavidade or 3
-
-		-- destino com altura
-		local destino = Vector3.new(posAlvo.X, posAlvo.Y + alturaVoo, posAlvo.Z)
-
+		local destino = Vector3.new(posAlvo.X, posAlvo.Y + alt, posAlvo.Z)
 		local t0 = tick()
 		local ultimaPos = hrp.Position
-		local tempoParado = 0
+		local parado = 0
+		local travou = 0
 
 		while tick() - t0 < timeout do
 			local h = GetHRP()
 			if not h then return false end
+			if not BodyVel or not BodyVel.Parent then IniciarVoo(); task.wait(0.1) end
 
-			local posAtual = h.Position
-			local diff = destino - posAtual
+			local pos = h.Position
+			local diff = destino - pos
 			local dist = diff.Magnitude
+			local plano = Vector3.new(pos.X - posAlvo.X, 0, pos.Z - posAlvo.Z)
 
-			-- Verifica se chegou
-			local diffPlano = Vector3.new(posAtual.X - posAlvo.X, 0, posAtual.Z - posAlvo.Z)
-			if diffPlano.Magnitude < distParada then
-				-- desacelera
-				if BodyVelocityVoo then
-					BodyVelocityVoo.Velocity = BodyVelocityVoo.Velocity * 0.5
-					task.wait(0.1)
-					BodyVelocityVoo.Velocity = Vector3.zero
-				end
+			if plano.Magnitude < distParada then
+				if BodyVel then BodyVel.Velocity = Vector3.zero end
 				return true
 			end
 
-			-- Desaceleração perto do destino (evita passar reto)
 			local fator = math.clamp(dist / 30, 0.3, 1)
-			local velFinal = diff.Unit * velocidadeVoo * fator
+			local velFinal = diff.Unit * vel * fator
 
-			-- suavização (interpola velocidade)
-			if BodyVelocityVoo then
-				local velAtual = BodyVelocityVoo.Velocity
-				local novaVel = velAtual:Lerp(velFinal, math.clamp(suavidade * 0.1, 0.05, 0.5))
-				BodyVelocityVoo.Velocity = novaVel
+			if BodyVel then
+				BodyVel.Velocity = BodyVel.Velocity:Lerp(velFinal, math.clamp(suav * 0.1, 0.05, 0.5))
 			end
 
-			-- atualiza Gyro pra olhar pro destino
-			if BodyGyroVoo then
-				local dir = Vector3.new(diff.X, 0, diff.Z)
-				if dir.Magnitude > 1 then
-					local look = CFrame.new(posAtual, posAtual + dir.Unit)
-					BodyGyroVoo.CFrame = BodyGyroVoo.CFrame:Lerp(look, 0.15)
+			if BodyGy and BodyGy.Parent then
+				local d = Vector3.new(diff.X, 0, diff.Z)
+				if d.Magnitude > 1 then
+					local look = CFrame.new(pos, pos + d.Unit)
+					BodyGy.CFrame = BodyGy.CFrame:Lerp(look, 0.15)
 				end
 			end
 
-			-- Anti-travamento
-			local moveu = (posAtual - ultimaPos).Magnitude
+			local moveu = (pos - ultimaPos).Magnitude
 			if moveu < 0.5 then
-				tempoParado = tempoParado + 0.1
-				if tempoParado > 1.5 then
-					-- tenta subir mais pra desviar
-					if BodyVelocityVoo then
-						BodyVelocityVoo.Velocity = Vector3.new(0, velocidadeVoo * 0.6, 0)
-					end
+				parado = parado + 0.1
+				if parado > 1.5 then
+					travou = travou + 1
+					if BodyVel then BodyVel.Velocity = Vector3.new(0, vel * 0.6, 0) end
 					task.wait(0.3)
-					tempoParado = 0
+					parado = 0
+					if travou >= 4 then return false end
 				end
 			else
-				tempoParado = 0
+				parado = 0
 			end
 
-			ultimaPos = posAtual
-			task.wait(0.05)
+			ultimaPos = pos
+			task.wait(0.1) -- mais lento pra não travar
 		end
 		return false
 	end
 
-	-- ============================================================
-	-- ANDAR A PÉ COM ANTI-TRAVAMENTO
-	-- ============================================================
 	local function AndarAte(posAlvo, timeout, distParada)
 		if not posAlvo then return false end
-		local hrp = GetHRP()
 		local hum = GetHum()
-		if not hrp or not hum then return false end
+		if not hum then return false end
 		timeout = timeout or 30
 		distParada = distParada or 4
 		local t0 = tick()
-		local ultimaPos = hrp.Position
-		local tempoParado = 0
-		local tentativasTravou = 0
+		local ultimaPos = Vector3.zero
+		local parado = 0
+		local travou = 0
 
 		hum:MoveTo(posAlvo)
 
 		while tick() - t0 < timeout do
 			local h = GetHRP()
-			if not h then return false end
+			if not h or not hum.Parent then return false end
 
 			local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
 			if diff.Magnitude < distParada then
@@ -481,36 +479,31 @@ local function AbrirAutoGari(infoKey)
 				return true
 			end
 
-			local moveu = (h.Position - ultimaPos).Magnitude
-			if moveu < 0.5 then
-				tempoParado = tempoParado + 0.1
-				if tempoParado > 1.5 then
-					tentativasTravou = tentativasTravou + 1
-					TocarSom("travou")
-					hum.Jump = true
-					task.wait(0.3)
-					hum:MoveTo(posAlvo)
-					tempoParado = 0
-					if tentativasTravou >= 3 then
-						Log("⚠️ Travou 3x ao ir pra " .. tostring(posAlvo))
-						return false
+			if ultimaPos ~= Vector3.zero then
+				local moveu = (h.Position - ultimaPos).Magnitude
+				if moveu < 0.5 then
+					parado = parado + 0.1
+					if parado > 1.5 then
+						travou = travou + 1
+						pcall(function() hum.Jump = true end)
+						task.wait(0.3)
+						hum:MoveTo(posAlvo)
+						parado = 0
+						if travou >= 3 then return false end
 					end
+				else
+					parado = 0
+					travou = 0
 				end
-			else
-				tempoParado = 0
-				tentativasTravou = 0
 			end
 
 			ultimaPos = h.Position
 			hum:MoveTo(posAlvo)
-			task.wait(0.1)
+			task.wait(0.15)
 		end
 		return false
 	end
 
-	-- ============================================================
-	-- IR ATÉ (escolhe voo ou a pé baseado no toggle)
-	-- ============================================================
 	local function IrAte(posAlvo, timeout, distParada)
 		if Config.vooAtivo then
 			return VoarAte(posAlvo, timeout, distParada or 5)
@@ -522,9 +515,6 @@ local function AbrirAutoGari(infoKey)
 	local lixosUsados = {}
 	local lixosFalhados = {}
 
-	-- ============================================================
-	-- DETECÇÃO DE LIXO
-	-- ============================================================
 	local function GetLixosContainer()
 		local caminhos = {
 			{"Construcoes", "SistemaGari", "Lixos"},
@@ -532,10 +522,10 @@ local function AbrirAutoGari(infoKey)
 			{"Lixos"},
 			{"Construcoes", "Lixos"},
 		}
-		for _, caminho in ipairs(caminhos) do
+		for _, c in ipairs(caminhos) do
 			local w = workspace
 			local ok = true
-			for _, n in ipairs(caminho) do
+			for _, n in ipairs(c) do
 				w = w:FindFirstChild(n)
 				if not w then ok = false; break end
 			end
@@ -570,24 +560,19 @@ local function AbrirAutoGari(infoKey)
 
 	local function AcharProximoLixo()
 		local cont = GetLixosContainer()
-		if not cont then return nil, 0 end
+		if not cont then return nil end
 		local hrp = GetHRP()
-		if not hrp then return nil, 0 end
+		if not hrp then return nil end
 
 		local disp = {}
-		local totalLixos = 0
 		for _, lixo in ipairs(cont:GetChildren()) do
-			if lixo:IsA("BasePart") then
-				totalLixos = totalLixos + 1
-				if not lixosUsados[lixo] and not lixosFalhados[lixo] then
-					table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
-				end
+			if lixo:IsA("BasePart") and not lixosUsados[lixo] and not lixosFalhados[lixo] then
+				table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 			end
 		end
 
 		if #disp == 0 then
 			TocarSom("reset")
-			Log("🔄 Todos lixos usados — resetando lista")
 			lixosUsados = {}
 			lixosFalhados = {}
 			for _, lixo in ipairs(cont:GetChildren()) do
@@ -598,12 +583,12 @@ local function AbrirAutoGari(infoKey)
 		end
 
 		table.sort(disp, function(a, b) return a.dist < b.dist end)
-		if #disp > 0 then return disp[1].lixo, totalLixos end
-		return nil, totalLixos
+		if #disp > 0 then return disp[1].lixo end
+		return nil
 	end
 
 	-- ============================================================
-	-- BOTÃO FLUTUANTE
+	-- UI (construção rápida)
 	-- ============================================================
 	local SGBtn = Instance.new("ScreenGui")
 	SGBtn.Name = "SailentFloatBtn"
@@ -611,8 +596,7 @@ local function AbrirAutoGari(infoKey)
 	SGBtn.IgnoreGuiInset = true
 	SGBtn.Parent = CoreGui
 
-	local BTN_SIZE = IS_MOBILE and 68 or 60
-
+	local BTN = IS_MOBILE and 68 or 60
 	local FloatBtn = Instance.new("TextButton")
 	FloatBtn.Text = "⚡"
 	FloatBtn.Font = Enum.Font.GothamBold
@@ -620,25 +604,24 @@ local function AbrirAutoGari(infoKey)
 	FloatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	FloatBtn.BackgroundColor3 = C.Black
 	FloatBtn.BorderSizePixel = 0
-	FloatBtn.Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)
-	FloatBtn.Position = UDim2.new(0, 20, 0.5, -BTN_SIZE/2)
+	FloatBtn.Size = UDim2.new(0, BTN, 0, BTN)
+	FloatBtn.Position = UDim2.new(0, 20, 0.5, -BTN/2)
 	FloatBtn.AutoButtonColor = false
 	FloatBtn.Active = true
 	FloatBtn.Parent = SGBtn
 
-	local BtnCorner = Instance.new("UICorner")
-	BtnCorner.CornerRadius = UDim.new(1, 0)
-	BtnCorner.Parent = FloatBtn
+	local BtnC = Instance.new("UICorner")
+	BtnC.CornerRadius = UDim.new(1, 0)
+	BtnC.Parent = FloatBtn
 
-	local BtnStroke = Instance.new("UIStroke")
-	BtnStroke.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green)
-	BtnStroke.Thickness = IS_MOBILE and 3 or 2
-	BtnStroke.Parent = FloatBtn
+	local BtnS = Instance.new("UIStroke")
+	BtnS.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green)
+	BtnS.Thickness = IS_MOBILE and 3 or 2
+	BtnS.Parent = FloatBtn
 
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			btnDragging = true
 			btnMoveuSe = false
 			btnDragStart = input.Position
@@ -646,23 +629,18 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 	FloatBtn.InputChanged:Connect(function(input)
-		if btnDragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-			or input.UserInputType == Enum.UserInputType.Touch) then
+		if btnDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - btnDragStart
 			if math.abs(delta.X) > 8 or math.abs(delta.Y) > 8 then btnMoveuSe = true end
 			FloatBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
 		end
 	end)
 	UserInput.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			btnDragging = false
 		end
 	end)
 
-	-- ============================================================
-	-- UI PRINCIPAL
-	-- ============================================================
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentGari"
 	SG.ResetOnSpawn = false
@@ -673,9 +651,9 @@ local function AbrirAutoGari(infoKey)
 	if IS_MOBILE then
 		local vp = workspace.CurrentCamera.ViewportSize
 		UI_W = math.min(vp.X * 0.92, 420)
-		UI_H = math.min(vp.Y * 0.85, 700)
+		UI_H = math.min(vp.Y * 0.85, 680)
 	else
-		UI_W, UI_H = 400, 680
+		UI_W, UI_H = 400, 660
 	end
 
 	local Main = Instance.new("Frame")
@@ -684,11 +662,9 @@ local function AbrirAutoGari(infoKey)
 	Main.BackgroundColor3 = C.BG
 	Main.BorderSizePixel = 0
 	Main.Parent = SG
-
 	local MC = Instance.new("UICorner")
 	MC.CornerRadius = UDim.new(0, 14)
 	MC.Parent = Main
-
 	local MS = Instance.new("UIStroke")
 	MS.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Accent)
 	MS.Thickness = 1.5
@@ -699,14 +675,8 @@ local function AbrirAutoGari(infoKey)
 
 	do
 		local d, di, ds, sp
-		local function up(i)
-			if _G.SailentBloquearDrag then return end
-			local x = i.Position - ds
-			Main.Position = UDim2.new(sp.X.Scale, sp.X.Offset + x.X, sp.Y.Scale, sp.Y.Offset + x.Y)
-		end
 		Main.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				if _G.SailentBloquearDrag then return end
 				d = true; ds = i.Position; sp = Main.Position
 				i.Changed:Connect(function()
@@ -715,17 +685,18 @@ local function AbrirAutoGari(infoKey)
 			end
 		end)
 		Main.InputChanged:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseMovement
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
 				di = i
 			end
 		end)
 		UserInput.InputChanged:Connect(function(i)
-			if i == di and d then up(i) end
+			if i == di and d and not _G.SailentBloquearDrag then
+				local x = i.Position - ds
+				Main.Position = UDim2.new(sp.X.Scale, sp.X.Offset + x.X, sp.Y.Scale, sp.Y.Offset + x.Y)
+			end
 		end)
 	end
 
-	-- HEADER
 	local TB = Instance.new("Frame")
 	TB.Size = UDim2.new(1, 0, 0, 56)
 	TB.BackgroundColor3 = C.Card
@@ -776,7 +747,6 @@ local function AbrirAutoGari(infoKey)
 	BadgeC.Parent = Badge
 
 	local MBTN_W = IS_MOBILE and 44 or 36
-
 	local MinBtn = Instance.new("TextButton")
 	MinBtn.Text = "−"
 	MinBtn.Font = Enum.Font.GothamBold
@@ -823,11 +793,11 @@ local function AbrirAutoGari(infoKey)
 	local H_SEC = IS_MOBILE and 30 or 26
 	local H_STAT = IS_MOBILE and 38 or 32
 	local H_BTN = IS_MOBILE and 48 or 38
-	local H_TOGGLE = IS_MOBILE and 52 or 42
+	local H_TOG = IS_MOBILE and 52 or 42
 	local FONT_S = IS_MOBILE and 12 or 11
 	local FONT_B = IS_MOBILE and 13 or 12
 
-	local function Sec(txt, color)
+	local function Sec(txt, cor)
 		local f = Instance.new("Frame")
 		f.Size = UDim2.new(1, 0, 0, H_SEC)
 		f.BackgroundColor3 = C.Card
@@ -840,7 +810,7 @@ local function AbrirAutoGari(infoKey)
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
 		l.TextSize = FONT_S
-		l.TextColor3 = color or C.Accent
+		l.TextColor3 = cor or C.Accent
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.new(0, 12, 0, 0)
 		l.Size = UDim2.new(1, -24, 1, 0)
@@ -848,7 +818,7 @@ local function AbrirAutoGari(infoKey)
 		l.Parent = f
 	end
 
-	local function Stat(txt, color)
+	local function Stat(txt, cor)
 		local f = Instance.new("Frame")
 		f.Size = UDim2.new(1, 0, 0, H_STAT)
 		f.BackgroundColor3 = C.Card
@@ -861,7 +831,7 @@ local function AbrirAutoGari(infoKey)
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
 		l.TextSize = FONT_S
-		l.TextColor3 = color or C.Text
+		l.TextColor3 = cor or C.Text
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.new(0, 12, 0, 0)
 		l.Size = UDim2.new(1, -24, 1, 0)
@@ -870,7 +840,7 @@ local function AbrirAutoGari(infoKey)
 		return l
 	end
 
-	local function Btn(txt, color, cb)
+	local function Btn(txt, cor, cb)
 		local b = Instance.new("TextButton")
 		b.Text = txt
 		b.Font = Enum.Font.GothamBold
@@ -885,17 +855,17 @@ local function AbrirAutoGari(infoKey)
 		c.CornerRadius = UDim.new(0, 8)
 		c.Parent = b
 		b.MouseButton1Click:Connect(function()
-			Tween(b, {BackgroundColor3 = color or C.Accent}, 0.08)
+			Tween(b, {BackgroundColor3 = cor or C.Accent}, 0.08)
 			task.wait(0.12)
 			Tween(b, {BackgroundColor3 = C.Card}, 0.15)
-			if cb then task.spawn(cb) end
+			if cb then task.spawn(function() pcall(cb) end) end
 		end)
 		return b
 	end
 
 	local function Toggle(txt, default, cb)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, H_TOGGLE)
+		f.Size = UDim2.new(1, 0, 0, H_TOG)
 		f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0
 		f.Parent = Content
@@ -913,13 +883,13 @@ local function AbrirAutoGari(infoKey)
 		l.TextXAlignment = Enum.TextXAlignment.Left
 		l.Parent = f
 
-		local BG_W = IS_MOBILE and 52 or 44
-		local BG_H = IS_MOBILE and 26 or 22
-		local K_SIZE = IS_MOBILE and 22 or 18
+		local BW = IS_MOBILE and 52 or 44
+		local BH = IS_MOBILE and 26 or 22
+		local KS = IS_MOBILE and 22 or 18
 
 		local bg = Instance.new("Frame")
-		bg.Size = UDim2.new(0, BG_W, 0, BG_H)
-		bg.Position = UDim2.new(1, -(BG_W + 12), 0.5, -BG_H/2)
+		bg.Size = UDim2.new(0, BW, 0, BH)
+		bg.Position = UDim2.new(1, -(BW + 12), 0.5, -BH/2)
 		bg.BackgroundColor3 = Color3.fromRGB(50,50,60)
 		bg.BorderSizePixel = 0
 		bg.Parent = f
@@ -928,8 +898,8 @@ local function AbrirAutoGari(infoKey)
 		bc.Parent = bg
 
 		local k = Instance.new("Frame")
-		k.Size = UDim2.new(0, K_SIZE, 0, K_SIZE)
-		k.Position = UDim2.new(0, 2, 0.5, -K_SIZE/2)
+		k.Size = UDim2.new(0, KS, 0, KS)
+		k.Position = UDim2.new(0, 2, 0.5, -KS/2)
 		k.BackgroundColor3 = C.Text
 		k.BorderSizePixel = 0
 		k.Parent = bg
@@ -940,19 +910,18 @@ local function AbrirAutoGari(infoKey)
 		local st = default or false
 		local function set(v)
 			st = v
-			local onX = BG_W - K_SIZE - 2
 			if st then
 				Tween(bg, {BackgroundColor3 = C.Green}, 0.2)
-				Tween(k, {Position = UDim2.new(0, onX, 0.5, -K_SIZE/2)}, 0.2)
+				Tween(k, {Position = UDim2.new(0, BW - KS - 2, 0.5, -KS/2)}, 0.2)
 			else
 				Tween(bg, {BackgroundColor3 = Color3.fromRGB(50,50,60)}, 0.2)
-				Tween(k, {Position = UDim2.new(0, 2, 0.5, -K_SIZE/2)}, 0.2)
+				Tween(k, {Position = UDim2.new(0, 2, 0.5, -KS/2)}, 0.2)
 			end
-			if cb then cb(st) end
+			if cb then task.spawn(function() pcall(cb, st) end) end
 		end
 		if st then
 			bg.BackgroundColor3 = C.Green
-			k.Position = UDim2.new(0, BG_W - K_SIZE - 2, 0.5, -K_SIZE/2)
+			k.Position = UDim2.new(0, BW - KS - 2, 0.5, -KS/2)
 		end
 		local cl = Instance.new("TextButton")
 		cl.Text = ""
@@ -965,13 +934,13 @@ local function AbrirAutoGari(infoKey)
 
 	local velocidadeAtual = Config.velocidade
 
-	local function CriarSlider(parent, min, max, default, callback, tituloTexto, corTitulo, sufixo)
-		local SLIDER_H = IS_MOBILE and 80 or 58
-		local KNOB = IS_MOBILE and 32 or 22
-		local BAR_H = IS_MOBILE and 16 or 12
+	local function Slider(parent, min, max, default, cb, titulo, cor, sufixo)
+		local SH = IS_MOBILE and 80 or 58
+		local KN = IS_MOBILE and 32 or 22
+		local BRH = IS_MOBILE and 16 or 12
 
 		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 0, SLIDER_H)
+		frame.Size = UDim2.new(1, 0, 0, SH)
 		frame.BackgroundColor3 = C.Card
 		frame.BorderSizePixel = 0
 		frame.Parent = parent
@@ -979,30 +948,30 @@ local function AbrirAutoGari(infoKey)
 		fc.CornerRadius = UDim.new(0, 8)
 		fc.Parent = frame
 
-		local titulo = Instance.new("TextLabel")
-		titulo.Text = tituloTexto or "⚡ Valor"
-		titulo.Font = Enum.Font.GothamBold
-		titulo.TextSize = IS_MOBILE and 13 or 12
-		titulo.TextColor3 = corTitulo or C.Text
-		titulo.BackgroundTransparency = 1
-		titulo.Position = UDim2.new(0, 12, 0, 8)
-		titulo.Size = UDim2.new(0.7, 0, 0, 18)
-		titulo.TextXAlignment = Enum.TextXAlignment.Left
-		titulo.Parent = frame
+		local t = Instance.new("TextLabel")
+		t.Text = titulo or "Valor"
+		t.Font = Enum.Font.GothamBold
+		t.TextSize = IS_MOBILE and 13 or 12
+		t.TextColor3 = cor or C.Text
+		t.BackgroundTransparency = 1
+		t.Position = UDim2.new(0, 12, 0, 8)
+		t.Size = UDim2.new(0.7, 0, 0, 18)
+		t.TextXAlignment = Enum.TextXAlignment.Left
+		t.Parent = frame
 
-		local valorLabel = Instance.new("TextLabel")
-		valorLabel.Text = tostring(default) .. (sufixo or "")
-		valorLabel.Font = Enum.Font.GothamBold
-		valorLabel.TextSize = IS_MOBILE and 16 or 14
-		valorLabel.TextColor3 = corTitulo or C.Green
-		valorLabel.BackgroundTransparency = 1
-		valorLabel.Position = UDim2.new(0.7, 0, 0, 8)
-		valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
-		valorLabel.TextXAlignment = Enum.TextXAlignment.Right
-		valorLabel.Parent = frame
+		local vl = Instance.new("TextLabel")
+		vl.Text = tostring(default) .. (sufixo or "")
+		vl.Font = Enum.Font.GothamBold
+		vl.TextSize = IS_MOBILE and 16 or 14
+		vl.TextColor3 = cor or C.Green
+		vl.BackgroundTransparency = 1
+		vl.Position = UDim2.new(0.7, 0, 0, 8)
+		vl.Size = UDim2.new(0.3, -12, 0, 18)
+		vl.TextXAlignment = Enum.TextXAlignment.Right
+		vl.Parent = frame
 
 		local bgBar = Instance.new("Frame")
-		bgBar.Size = UDim2.new(1, -24, 0, BAR_H)
+		bgBar.Size = UDim2.new(1, -24, 0, BRH)
 		bgBar.Position = UDim2.new(0, 12, 0, IS_MOBILE and 42 or 32)
 		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 		bgBar.BorderSizePixel = 0
@@ -1011,18 +980,18 @@ local function AbrirAutoGari(infoKey)
 		bbc.CornerRadius = UDim.new(1, 0)
 		bbc.Parent = bgBar
 
-		local fillBar = Instance.new("Frame")
-		fillBar.Size = UDim2.new(0, 0, 1, 0)
-		fillBar.BackgroundColor3 = corTitulo or C.Green
-		fillBar.BorderSizePixel = 0
-		fillBar.Parent = bgBar
+		local fill = Instance.new("Frame")
+		fill.Size = UDim2.new(0, 0, 1, 0)
+		fill.BackgroundColor3 = cor or C.Green
+		fill.BorderSizePixel = 0
+		fill.Parent = bgBar
 		local fbc = Instance.new("UICorner")
 		fbc.CornerRadius = UDim.new(1, 0)
-		fbc.Parent = fillBar
+		fbc.Parent = fill
 
 		local knob = Instance.new("Frame")
-		knob.Size = UDim2.new(0, KNOB, 0, KNOB)
-		knob.Position = UDim2.new(0, -KNOB/2, 0.5, -KNOB/2)
+		knob.Size = UDim2.new(0, KN, 0, KN)
+		knob.Position = UDim2.new(0, -KN/2, 0.5, -KN/2)
 		knob.BackgroundColor3 = C.Text
 		knob.BorderSizePixel = 0
 		knob.ZIndex = 2
@@ -1031,48 +1000,38 @@ local function AbrirAutoGari(infoKey)
 		kc.CornerRadius = UDim.new(1, 0)
 		kc.Parent = knob
 
-		local touchArea = Instance.new("TextButton")
-		touchArea.Text = ""
-		touchArea.BackgroundTransparency = 1
-		touchArea.Size = UDim2.new(1, 0, 0, KNOB + 20)
-		touchArea.Position = UDim2.new(0, 0, 0.5, -(KNOB + 20)/2)
-		touchArea.Parent = bgBar
-
 		local valor = default
 		local arrastando = false
 
 		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X
-			local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
-			valor = math.floor(min + (max - min) * percent)
-			valorLabel.Text = tostring(valor) .. (sufixo or "")
-			fillBar.Size = UDim2.new(percent, 0, 1, 0)
-			knob.Position = UDim2.new(percent, -KNOB/2, 0.5, -KNOB/2)
-			if callback then callback(valor) end
+			local a = bgBar.AbsolutePosition.X
+			local s = bgBar.AbsoluteSize.X
+			local p = math.clamp((posX - a) / s, 0, 1)
+			valor = math.floor(min + (max - min) * p)
+			vl.Text = tostring(valor) .. (sufixo or "")
+			fill.Size = UDim2.new(p, 0, 1, 0)
+			knob.Position = UDim2.new(p, -KN/2, 0.5, -KN/2)
+			if cb then task.spawn(function() pcall(cb, valor) end) end
 		end
 
-		local initPercent = (default - min) / (max - min)
-		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
-		knob.Position = UDim2.new(initPercent, -KNOB/2, 0.5, -KNOB/2)
+		local ip = (default - min) / (max - min)
+		fill.Size = UDim2.new(ip, 0, 1, 0)
+		knob.Position = UDim2.new(ip, -KN/2, 0.5, -KN/2)
 
 		bgBar.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				arrastando = true
 				_G.SailentBloquearDrag = true
 				Atualizar(i.Position.X)
 			end
 		end)
 		UserInput.InputChanged:Connect(function(i)
-			if arrastando and (i.UserInputType == Enum.UserInputType.MouseMovement
-				or i.UserInputType == Enum.UserInputType.Touch) then
+			if arrastando and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
 				Atualizar(i.Position.X)
 			end
 		end)
 		UserInput.InputEnded:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				if arrastando then
 					arrastando = false
 					_G.SailentBloquearDrag = false
@@ -1089,11 +1048,6 @@ local function AbrirAutoGari(infoKey)
 	Stat("Nome: " .. (infoKey.nome or "Cliente"), C.Text)
 	Stat("Nível: " .. string.upper(infoKey.nivel or "normal"),
 		infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green))
-	if infoKey.expira and infoKey.expira < 99999999999 then
-		local restante = infoKey.expira - os.time()
-		local dias = math.floor(restante / 86400)
-		Stat("Expira em: " .. dias .. " dias", restante < 86400 and C.Red or C.Yellow)
-	end
 
 	Sec("🗑️ AUTO GARI", C.Green)
 	local gariStatus = Stat("Status: PARADO", C.Sub)
@@ -1105,7 +1059,7 @@ local function AbrirAutoGari(infoKey)
 	local gariCount = {coletados = 0, entregues = 0}
 	local tempoInicio = 0
 
-	local setGariAtivo = Toggle("Auto Coletar + Entregar", false, function(s)
+	local setGari = Toggle("Auto Coletar + Entregar", false, function(s)
 		gariOn = s
 		if s then
 			gariStatus.Text = "Status: ● ATIVO"
@@ -1116,80 +1070,82 @@ local function AbrirAutoGari(infoKey)
 
 			task.spawn(function()
 				while gariOn do
-					local temLixo = TemLixoNaMao()
-					if temLixo then
-						gariStatus.Text = (Config.vooAtivo and "✈️ Voando pra TRASEIRA..." or "📤 Indo pra TRASEIRA...")
-						local cam = GetCaminhao()
-						if not cam then
-							gariStatus.Text = "⚠️ Spawne o caminhão!"
-							task.wait(2)
-							continue
-						end
-						local traseira = GetTraseira(cam)
-						if traseira then
-							IrAte(traseira.Position, 30, Config.vooAtivo and 5 or 4)
-							task.wait(0.5)
-							gariStatus.Text = "📤 Entregando..."
-							local prompt = GetPrompt(traseira)
-							if prompt then
-								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.8)
-								if not TemLixoNaMao() then
-									gariCount.entregues += 1
-									TocarSom("entregou")
-								end
+					pcall(function()
+						local temLixo = TemLixoNaMao()
+						if temLixo then
+							gariStatus.Text = (Config.vooAtivo and "✈️ Voando pra TRASEIRA..." or "📤 Indo pra TRASEIRA...")
+							local cam = GetCaminhao()
+							if not cam then
+								gariStatus.Text = "⚠️ Spawne o caminhão!"
+								task.wait(2)
+								return
 							end
-						end
-					else
-						gariStatus.Text = "📥 Procurando lixo..."
-						local lixo, total = AcharProximoLixo()
-						if lixo then
-							gariStatus.Text = (Config.vooAtivo and "✈️ Voando pro lixo..." or "📥 Indo pro lixo...")
-							local sucesso = IrAte(lixo.Position, 30, Config.vooAtivo and 5 or 4)
-							task.wait(0.5)
-							if sucesso then
-								gariStatus.Text = "📥 Coletando..."
-								local prompt = GetPrompt(lixo)
+							local traseira = GetTraseira(cam)
+							if traseira then
+								IrAte(traseira.Position, 30, Config.vooAtivo and 5 or 4)
+								task.wait(0.5)
+								gariStatus.Text = "📤 Entregando..."
+								local prompt = GetPrompt(traseira)
 								if prompt then
 									pcall(function() fireproximityprompt(prompt) end)
 									task.wait(0.8)
-									if TemLixoNaMao() then
-										gariCount.coletados += 1
-										lixosUsados[lixo] = true
-										TocarSom("coletou")
+									if not TemLixoNaMao() then
+										gariCount.entregues += 1
+										TocarSom("entregou")
+									end
+								end
+							end
+						else
+							gariStatus.Text = "📥 Procurando lixo..."
+							local lixo = AcharProximoLixo()
+							if lixo then
+								gariStatus.Text = (Config.vooAtivo and "✈️ Voando pro lixo..." or "📥 Indo pro lixo...")
+								local ok = IrAte(lixo.Position, 30, Config.vooAtivo and 5 or 4)
+								task.wait(0.5)
+								if ok then
+									gariStatus.Text = "📥 Coletando..."
+									local prompt = GetPrompt(lixo)
+									if prompt then
+										pcall(function() fireproximityprompt(prompt) end)
+										task.wait(0.8)
+										if TemLixoNaMao() then
+											gariCount.coletados += 1
+											lixosUsados[lixo] = true
+											TocarSom("coletou")
+										else
+											lixosFalhados[lixo] = true
+										end
 									else
 										lixosFalhados[lixo] = true
 									end
 								else
 									lixosFalhados[lixo] = true
 								end
-							else
-								lixosFalhados[lixo] = true
 							end
 						end
-					end
-					local totalUsados = 0
-					for _ in pairs(lixosUsados) do totalUsados += 1 end
-					local totalFalhados = 0
-					for _ in pairs(lixosFalhados) do totalFalhados += 1 end
 
-					local totalLixos = 0
-					local cont = GetLixosContainer()
-					if cont then
-						for _, v in ipairs(cont:GetChildren()) do
-							if v:IsA("BasePart") then totalLixos = totalLixos + 1 end
+						local usados = 0
+						for _ in pairs(lixosUsados) do usados += 1 end
+						local falhas = 0
+						for _ in pairs(lixosFalhados) do falhas += 1 end
+
+						local total = 0
+						local cont = GetLixosContainer()
+						if cont then
+							for _, v in ipairs(cont:GetChildren()) do
+								if v:IsA("BasePart") then total = total + 1 end
+							end
 						end
-					end
 
-					local tempoRodando = tick() - tempoInicio
-					local totalColetado = gariCount.coletados + gariCount.entregues
-					local porMinuto = tempoRodando > 0 and math.floor((totalColetado / tempoRodando) * 60) or 0
+						local tempo = tick() - tempoInicio
+						local tot = gariCount.coletados + gariCount.entregues
+						local porMin = tempo > 0 and math.floor((tot / tempo) * 60) or 0
 
-					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
-					gariLixos.Text = "Lixos: "..totalUsados.."/"..totalLixos..(totalFalhados > 0 and " ("..totalFalhados.." falhas)" or "")
-					gariTempo.Text = "Tempo: "..FormatarTempo(tempoRodando).." | "..porMinuto.."/min"
-
-					task.wait(1)
+						gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
+						gariLixos.Text = "Lixos: "..usados.."/"..total..(falhas > 0 and " ("..falhas.." falhas)" or "")
+						gariTempo.Text = "Tempo: "..FormatarTempo(tempo).." | "..porMin.."/min"
+					end)
+					task.wait(1.2)
 				end
 			end)
 		else
@@ -1200,60 +1156,32 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
-	-- ============================================================
-	-- MODO DE MOVIMENTO (A pé / Voo)
-	-- ============================================================
-	Sec("🚶 MODO DE MOVIMENTO", C.Cyan)
-	Stat("A pé pega o lixo normalmente. Voo é mais rápido e ignora obstáculos.", C.Sub)
-
-	local setVooAtivo = Toggle("✈️ Voo Suave (ignora obstáculos)", false, function(s)
+	Sec("🚶 MODO", C.Cyan)
+	local setVoo = Toggle("✈️ Voo Suave", Config.vooAtivo, function(s)
 		Config.vooAtivo = s
 		SalvarConfig()
-		if s then
-			IniciarVoo()
-		else
-			PararVoo()
-		end
+		if s then IniciarVoo() else PararVoo() end
 	end)
 
 	Sec("✈️ AJUSTES DE VOO", C.Cyan)
+	Slider(Content, 20, 300, Config.vooVelocidade, function(v) Config.vooVelocidade = v end, "✈️ Velocidade", C.Cyan, "")
+	Slider(Content, 3, 60, Config.vooAltura, function(v) Config.vooAltura = v end, "📏 Altura", C.Cyan, "")
+	Slider(Content, 1, 10, Config.vooSuavidade, function(v) Config.vooSuavidade = v end, "🌊 Suavidade", C.Cyan, "")
 
-	CriarSlider(Content, 20, 300, Config.vooVelocidade, function(v)
-		Config.vooVelocidade = v
-	end, "✈️ Velocidade de voo", C.Cyan, " studs/s")
-
-	CriarSlider(Content, 3, 60, Config.vooAltura, function(v)
-		Config.vooAltura = v
-	end, "📏 Altura do voo", C.Cyan, " studs")
-
-	CriarSlider(Content, 1, 10, Config.vooSuavidade, function(v)
-		Config.vooSuavidade = v
-	end, "🌊 Suavidade", C.Cyan, "")
-
-	-- ============================================================
-	-- VELOCIDADE A PÉ
-	-- ============================================================
 	Sec("⚡ VELOCIDADE A PÉ", C.Yellow)
-	CriarSlider(Content, 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
-		Config.velocidade = valor
+	Slider(Content, 16, 200, Config.velocidade, function(v)
+		velocidadeAtual = v
+		Config.velocidade = v
 		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		if hum then hum.WalkSpeed = v end
 	end, "⚡ Velocidade", C.Yellow, "")
 
-	-- ============================================================
-	-- NOCLIP
-	-- ============================================================
 	Sec("👻 NOCLIP", C.Purple)
-	local noclipOn = false
 	local noclipConn
-
-	Toggle("Noclip (atravessar paredes)", false, function(s)
-		noclipOn = s
+	Toggle("Noclip", false, function(s)
 		if s then
 			if noclipConn then noclipConn:Disconnect() end
 			noclipConn = RunService.Stepped:Connect(function()
-				if not noclipOn then return end
 				local c = lp.Character
 				if not c then return end
 				for _, p in ipairs(c:GetDescendants()) do
@@ -1265,44 +1193,25 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
-	Sec("🔊 SOM", C.Blue)
-	Toggle("Sons ativados", Config.somAtivo, function(s)
-		Config.somAtivo = s
-		SalvarConfig()
-	end)
-
 	Sec("🚨 EMERGÊNCIA", C.Red)
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		gariOn = false
-		setGariAtivo(false)
-		noclipOn = false
+		setGari(false)
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 		PararVoo()
-		if setVooAtivo then setVooAtivo(false) end
+		setVoo(false)
 		gariStatus.Text = "Status: PARADO"
 		gariStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
 	end)
 
-	if infoKey.nivel == "admin" then
-		Sec("⚙️ ADMIN", C.Gold)
-		Btn("🚪 Deslogar Key", C.Red, function()
-			PararVoo()
-			LimparKeySalva()
-			SafeDeleteFile(CACHE_FILE)
-			lp:Kick("Key removida. Reabra o script.")
-		end)
-	end
-
-	-- ============================================================
-	-- ABRIR/FECHAR UI
-	-- ============================================================
+	-- UI TOGGLE
 	local uiAberta = true
 	local function FecharUI()
 		uiAberta = false
 		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-		task.wait(0.2)
+		task.wait(0.25)
 		Main.Visible = false
 		FloatBtn.Text = "⚡"
 		Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
@@ -1327,11 +1236,10 @@ local function AbrirAutoGari(infoKey)
 			if uiAberta then FecharUI() else AbrirUI() end
 		elseif input.KeyCode == Enum.KeyCode.F1 then
 			gariOn = false
-			setGariAtivo(false)
-			noclipOn = false
+			setGari(false)
 			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 			PararVoo()
-			if setVooAtivo then setVooAtivo(false) end
+			setVoo(false)
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 			FecharUI()
@@ -1352,53 +1260,32 @@ local function AbrirAutoGari(infoKey)
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
-	if IS_MOBILE then
-		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-			local vp = workspace.CurrentCamera.ViewportSize
-			local nW = math.min(vp.X * 0.92, 420)
-			local nH = math.min(vp.Y * 0.85, 700)
-			UI_W, UI_H = nW, nH
-			if uiAberta and not minimizado then
-				Main.Size = UDim2.new(0, nW, 0, nH)
-				Main.Position = UDim2.new(0.5, -nW/2, 0.5, -nH/2)
-			end
+	-- reconexão
+	lp.CharacterAdded:Connect(function()
+		task.spawn(function()
+			task.wait(2)
+			pcall(function()
+				local hum = GetHum()
+				if hum and gariOn then
+					hum.WalkSpeed = velocidadeAtual
+					if Config.vooAtivo then IniciarVoo() end
+				end
+			end)
 		end)
-	end
-
-	-- ============================================================
-	-- RECONEXÃO
-	-- ============================================================
-	lp.CharacterAdded:Connect(function(char)
-		Log("🔄 Character respawnou, aguardando...")
-		task.wait(2)
-		local hum = char:FindFirstChild("Humanoid")
-		if hum and gariOn then
-			hum.WalkSpeed = velocidadeAtual
-			if Config.vooAtivo then
-				task.wait(0.5)
-				IniciarVoo()
-			end
-			Log("✅ Reconectado, continuando...")
-		end
 	end)
 
-	-- Aplica config inicial
-	if Config.vooAtivo then
-		setVooAtivo(true)
-	end
-
-	Log("🗑️ Sailent Auto Gari v" .. SCRIPT_VERSION .. " | " .. (infoKey.nome or "Cliente") .. " | " .. (IS_MOBILE and "MOBILE" or "PC"))
+	Log("✅ Auto Gari v" .. SCRIPT_VERSION .. " pronto")
 end
 
 -- ============================================================
--- UI DE KEY
+-- UI DE KEY (leve)
 -- ============================================================
 local function AbrirUIKey()
-	local SGScreen = Instance.new("ScreenGui")
-	SGScreen.Name = "SailentKeyUI"
-	SGScreen.ResetOnSpawn = false
-	SGScreen.IgnoreGuiInset = true
-	SGScreen.Parent = CoreGui
+	local SG = Instance.new("ScreenGui")
+	SG.Name = "SailentKeyUI"
+	SG.ResetOnSpawn = false
+	SG.IgnoreGuiInset = true
+	SG.Parent = CoreGui
 
 	local KW, KH
 	if IS_MOBILE then
@@ -1409,31 +1296,29 @@ local function AbrirUIKey()
 		KW, KH = 400, 400
 	end
 
-	local KeyFrame = Instance.new("Frame")
-	KeyFrame.Size = UDim2.new(0, KW, 0, KH)
-	KeyFrame.Position = UDim2.new(0.5, -KW/2, 0.5, -KH/2)
-	KeyFrame.BackgroundColor3 = C.BG
-	KeyFrame.BorderSizePixel = 0
-	KeyFrame.Parent = SGScreen
+	local F = Instance.new("Frame")
+	F.Size = UDim2.new(0, KW, 0, KH)
+	F.Position = UDim2.new(0.5, -KW/2, 0.5, -KH/2)
+	F.BackgroundColor3 = C.BG
+	F.BorderSizePixel = 0
+	F.Parent = SG
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 14)
+	c.Parent = F
+	local s = Instance.new("UIStroke")
+	s.Color = C.Purple
+	s.Thickness = 2
+	s.Parent = F
 
-	local MC = Instance.new("UICorner")
-	MC.CornerRadius = UDim.new(0, 14)
-	MC.Parent = KeyFrame
-
-	local MS = Instance.new("UIStroke")
-	MS.Color = C.Purple
-	MS.Thickness = 2
-	MS.Parent = KeyFrame
-
-	local Titulo = Instance.new("TextLabel")
-	Titulo.Text = "🔐 SAILENT KEY SYSTEM"
-	Titulo.Font = Enum.Font.GothamBold
-	Titulo.TextSize = IS_MOBILE and 18 or 20
-	Titulo.TextColor3 = C.Text
-	Titulo.BackgroundTransparency = 1
-	Titulo.Size = UDim2.new(1, 0, 0, 50)
-	Titulo.Position = UDim2.new(0, 0, 0, 15)
-	Titulo.Parent = KeyFrame
+	local T = Instance.new("TextLabel")
+	T.Text = "🔐 SAILENT KEY SYSTEM"
+	T.Font = Enum.Font.GothamBold
+	T.TextSize = IS_MOBILE and 18 or 20
+	T.TextColor3 = C.Text
+	T.BackgroundTransparency = 1
+	T.Size = UDim2.new(1, 0, 0, 50)
+	T.Position = UDim2.new(0, 0, 0, 15)
+	T.Parent = F
 
 	local Sub = Instance.new("TextLabel")
 	Sub.Text = "Digite sua key abaixo"
@@ -1443,167 +1328,165 @@ local function AbrirUIKey()
 	Sub.BackgroundTransparency = 1
 	Sub.Size = UDim2.new(1, 0, 0, 20)
 	Sub.Position = UDim2.new(0, 0, 0, 62)
-	Sub.Parent = KeyFrame
+	Sub.Parent = F
 
-	local H_INPUT = IS_MOBILE and 54 or 50
-	local H_BTN = IS_MOBILE and 54 or 50
-	local PAD = IS_MOBILE and 20 or 30
+	local HI = IS_MOBILE and 54 or 50
+	local HB = IS_MOBILE and 54 or 50
+	local P = IS_MOBILE and 20 or 30
 
-	local KeyInput = Instance.new("TextBox")
-	KeyInput.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
-	KeyInput.Font = Enum.Font.Code
-	KeyInput.TextSize = IS_MOBILE and 15 or 14
-	KeyInput.TextColor3 = C.Text
-	KeyInput.PlaceholderColor3 = C.Sub
-	KeyInput.BackgroundColor3 = C.Card
-	KeyInput.BorderSizePixel = 0
-	KeyInput.Size = UDim2.new(1, -PAD*2, 0, H_INPUT)
-	KeyInput.Position = UDim2.new(0, PAD, 0, 95)
-	KeyInput.Text = ""
-	KeyInput.ClearTextOnFocus = false
-	KeyInput.Parent = KeyFrame
+	local Input = Instance.new("TextBox")
+	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
+	Input.Font = Enum.Font.Code
+	Input.TextSize = IS_MOBILE and 15 or 14
+	Input.TextColor3 = C.Text
+	Input.PlaceholderColor3 = C.Sub
+	Input.BackgroundColor3 = C.Card
+	Input.BorderSizePixel = 0
+	Input.Size = UDim2.new(1, -P*2, 0, HI)
+	Input.Position = UDim2.new(0, P, 0, 95)
+	Input.Text = ""
+	Input.ClearTextOnFocus = false
+	Input.Parent = F
+	local ic = Instance.new("UICorner")
+	ic.CornerRadius = UDim.new(0, 10)
+	ic.Parent = Input
 
-	local IC = Instance.new("UICorner")
-	IC.CornerRadius = UDim.new(0, 10)
-	IC.Parent = KeyInput
+	local H = Instance.new("TextLabel")
+	H.Text = "HWID: " .. GetHWID():sub(1,16) .. "..."
+	H.Font = Enum.Font.Code
+	H.TextSize = IS_MOBILE and 11 or 10
+	H.TextColor3 = C.Sub
+	H.BackgroundTransparency = 1
+	H.Size = UDim2.new(1, -P*2, 0, 18)
+	H.Position = UDim2.new(0, P, 0, 95 + HI + 8)
+	H.Parent = F
 
-	local HWIDLabel = Instance.new("TextLabel")
-	HWIDLabel.Text = "Seu HWID: " .. GetHWID():sub(1,16) .. "..."
-	HWIDLabel.Font = Enum.Font.Code
-	HWIDLabel.TextSize = IS_MOBILE and 11 or 10
-	HWIDLabel.TextColor3 = C.Sub
-	HWIDLabel.BackgroundTransparency = 1
-	HWIDLabel.Size = UDim2.new(1, -PAD*2, 0, 18)
-	HWIDLabel.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 8)
-	HWIDLabel.Parent = KeyFrame
+	local St = Instance.new("TextLabel")
+	St.Text = "Status: ● Aguardando"
+	St.Font = Enum.Font.GothamBold
+	St.TextSize = IS_MOBILE and 13 or 12
+	St.TextColor3 = C.Yellow
+	St.BackgroundTransparency = 1
+	St.Size = UDim2.new(1, -P*2, 0, 20)
+	St.Position = UDim2.new(0, P, 0, 95 + HI + 32)
+	St.Parent = F
 
-	local Status = Instance.new("TextLabel")
-	Status.Text = "Status: ● Aguardando"
-	Status.Font = Enum.Font.GothamBold
-	Status.TextSize = IS_MOBILE and 13 or 12
-	Status.TextColor3 = C.Yellow
-	Status.BackgroundTransparency = 1
-	Status.Size = UDim2.new(1, -PAD*2, 0, 20)
-	Status.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 32)
-	Status.Parent = KeyFrame
+	local VB = Instance.new("TextButton")
+	VB.Text = "🔓 VALIDAR KEY"
+	VB.Font = Enum.Font.GothamBold
+	VB.TextSize = IS_MOBILE and 16 or 15
+	VB.TextColor3 = C.Text
+	VB.BackgroundColor3 = C.Green
+	VB.BorderSizePixel = 0
+	VB.Size = UDim2.new(1, -P*2, 0, HB)
+	VB.Position = UDim2.new(0, P, 0, 95 + HI + 60)
+	VB.AutoButtonColor = false
+	VB.Parent = F
+	local vc = Instance.new("UICorner")
+	vc.CornerRadius = UDim.new(0, 10)
+	vc.Parent = VB
 
-	local ValidarBtn = Instance.new("TextButton")
-	ValidarBtn.Text = "🔓 VALIDAR KEY"
-	ValidarBtn.Font = Enum.Font.GothamBold
-	ValidarBtn.TextSize = IS_MOBILE and 16 or 15
-	ValidarBtn.TextColor3 = C.Text
-	ValidarBtn.BackgroundColor3 = C.Green
-	ValidarBtn.BorderSizePixel = 0
-	ValidarBtn.Size = UDim2.new(1, -PAD*2, 0, H_BTN)
-	ValidarBtn.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60)
-	ValidarBtn.AutoButtonColor = false
-	ValidarBtn.Parent = KeyFrame
+	local CB = Instance.new("TextButton")
+	CB.Text = "📋 Copiar HWID"
+	CB.Font = Enum.Font.GothamBold
+	CB.TextSize = IS_MOBILE and 12 or 11
+	CB.TextColor3 = C.Text
+	CB.BackgroundColor3 = C.Card
+	CB.BorderSizePixel = 0
+	CB.Size = UDim2.new(1, -P*2, 0, HB - 10)
+	CB.Position = UDim2.new(0, P, 0, 95 + HI + 60 + HB + 10)
+	CB.AutoButtonColor = false
+	CB.Parent = F
+	local cbc = Instance.new("UICorner")
+	cbc.CornerRadius = UDim.new(0, 8)
+	cbc.Parent = CB
 
-	local VC = Instance.new("UICorner")
-	VC.CornerRadius = UDim.new(0, 10)
-	VC.Parent = ValidarBtn
-
-	local CopiarBtn = Instance.new("TextButton")
-	CopiarBtn.Text = "📋 Copiar HWID"
-	CopiarBtn.Font = Enum.Font.GothamBold
-	CopiarBtn.TextSize = IS_MOBILE and 12 or 11
-	CopiarBtn.TextColor3 = C.Text
-	CopiarBtn.BackgroundColor3 = C.Card
-	CopiarBtn.BorderSizePixel = 0
-	CopiarBtn.Size = UDim2.new(1, -PAD*2, 0, H_BTN - 10)
-	CopiarBtn.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60 + H_BTN + 10)
-	CopiarBtn.AutoButtonColor = false
-	CopiarBtn.Parent = KeyFrame
-
-	local CCopiar = Instance.new("UICorner")
-	CCopiar.CornerRadius = UDim.new(0, 8)
-	CCopiar.Parent = CopiarBtn
-
-	CopiarBtn.MouseButton1Click:Connect(function()
+	CB.MouseButton1Click:Connect(function()
 		pcall(function() if setclipboard then setclipboard(GetHWID()) end end)
-		CopiarBtn.Text = "✅ Copiado!"
+		CB.Text = "✅ Copiado!"
 		task.wait(1.5)
-		CopiarBtn.Text = "📋 Copiar HWID"
+		CB.Text = "📋 Copiar HWID"
 	end)
 
-	local Info = Instance.new("TextLabel")
-	Info.Text = "Se não tiver key, fale com o dono"
-	Info.Font = Enum.Font.GothamMedium
-	Info.TextSize = IS_MOBILE and 12 or 11
-	Info.TextColor3 = C.Sub
-	Info.BackgroundTransparency = 1
-	Info.Size = UDim2.new(1, -PAD*2, 0, 20)
-	Info.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60 + H_BTN + 60)
-	Info.Parent = KeyFrame
+	local Inf = Instance.new("TextLabel")
+	Inf.Text = "Se não tiver key, fale com o dono"
+	Inf.Font = Enum.Font.GothamMedium
+	Inf.TextSize = IS_MOBILE and 12 or 11
+	Inf.TextColor3 = C.Sub
+	Inf.BackgroundTransparency = 1
+	Inf.Size = UDim2.new(1, -P*2, 0, 20)
+	Inf.Position = UDim2.new(0, P, 0, 95 + HI + 60 + HB + 60)
+	Inf.Parent = F
 
-	ValidarBtn.MouseEnter:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = Color3.fromRGB(100, 240, 140)}, 0.15)
+	VB.MouseEnter:Connect(function()
+		Tween(VB, {BackgroundColor3 = Color3.fromRGB(100, 240, 140)}, 0.15)
 	end)
-	ValidarBtn.MouseLeave:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = C.Green}, 0.15)
+	VB.MouseLeave:Connect(function()
+		Tween(VB, {BackgroundColor3 = C.Green}, 0.15)
 	end)
 
 	local validando = false
-	ValidarBtn.MouseButton1Click:Connect(function()
+	VB.MouseButton1Click:Connect(function()
 		if validando then return end
-		local key = KeyInput.Text
+		local key = Input.Text
 		if key == "" then
-			Status.Text = "Status: ❌ Digite a key"
-			Status.TextColor3 = C.Red
+			St.Text = "Status: ❌ Digite a key"
+			St.TextColor3 = C.Red
 			return
 		end
 		validando = true
-		Status.Text = "Status: ⏳ Validando..."
-		Status.TextColor3 = C.Yellow
+		St.Text = "Status: ⏳ Validando..."
+		St.TextColor3 = C.Yellow
 
-		local valida, info, hash = ValidarKey(key)
+		task.spawn(function()
+			local valida, info, hash = ValidarKey(key)
+			validando = false
 
-		if valida then
-			Status.Text = "Status: ✅ Key válida!"
-			Status.TextColor3 = C.Green
-			Info.Text = "Bem-vindo, " .. (info.nome or "Cliente") .. "!"
-			SalvarKey(hash or key)
-			task.wait(1.5)
-			SGScreen:Destroy()
-			AbrirAutoGari(info)
-		else
-			Status.Text = "Status: ❌ " .. tostring(info or "Erro")
-			Status.TextColor3 = C.Red
-		end
-		validando = false
+			if valida then
+				St.Text = "Status: ✅ Key válida!"
+				St.TextColor3 = C.Green
+				Inf.Text = "Bem-vindo, " .. (info.nome or "Cliente") .. "!"
+				SalvarKey(hash or key)
+				task.wait(1.5)
+				SG:Destroy()
+				AbrirAutoGari(info)
+			else
+				St.Text = "Status: ❌ " .. tostring(info or "Erro")
+				St.TextColor3 = C.Red
+			end
+		end)
 	end)
 end
 
 -- ============================================================
--- INICIAR
+-- INICIAR (com loading)
 -- ============================================================
 task.spawn(function()
-	Log("🗑️ Sailent Auto Gari v" .. SCRIPT_VERSION)
-	Log("📱 Modo: " .. (IS_MOBILE and (IS_TABLET and "TABLET" or "MOBILE") or "PC"))
-	Log("🔑 HWID: " .. GetHWID())
+	local loading = CriarLoading("🔐 Verificando key...")
+
+	task.wait(0.3)
 
 	local keySalva, hwidSalvo = TemKeySalva()
 
 	if keySalva then
 		if hwidSalvo and hwidSalvo ~= "" and hwidSalvo ~= GetHWID() then
-			Log("⚠️ HWID diferente, limpando...")
 			LimparKeySalva()
 		else
 			local valida, info = ValidarKey(keySalva)
 			if valida then
-				Log("✅ Key salva válida!")
+				loading:Destroy()
 				AbrirAutoGari(info)
 				return
 			else
-				Log("⚠️ " .. tostring(info))
 				LimparKeySalva()
 			end
 		end
 	end
 
+	loading:Destroy()
 	AbrirUIKey()
 end)-- ============================================================
--- SAILENT AUTO GARI v7.3 — PC + MOBILE + VOO SUAVE
+-- SAILENT AUTO GARI v7.5 — LEVE E SEM TRAVAMENTO
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -1613,41 +1496,34 @@ local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
-local GuiService = game:GetService("GuiService")
 local lp = Players.LocalPlayer
 
--- ============================================================
--- CONFIG
--- ============================================================
 local GITHUB_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SAVE_FILE = "sailent_key_salva.txt"
 local CACHE_FILE = "sailent_keys_cache.json"
 local CONFIG_FILE = "sailent_gari_config.txt"
 local KEY_DURACAO_LOCAL = 24 * 60 * 60
 local CACHE_DURACAO = 6 * 60 * 60
-local SCRIPT_VERSION = "7.3"
+local SCRIPT_VERSION = "7.5"
 
--- ============================================================
--- DETECÇÃO DE MOBILE
--- ============================================================
 local IS_MOBILE = UserInput.TouchEnabled and not UserInput.KeyboardEnabled
-local IS_TABLET = IS_MOBILE and workspace.CurrentCamera.ViewportSize.X >= 700
 
-for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI"}) do
-	if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+-- Limpa UIs antigas
+for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoading"}) do
+	pcall(function()
+		if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+	end)
 end
 
 local C = {
 	BG = Color3.fromRGB(12,12,18),
 	Card = Color3.fromRGB(25,25,35),
-	CardHover = Color3.fromRGB(35,35,48),
 	Accent = Color3.fromRGB(80,220,120),
 	Text = Color3.fromRGB(240,240,245),
 	Sub = Color3.fromRGB(150,150,165),
 	Green = Color3.fromRGB(80,220,120),
 	Red = Color3.fromRGB(230,70,80),
 	Yellow = Color3.fromRGB(255,200,80),
-	Blue = Color3.fromRGB(80,160,240),
 	Purple = Color3.fromRGB(180,120,255),
 	Black = Color3.fromRGB(10, 10, 15),
 	Gold = Color3.fromRGB(255,215,0),
@@ -1655,16 +1531,10 @@ local C = {
 }
 
 -- ============================================================
--- UTILS
+-- UTILITÁRIOS
 -- ============================================================
-local function Tween(o, p, t)
-	local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p)
-	tw:Play()
-	return tw
-end
-
-local function Log(msg)
-	print("[Sailent] " .. tostring(msg))
+local function Log(m)
+	pcall(function() print("[Sailent] " .. tostring(m)) end)
 end
 
 local function GetHRP()
@@ -1682,18 +1552,25 @@ local function GetPrompt(item)
 	return item:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
-local function FormatarTempo(seg)
-	seg = math.floor(seg)
-	local h = math.floor(seg / 3600)
-	local m = math.floor((seg % 3600) / 60)
-	local s = seg % 60
-	if h > 0 then return string.format("%dh %dm %ds", h, m, s) end
-	if m > 0 then return string.format("%dm %ds", m, s) end
-	return string.format("%ds", s)
+local function FormatarTempo(s)
+	s = math.floor(s or 0)
+	local h = math.floor(s/3600)
+	local m = math.floor((s%3600)/60)
+	local ss = s%60
+	if h > 0 then return string.format("%dh %dm %ds", h, m, ss) end
+	if m > 0 then return string.format("%dm %ds", m, ss) end
+	return string.format("%ds", ss)
+end
+
+local function Tween(o, p, t)
+	if not o or not o.Parent then return end
+	local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p)
+	tw:Play()
+	return tw
 end
 
 -- ============================================================
--- SHA-256
+-- SHA-256 (mantido)
 -- ============================================================
 local function sha256(msg)
 	local K = {
@@ -1708,17 +1585,13 @@ local function sha256(msg)
 	}
 	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
 	local function rrot(x,n) return (x >> n) | (x << (32-n)) & 0xffffffff end
-	local function pad(s)
-		local l = #s * 8
-		s = s .. "\128"
-		while #s % 64 ~= 56 do s = s .. "\0" end
-		for i = 7, 0, -1 do s = s .. string.char((l >> (i*8)) & 0xff) end
-		return s
-	end
 	local function uint32(x) return x & 0xffffffff end
-	local padded = pad(msg)
-	for ci = 0, (#padded / 64) - 1 do
-		local chunk = padded:sub(ci*64+1, ci*64+64)
+	local s = msg .. "\128"
+	local l = #msg * 8
+	while #s % 64 ~= 56 do s = s .. "\0" end
+	for i = 7, 0, -1 do s = s .. string.char((l >> (i*8)) & 0xff) end
+	for ci = 0, (#s / 64) - 1 do
+		local chunk = s:sub(ci*64+1, ci*64+64)
 		local w = {}
 		for i = 1, 16 do
 			local b1,b2,b3,b4 = chunk:byte((i-1)*4+1, i*4)
@@ -1758,7 +1631,6 @@ local function GetHWID()
 	pcall(function() parts[#parts+1] = tostring(game.PlaceId) end)
 	pcall(function() parts[#parts+1] = tostring(game.JobId) end)
 	pcall(function() parts[#parts+1] = gethwid and gethwid() or "" end)
-	pcall(function() parts[#parts+1] = game:GetService("RbxAnalyticsService"):GetClientId() end)
 	cachedHwid = sha256(table.concat(parts, "|")):sub(1, 32)
 	return cachedHwid
 end
@@ -1766,7 +1638,7 @@ end
 -- ============================================================
 -- ARQUIVOS
 -- ============================================================
-local function SafeReadFile(path)
+local function ReadFile(path)
 	local ok, data = pcall(function()
 		if isfile and isfile(path) and readfile then return readfile(path) end
 	end)
@@ -1774,11 +1646,11 @@ local function SafeReadFile(path)
 	return nil
 end
 
-local function SafeWriteFile(path, content)
+local function WriteFile(path, content)
 	pcall(function() if writefile then writefile(path, content) end end)
 end
 
-local function SafeDeleteFile(path)
+local function DeleteFile(path)
 	pcall(function() if delfile and isfile and isfile(path) then delfile(path) end end)
 end
 
@@ -1786,7 +1658,7 @@ end
 -- SISTEMA DE KEY
 -- ============================================================
 local function TemKeySalva()
-	local dados = SafeReadFile(SAVE_FILE)
+	local dados = ReadFile(SAVE_FILE)
 	if not dados then return nil end
 	local key, expira, hwid = dados:match("([^|]+)|(%d+)|(.*)")
 	if key and expira then
@@ -1797,46 +1669,60 @@ local function TemKeySalva()
 end
 
 local function SalvarKey(key)
-	local hwid = GetHWID()
-	SafeWriteFile(SAVE_FILE, key .. "|" .. (os.time() + KEY_DURACAO_LOCAL) .. "|" .. hwid)
+	WriteFile(SAVE_FILE, key .. "|" .. (os.time() + KEY_DURACAO_LOCAL) .. "|" .. GetHWID())
 end
 
-local function LimparKeySalva() SafeDeleteFile(SAVE_FILE) end
+local function LimparKeySalva() DeleteFile(SAVE_FILE) end
 
 local function BaixarKeys()
-	local cache = SafeReadFile(CACHE_FILE)
+	local cache = ReadFile(CACHE_FILE)
 	if cache then
 		local ok, dados = pcall(function() return HttpService:JSONDecode(cache) end)
 		if ok and dados and dados._cached_at and (os.time() - dados._cached_at) < CACHE_DURACAO then
-			return dados, true
+			return dados
 		end
 	end
-	local ok, resultado = pcall(function() return game:HttpGet(GITHUB_URL, true) end)
-	if not ok or not resultado or resultado == "" then
+
+	-- HttpGet com timeout via task.spawn
+	local resultado = nil
+	local terminou = false
+	task.spawn(function()
+		pcall(function() resultado = game:HttpGet(GITHUB_URL, true) end)
+		terminou = true
+	end)
+
+	local t0 = tick()
+	while not terminou and tick() - t0 < 8 do
+		task.wait(0.1)
+	end
+
+	if not terminou or not resultado or resultado == "" then
 		if cache then
-			local ok2, dados = pcall(function() return HttpService:JSONDecode(cache) end)
-			if ok2 and dados then return dados, true end
+			local ok, dados = pcall(function() return HttpService:JSONDecode(cache) end)
+			if ok and dados then return dados end
 		end
-		return nil, "Erro ao baixar keys"
+		return nil, "Timeout/sem conexão"
 	end
-	local ok2, dados = pcall(function() return HttpService:JSONDecode(resultado) end)
-	if not ok2 or not dados then
+
+	local ok, dados = pcall(function() return HttpService:JSONDecode(resultado) end)
+	if not ok or not dados then
 		if cache then
-			local ok3, dados2 = pcall(function() return HttpService:JSONDecode(cache) end)
-			if ok3 and dados2 then return dados2, true end
+			local ok2, d2 = pcall(function() return HttpService:JSONDecode(cache) end)
+			if ok2 and d2 then return d2 end
 		end
-		return nil, "Erro no JSON"
+		return nil, "JSON inválido"
 	end
+
 	dados._cached_at = os.time()
-	SafeWriteFile(CACHE_FILE, HttpService:JSONEncode(dados))
-	return dados, false
+	WriteFile(CACHE_FILE, HttpService:JSONEncode(dados))
+	return dados
 end
 
 local function ValidarKey(key)
 	if not key or key == "" then return false, "Key vazia" end
 	local hashKey = sha256(key)
 	local dados, erro = BaixarKeys()
-	if not dados then return false, erro or "Erro de conexão" end
+	if not dados then return false, erro or "Sem conexão" end
 	if not dados.keys then return false, "Keys não encontradas" end
 	local info = dados.keys[hashKey] or dados.keys[key]
 	if not info then return false, "Key inválida" end
@@ -1846,18 +1732,54 @@ local function ValidarKey(key)
 	end
 	local meuHwid = GetHWID()
 	if info.hwid and info.hwid ~= "" and info.hwid ~= meuHwid then
-		return false, "Key vinculada a outro dispositivo"
+		return false, "Key de outro dispositivo"
 	end
 	if info.max_usos and info.max_usos > 0 then
 		if (info.usos or 0) >= info.max_usos then
-			return false, "Limite de usos atingido"
+			return false, "Limite atingido"
 		end
 	end
 	return true, info, hashKey
 end
 
 -- ============================================================
--- ABRIR AUTO GARI
+-- UI DE CARREGAMENTO
+-- ============================================================
+local function CriarLoading(txt)
+	local SG = Instance.new("ScreenGui")
+	SG.Name = "SailentLoading"
+	SG.ResetOnSpawn = false
+	SG.IgnoreGuiInset = true
+	SG.Parent = CoreGui
+
+	local F = Instance.new("Frame")
+	F.Size = UDim2.new(0, 260, 0, 90)
+	F.Position = UDim2.new(0.5, -130, 0.5, -45)
+	F.BackgroundColor3 = C.BG
+	F.BorderSizePixel = 0
+	F.Parent = SG
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = F
+	local s = Instance.new("UIStroke")
+	s.Color = C.Green
+	s.Thickness = 2
+	s.Parent = F
+
+	local L = Instance.new("TextLabel")
+	L.Text = txt or "⏳ Carregando..."
+	L.Font = Enum.Font.GothamBold
+	L.TextSize = 14
+	L.TextColor3 = C.Text
+	L.BackgroundTransparency = 1
+	L.Size = UDim2.new(1, 0, 1, 0)
+	L.Parent = F
+
+	return SG
+end
+
+-- ============================================================
+-- ABRIR AUTO GARI (construção leve)
 -- ============================================================
 local function AbrirAutoGari(infoKey)
 	infoKey = infoKey or {nome = "Cliente", nivel = "normal"}
@@ -1865,7 +1787,6 @@ local function AbrirAutoGari(infoKey)
 	local Config = {
 		velocidade = 100,
 		noclip = false,
-		autoGari = false,
 		somAtivo = true,
 		vooAtivo = false,
 		vooVelocidade = 80,
@@ -1873,28 +1794,29 @@ local function AbrirAutoGari(infoKey)
 		vooSuavidade = 3,
 	}
 
+	-- carrega config
+	do
+		local str = ReadFile(CONFIG_FILE)
+		if str then
+			for linha in str:gmatch("[^\n]+") do
+				local k, v = linha:match("([^=]+)=(.+)")
+				if k and v then
+					if v == "true" then v = true
+					elseif v == "false" then v = false
+					elseif tonumber(v) then v = tonumber(v) end
+					Config[k] = v
+				end
+			end
+		end
+	end
+
 	local function SalvarConfig()
 		local str = ""
 		for k, v in pairs(Config) do
 			str = str .. k .. "=" .. tostring(v) .. "\n"
 		end
-		SafeWriteFile(CONFIG_FILE, str)
+		WriteFile(CONFIG_FILE, str)
 	end
-
-	local function CarregarConfig()
-		local str = SafeReadFile(CONFIG_FILE)
-		if not str then return end
-		for linha in str:gmatch("[^\n]+") do
-			local k, v = linha:match("([^=]+)=(.+)")
-			if k and v then
-				if v == "true" then v = true
-				elseif v == "false" then v = false
-				elseif tonumber(v) then v = tonumber(v) end
-				Config[k] = v
-			end
-		end
-	end
-	CarregarConfig()
 
 	local function TocarSom(tipo)
 		if not Config.somAtivo then return end
@@ -1903,39 +1825,34 @@ local function AbrirAutoGari(infoKey)
 			s.Parent = SoundService
 			if tipo == "coletou" then s.SoundId = "rbxassetid://4612375230"
 			elseif tipo == "entregou" then s.SoundId = "rbxassetid://4612384334"
-			elseif tipo == "reset" then s.SoundId = "rbxassetid://6042053626"
-			elseif tipo == "travou" then s.SoundId = "rbxassetid://6042053626" end
+			elseif tipo == "reset" then s.SoundId = "rbxassetid://6042053626" end
 			s.Volume = 0.5
 			s:Play()
-			task.delay(2, function() s:Destroy() end)
+			task.delay(2, function() pcall(function() s:Destroy() end) end)
 		end)
 	end
 
 	-- ============================================================
-	-- SISTEMA DE VOO SUAVE
+	-- VOO
 	-- ============================================================
-	local BodyVelocityVoo = nil
-	local BodyGyroVoo = nil
-	local voando = false
+	local BodyVel = nil
+	local BodyGy = nil
 
 	local function IniciarVoo()
 		local hrp = GetHRP()
-		if not hrp then return false end
-
-		-- limpa
-		if hrp:FindFirstChild("SailentVooVel") then hrp.SailentVooVel:Destroy() end
-		if hrp:FindFirstChild("SailentVooGyro") then hrp.SailentVooGyro:Destroy() end
-
-		-- BodyVelocity (movimento suave)
+		if not hrp then return end
+		pcall(function()
+			local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
+			local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
+		end)
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "SailentVooVel"
 		bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 		bv.Velocity = Vector3.zero
 		bv.P = 1250
 		bv.Parent = hrp
-		BodyVelocityVoo = bv
+		BodyVel = bv
 
-		-- BodyGyro (mantém orientação estável)
 		local bg = Instance.new("BodyGyro")
 		bg.Name = "SailentVooGyro"
 		bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
@@ -1943,141 +1860,105 @@ local function AbrirAutoGari(infoKey)
 		bg.D = 100
 		bg.CFrame = hrp.CFrame
 		bg.Parent = hrp
-		BodyGyroVoo = bg
-
-		-- desativa física de queda do Humanoid
-		local hum = GetHum()
-		if hum then
-			hum.PlatformStand = false
-		end
-
-		voando = true
-		return true
+		BodyGy = bg
 	end
 
 	local function PararVoo()
-		voando = false
-		local hrp = GetHRP()
-		if hrp then
-			local bv = hrp:FindFirstChild("SailentVooVel")
-			if bv then bv:Destroy() end
-			local bg = hrp:FindFirstChild("SailentVooGyro")
-			if bg then bg:Destroy() end
-		end
-		BodyVelocityVoo = nil
-		BodyGyroVoo = nil
+		pcall(function()
+			local hrp = GetHRP()
+			if hrp then
+				local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
+				local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
+			end
+		end)
+		BodyVel = nil
+		BodyGy = nil
 	end
 
-	-- ============================================================
-	-- VOAR ATÉ (suave, com desaceleração)
-	-- ============================================================
 	local function VoarAte(posAlvo, timeout, distParada)
 		if not posAlvo then return false end
 		local hrp = GetHRP()
-		local hum = GetHum()
-		if not hrp or not hum then return false end
+		if not hrp then return false end
+		if not BodyVel or not BodyVel.Parent then IniciarVoo() end
 
 		timeout = timeout or 30
 		distParada = distParada or 5
+		local vel = Config.vooVelocidade or 80
+		local alt = Config.vooAltura or 12
+		local suav = Config.vooSuavidade or 3
 
-		-- garante que o voo está ativo
-		if not BodyVelocityVoo or not BodyVelocityVoo.Parent then
-			IniciarVoo()
-		end
-
-		local velocidadeVoo = Config.vooVelocidade or 80
-		local alturaVoo = Config.vooAltura or 12
-		local suavidade = Config.vooSuavidade or 3
-
-		-- destino com altura
-		local destino = Vector3.new(posAlvo.X, posAlvo.Y + alturaVoo, posAlvo.Z)
-
+		local destino = Vector3.new(posAlvo.X, posAlvo.Y + alt, posAlvo.Z)
 		local t0 = tick()
 		local ultimaPos = hrp.Position
-		local tempoParado = 0
+		local parado = 0
+		local travou = 0
 
 		while tick() - t0 < timeout do
 			local h = GetHRP()
 			if not h then return false end
+			if not BodyVel or not BodyVel.Parent then IniciarVoo(); task.wait(0.1) end
 
-			local posAtual = h.Position
-			local diff = destino - posAtual
+			local pos = h.Position
+			local diff = destino - pos
 			local dist = diff.Magnitude
+			local plano = Vector3.new(pos.X - posAlvo.X, 0, pos.Z - posAlvo.Z)
 
-			-- Verifica se chegou
-			local diffPlano = Vector3.new(posAtual.X - posAlvo.X, 0, posAtual.Z - posAlvo.Z)
-			if diffPlano.Magnitude < distParada then
-				-- desacelera
-				if BodyVelocityVoo then
-					BodyVelocityVoo.Velocity = BodyVelocityVoo.Velocity * 0.5
-					task.wait(0.1)
-					BodyVelocityVoo.Velocity = Vector3.zero
-				end
+			if plano.Magnitude < distParada then
+				if BodyVel then BodyVel.Velocity = Vector3.zero end
 				return true
 			end
 
-			-- Desaceleração perto do destino (evita passar reto)
 			local fator = math.clamp(dist / 30, 0.3, 1)
-			local velFinal = diff.Unit * velocidadeVoo * fator
+			local velFinal = diff.Unit * vel * fator
 
-			-- suavização (interpola velocidade)
-			if BodyVelocityVoo then
-				local velAtual = BodyVelocityVoo.Velocity
-				local novaVel = velAtual:Lerp(velFinal, math.clamp(suavidade * 0.1, 0.05, 0.5))
-				BodyVelocityVoo.Velocity = novaVel
+			if BodyVel then
+				BodyVel.Velocity = BodyVel.Velocity:Lerp(velFinal, math.clamp(suav * 0.1, 0.05, 0.5))
 			end
 
-			-- atualiza Gyro pra olhar pro destino
-			if BodyGyroVoo then
-				local dir = Vector3.new(diff.X, 0, diff.Z)
-				if dir.Magnitude > 1 then
-					local look = CFrame.new(posAtual, posAtual + dir.Unit)
-					BodyGyroVoo.CFrame = BodyGyroVoo.CFrame:Lerp(look, 0.15)
+			if BodyGy and BodyGy.Parent then
+				local d = Vector3.new(diff.X, 0, diff.Z)
+				if d.Magnitude > 1 then
+					local look = CFrame.new(pos, pos + d.Unit)
+					BodyGy.CFrame = BodyGy.CFrame:Lerp(look, 0.15)
 				end
 			end
 
-			-- Anti-travamento
-			local moveu = (posAtual - ultimaPos).Magnitude
+			local moveu = (pos - ultimaPos).Magnitude
 			if moveu < 0.5 then
-				tempoParado = tempoParado + 0.1
-				if tempoParado > 1.5 then
-					-- tenta subir mais pra desviar
-					if BodyVelocityVoo then
-						BodyVelocityVoo.Velocity = Vector3.new(0, velocidadeVoo * 0.6, 0)
-					end
+				parado = parado + 0.1
+				if parado > 1.5 then
+					travou = travou + 1
+					if BodyVel then BodyVel.Velocity = Vector3.new(0, vel * 0.6, 0) end
 					task.wait(0.3)
-					tempoParado = 0
+					parado = 0
+					if travou >= 4 then return false end
 				end
 			else
-				tempoParado = 0
+				parado = 0
 			end
 
-			ultimaPos = posAtual
-			task.wait(0.05)
+			ultimaPos = pos
+			task.wait(0.1) -- mais lento pra não travar
 		end
 		return false
 	end
 
-	-- ============================================================
-	-- ANDAR A PÉ COM ANTI-TRAVAMENTO
-	-- ============================================================
 	local function AndarAte(posAlvo, timeout, distParada)
 		if not posAlvo then return false end
-		local hrp = GetHRP()
 		local hum = GetHum()
-		if not hrp or not hum then return false end
+		if not hum then return false end
 		timeout = timeout or 30
 		distParada = distParada or 4
 		local t0 = tick()
-		local ultimaPos = hrp.Position
-		local tempoParado = 0
-		local tentativasTravou = 0
+		local ultimaPos = Vector3.zero
+		local parado = 0
+		local travou = 0
 
 		hum:MoveTo(posAlvo)
 
 		while tick() - t0 < timeout do
 			local h = GetHRP()
-			if not h then return false end
+			if not h or not hum.Parent then return false end
 
 			local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
 			if diff.Magnitude < distParada then
@@ -2085,36 +1966,31 @@ local function AbrirAutoGari(infoKey)
 				return true
 			end
 
-			local moveu = (h.Position - ultimaPos).Magnitude
-			if moveu < 0.5 then
-				tempoParado = tempoParado + 0.1
-				if tempoParado > 1.5 then
-					tentativasTravou = tentativasTravou + 1
-					TocarSom("travou")
-					hum.Jump = true
-					task.wait(0.3)
-					hum:MoveTo(posAlvo)
-					tempoParado = 0
-					if tentativasTravou >= 3 then
-						Log("⚠️ Travou 3x ao ir pra " .. tostring(posAlvo))
-						return false
+			if ultimaPos ~= Vector3.zero then
+				local moveu = (h.Position - ultimaPos).Magnitude
+				if moveu < 0.5 then
+					parado = parado + 0.1
+					if parado > 1.5 then
+						travou = travou + 1
+						pcall(function() hum.Jump = true end)
+						task.wait(0.3)
+						hum:MoveTo(posAlvo)
+						parado = 0
+						if travou >= 3 then return false end
 					end
+				else
+					parado = 0
+					travou = 0
 				end
-			else
-				tempoParado = 0
-				tentativasTravou = 0
 			end
 
 			ultimaPos = h.Position
 			hum:MoveTo(posAlvo)
-			task.wait(0.1)
+			task.wait(0.15)
 		end
 		return false
 	end
 
-	-- ============================================================
-	-- IR ATÉ (escolhe voo ou a pé baseado no toggle)
-	-- ============================================================
 	local function IrAte(posAlvo, timeout, distParada)
 		if Config.vooAtivo then
 			return VoarAte(posAlvo, timeout, distParada or 5)
@@ -2126,9 +2002,6 @@ local function AbrirAutoGari(infoKey)
 	local lixosUsados = {}
 	local lixosFalhados = {}
 
-	-- ============================================================
-	-- DETECÇÃO DE LIXO
-	-- ============================================================
 	local function GetLixosContainer()
 		local caminhos = {
 			{"Construcoes", "SistemaGari", "Lixos"},
@@ -2136,10 +2009,10 @@ local function AbrirAutoGari(infoKey)
 			{"Lixos"},
 			{"Construcoes", "Lixos"},
 		}
-		for _, caminho in ipairs(caminhos) do
+		for _, c in ipairs(caminhos) do
 			local w = workspace
 			local ok = true
-			for _, n in ipairs(caminho) do
+			for _, n in ipairs(c) do
 				w = w:FindFirstChild(n)
 				if not w then ok = false; break end
 			end
@@ -2174,24 +2047,19 @@ local function AbrirAutoGari(infoKey)
 
 	local function AcharProximoLixo()
 		local cont = GetLixosContainer()
-		if not cont then return nil, 0 end
+		if not cont then return nil end
 		local hrp = GetHRP()
-		if not hrp then return nil, 0 end
+		if not hrp then return nil end
 
 		local disp = {}
-		local totalLixos = 0
 		for _, lixo in ipairs(cont:GetChildren()) do
-			if lixo:IsA("BasePart") then
-				totalLixos = totalLixos + 1
-				if not lixosUsados[lixo] and not lixosFalhados[lixo] then
-					table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
-				end
+			if lixo:IsA("BasePart") and not lixosUsados[lixo] and not lixosFalhados[lixo] then
+				table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 			end
 		end
 
 		if #disp == 0 then
 			TocarSom("reset")
-			Log("🔄 Todos lixos usados — resetando lista")
 			lixosUsados = {}
 			lixosFalhados = {}
 			for _, lixo in ipairs(cont:GetChildren()) do
@@ -2202,12 +2070,12 @@ local function AbrirAutoGari(infoKey)
 		end
 
 		table.sort(disp, function(a, b) return a.dist < b.dist end)
-		if #disp > 0 then return disp[1].lixo, totalLixos end
-		return nil, totalLixos
+		if #disp > 0 then return disp[1].lixo end
+		return nil
 	end
 
 	-- ============================================================
-	-- BOTÃO FLUTUANTE
+	-- UI (construção rápida)
 	-- ============================================================
 	local SGBtn = Instance.new("ScreenGui")
 	SGBtn.Name = "SailentFloatBtn"
@@ -2215,8 +2083,7 @@ local function AbrirAutoGari(infoKey)
 	SGBtn.IgnoreGuiInset = true
 	SGBtn.Parent = CoreGui
 
-	local BTN_SIZE = IS_MOBILE and 68 or 60
-
+	local BTN = IS_MOBILE and 68 or 60
 	local FloatBtn = Instance.new("TextButton")
 	FloatBtn.Text = "⚡"
 	FloatBtn.Font = Enum.Font.GothamBold
@@ -2224,25 +2091,24 @@ local function AbrirAutoGari(infoKey)
 	FloatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	FloatBtn.BackgroundColor3 = C.Black
 	FloatBtn.BorderSizePixel = 0
-	FloatBtn.Size = UDim2.new(0, BTN_SIZE, 0, BTN_SIZE)
-	FloatBtn.Position = UDim2.new(0, 20, 0.5, -BTN_SIZE/2)
+	FloatBtn.Size = UDim2.new(0, BTN, 0, BTN)
+	FloatBtn.Position = UDim2.new(0, 20, 0.5, -BTN/2)
 	FloatBtn.AutoButtonColor = false
 	FloatBtn.Active = true
 	FloatBtn.Parent = SGBtn
 
-	local BtnCorner = Instance.new("UICorner")
-	BtnCorner.CornerRadius = UDim.new(1, 0)
-	BtnCorner.Parent = FloatBtn
+	local BtnC = Instance.new("UICorner")
+	BtnC.CornerRadius = UDim.new(1, 0)
+	BtnC.Parent = FloatBtn
 
-	local BtnStroke = Instance.new("UIStroke")
-	BtnStroke.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green)
-	BtnStroke.Thickness = IS_MOBILE and 3 or 2
-	BtnStroke.Parent = FloatBtn
+	local BtnS = Instance.new("UIStroke")
+	BtnS.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green)
+	BtnS.Thickness = IS_MOBILE and 3 or 2
+	BtnS.Parent = FloatBtn
 
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			btnDragging = true
 			btnMoveuSe = false
 			btnDragStart = input.Position
@@ -2250,23 +2116,18 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 	FloatBtn.InputChanged:Connect(function(input)
-		if btnDragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-			or input.UserInputType == Enum.UserInputType.Touch) then
+		if btnDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - btnDragStart
 			if math.abs(delta.X) > 8 or math.abs(delta.Y) > 8 then btnMoveuSe = true end
 			FloatBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
 		end
 	end)
 	UserInput.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			btnDragging = false
 		end
 	end)
 
-	-- ============================================================
-	-- UI PRINCIPAL
-	-- ============================================================
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentGari"
 	SG.ResetOnSpawn = false
@@ -2277,9 +2138,9 @@ local function AbrirAutoGari(infoKey)
 	if IS_MOBILE then
 		local vp = workspace.CurrentCamera.ViewportSize
 		UI_W = math.min(vp.X * 0.92, 420)
-		UI_H = math.min(vp.Y * 0.85, 700)
+		UI_H = math.min(vp.Y * 0.85, 680)
 	else
-		UI_W, UI_H = 400, 680
+		UI_W, UI_H = 400, 660
 	end
 
 	local Main = Instance.new("Frame")
@@ -2288,11 +2149,9 @@ local function AbrirAutoGari(infoKey)
 	Main.BackgroundColor3 = C.BG
 	Main.BorderSizePixel = 0
 	Main.Parent = SG
-
 	local MC = Instance.new("UICorner")
 	MC.CornerRadius = UDim.new(0, 14)
 	MC.Parent = Main
-
 	local MS = Instance.new("UIStroke")
 	MS.Color = infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Accent)
 	MS.Thickness = 1.5
@@ -2303,14 +2162,8 @@ local function AbrirAutoGari(infoKey)
 
 	do
 		local d, di, ds, sp
-		local function up(i)
-			if _G.SailentBloquearDrag then return end
-			local x = i.Position - ds
-			Main.Position = UDim2.new(sp.X.Scale, sp.X.Offset + x.X, sp.Y.Scale, sp.Y.Offset + x.Y)
-		end
 		Main.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				if _G.SailentBloquearDrag then return end
 				d = true; ds = i.Position; sp = Main.Position
 				i.Changed:Connect(function()
@@ -2319,17 +2172,18 @@ local function AbrirAutoGari(infoKey)
 			end
 		end)
 		Main.InputChanged:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseMovement
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
 				di = i
 			end
 		end)
 		UserInput.InputChanged:Connect(function(i)
-			if i == di and d then up(i) end
+			if i == di and d and not _G.SailentBloquearDrag then
+				local x = i.Position - ds
+				Main.Position = UDim2.new(sp.X.Scale, sp.X.Offset + x.X, sp.Y.Scale, sp.Y.Offset + x.Y)
+			end
 		end)
 	end
 
-	-- HEADER
 	local TB = Instance.new("Frame")
 	TB.Size = UDim2.new(1, 0, 0, 56)
 	TB.BackgroundColor3 = C.Card
@@ -2380,7 +2234,6 @@ local function AbrirAutoGari(infoKey)
 	BadgeC.Parent = Badge
 
 	local MBTN_W = IS_MOBILE and 44 or 36
-
 	local MinBtn = Instance.new("TextButton")
 	MinBtn.Text = "−"
 	MinBtn.Font = Enum.Font.GothamBold
@@ -2427,11 +2280,11 @@ local function AbrirAutoGari(infoKey)
 	local H_SEC = IS_MOBILE and 30 or 26
 	local H_STAT = IS_MOBILE and 38 or 32
 	local H_BTN = IS_MOBILE and 48 or 38
-	local H_TOGGLE = IS_MOBILE and 52 or 42
+	local H_TOG = IS_MOBILE and 52 or 42
 	local FONT_S = IS_MOBILE and 12 or 11
 	local FONT_B = IS_MOBILE and 13 or 12
 
-	local function Sec(txt, color)
+	local function Sec(txt, cor)
 		local f = Instance.new("Frame")
 		f.Size = UDim2.new(1, 0, 0, H_SEC)
 		f.BackgroundColor3 = C.Card
@@ -2444,7 +2297,7 @@ local function AbrirAutoGari(infoKey)
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
 		l.TextSize = FONT_S
-		l.TextColor3 = color or C.Accent
+		l.TextColor3 = cor or C.Accent
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.new(0, 12, 0, 0)
 		l.Size = UDim2.new(1, -24, 1, 0)
@@ -2452,7 +2305,7 @@ local function AbrirAutoGari(infoKey)
 		l.Parent = f
 	end
 
-	local function Stat(txt, color)
+	local function Stat(txt, cor)
 		local f = Instance.new("Frame")
 		f.Size = UDim2.new(1, 0, 0, H_STAT)
 		f.BackgroundColor3 = C.Card
@@ -2465,7 +2318,7 @@ local function AbrirAutoGari(infoKey)
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
 		l.TextSize = FONT_S
-		l.TextColor3 = color or C.Text
+		l.TextColor3 = cor or C.Text
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.new(0, 12, 0, 0)
 		l.Size = UDim2.new(1, -24, 1, 0)
@@ -2474,7 +2327,7 @@ local function AbrirAutoGari(infoKey)
 		return l
 	end
 
-	local function Btn(txt, color, cb)
+	local function Btn(txt, cor, cb)
 		local b = Instance.new("TextButton")
 		b.Text = txt
 		b.Font = Enum.Font.GothamBold
@@ -2489,17 +2342,17 @@ local function AbrirAutoGari(infoKey)
 		c.CornerRadius = UDim.new(0, 8)
 		c.Parent = b
 		b.MouseButton1Click:Connect(function()
-			Tween(b, {BackgroundColor3 = color or C.Accent}, 0.08)
+			Tween(b, {BackgroundColor3 = cor or C.Accent}, 0.08)
 			task.wait(0.12)
 			Tween(b, {BackgroundColor3 = C.Card}, 0.15)
-			if cb then task.spawn(cb) end
+			if cb then task.spawn(function() pcall(cb) end) end
 		end)
 		return b
 	end
 
 	local function Toggle(txt, default, cb)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, H_TOGGLE)
+		f.Size = UDim2.new(1, 0, 0, H_TOG)
 		f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0
 		f.Parent = Content
@@ -2517,13 +2370,13 @@ local function AbrirAutoGari(infoKey)
 		l.TextXAlignment = Enum.TextXAlignment.Left
 		l.Parent = f
 
-		local BG_W = IS_MOBILE and 52 or 44
-		local BG_H = IS_MOBILE and 26 or 22
-		local K_SIZE = IS_MOBILE and 22 or 18
+		local BW = IS_MOBILE and 52 or 44
+		local BH = IS_MOBILE and 26 or 22
+		local KS = IS_MOBILE and 22 or 18
 
 		local bg = Instance.new("Frame")
-		bg.Size = UDim2.new(0, BG_W, 0, BG_H)
-		bg.Position = UDim2.new(1, -(BG_W + 12), 0.5, -BG_H/2)
+		bg.Size = UDim2.new(0, BW, 0, BH)
+		bg.Position = UDim2.new(1, -(BW + 12), 0.5, -BH/2)
 		bg.BackgroundColor3 = Color3.fromRGB(50,50,60)
 		bg.BorderSizePixel = 0
 		bg.Parent = f
@@ -2532,8 +2385,8 @@ local function AbrirAutoGari(infoKey)
 		bc.Parent = bg
 
 		local k = Instance.new("Frame")
-		k.Size = UDim2.new(0, K_SIZE, 0, K_SIZE)
-		k.Position = UDim2.new(0, 2, 0.5, -K_SIZE/2)
+		k.Size = UDim2.new(0, KS, 0, KS)
+		k.Position = UDim2.new(0, 2, 0.5, -KS/2)
 		k.BackgroundColor3 = C.Text
 		k.BorderSizePixel = 0
 		k.Parent = bg
@@ -2544,19 +2397,18 @@ local function AbrirAutoGari(infoKey)
 		local st = default or false
 		local function set(v)
 			st = v
-			local onX = BG_W - K_SIZE - 2
 			if st then
 				Tween(bg, {BackgroundColor3 = C.Green}, 0.2)
-				Tween(k, {Position = UDim2.new(0, onX, 0.5, -K_SIZE/2)}, 0.2)
+				Tween(k, {Position = UDim2.new(0, BW - KS - 2, 0.5, -KS/2)}, 0.2)
 			else
 				Tween(bg, {BackgroundColor3 = Color3.fromRGB(50,50,60)}, 0.2)
-				Tween(k, {Position = UDim2.new(0, 2, 0.5, -K_SIZE/2)}, 0.2)
+				Tween(k, {Position = UDim2.new(0, 2, 0.5, -KS/2)}, 0.2)
 			end
-			if cb then cb(st) end
+			if cb then task.spawn(function() pcall(cb, st) end) end
 		end
 		if st then
 			bg.BackgroundColor3 = C.Green
-			k.Position = UDim2.new(0, BG_W - K_SIZE - 2, 0.5, -K_SIZE/2)
+			k.Position = UDim2.new(0, BW - KS - 2, 0.5, -KS/2)
 		end
 		local cl = Instance.new("TextButton")
 		cl.Text = ""
@@ -2569,13 +2421,13 @@ local function AbrirAutoGari(infoKey)
 
 	local velocidadeAtual = Config.velocidade
 
-	local function CriarSlider(parent, min, max, default, callback, tituloTexto, corTitulo, sufixo)
-		local SLIDER_H = IS_MOBILE and 80 or 58
-		local KNOB = IS_MOBILE and 32 or 22
-		local BAR_H = IS_MOBILE and 16 or 12
+	local function Slider(parent, min, max, default, cb, titulo, cor, sufixo)
+		local SH = IS_MOBILE and 80 or 58
+		local KN = IS_MOBILE and 32 or 22
+		local BRH = IS_MOBILE and 16 or 12
 
 		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 0, SLIDER_H)
+		frame.Size = UDim2.new(1, 0, 0, SH)
 		frame.BackgroundColor3 = C.Card
 		frame.BorderSizePixel = 0
 		frame.Parent = parent
@@ -2583,30 +2435,30 @@ local function AbrirAutoGari(infoKey)
 		fc.CornerRadius = UDim.new(0, 8)
 		fc.Parent = frame
 
-		local titulo = Instance.new("TextLabel")
-		titulo.Text = tituloTexto or "⚡ Valor"
-		titulo.Font = Enum.Font.GothamBold
-		titulo.TextSize = IS_MOBILE and 13 or 12
-		titulo.TextColor3 = corTitulo or C.Text
-		titulo.BackgroundTransparency = 1
-		titulo.Position = UDim2.new(0, 12, 0, 8)
-		titulo.Size = UDim2.new(0.7, 0, 0, 18)
-		titulo.TextXAlignment = Enum.TextXAlignment.Left
-		titulo.Parent = frame
+		local t = Instance.new("TextLabel")
+		t.Text = titulo or "Valor"
+		t.Font = Enum.Font.GothamBold
+		t.TextSize = IS_MOBILE and 13 or 12
+		t.TextColor3 = cor or C.Text
+		t.BackgroundTransparency = 1
+		t.Position = UDim2.new(0, 12, 0, 8)
+		t.Size = UDim2.new(0.7, 0, 0, 18)
+		t.TextXAlignment = Enum.TextXAlignment.Left
+		t.Parent = frame
 
-		local valorLabel = Instance.new("TextLabel")
-		valorLabel.Text = tostring(default) .. (sufixo or "")
-		valorLabel.Font = Enum.Font.GothamBold
-		valorLabel.TextSize = IS_MOBILE and 16 or 14
-		valorLabel.TextColor3 = corTitulo or C.Green
-		valorLabel.BackgroundTransparency = 1
-		valorLabel.Position = UDim2.new(0.7, 0, 0, 8)
-		valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
-		valorLabel.TextXAlignment = Enum.TextXAlignment.Right
-		valorLabel.Parent = frame
+		local vl = Instance.new("TextLabel")
+		vl.Text = tostring(default) .. (sufixo or "")
+		vl.Font = Enum.Font.GothamBold
+		vl.TextSize = IS_MOBILE and 16 or 14
+		vl.TextColor3 = cor or C.Green
+		vl.BackgroundTransparency = 1
+		vl.Position = UDim2.new(0.7, 0, 0, 8)
+		vl.Size = UDim2.new(0.3, -12, 0, 18)
+		vl.TextXAlignment = Enum.TextXAlignment.Right
+		vl.Parent = frame
 
 		local bgBar = Instance.new("Frame")
-		bgBar.Size = UDim2.new(1, -24, 0, BAR_H)
+		bgBar.Size = UDim2.new(1, -24, 0, BRH)
 		bgBar.Position = UDim2.new(0, 12, 0, IS_MOBILE and 42 or 32)
 		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 		bgBar.BorderSizePixel = 0
@@ -2615,18 +2467,18 @@ local function AbrirAutoGari(infoKey)
 		bbc.CornerRadius = UDim.new(1, 0)
 		bbc.Parent = bgBar
 
-		local fillBar = Instance.new("Frame")
-		fillBar.Size = UDim2.new(0, 0, 1, 0)
-		fillBar.BackgroundColor3 = corTitulo or C.Green
-		fillBar.BorderSizePixel = 0
-		fillBar.Parent = bgBar
+		local fill = Instance.new("Frame")
+		fill.Size = UDim2.new(0, 0, 1, 0)
+		fill.BackgroundColor3 = cor or C.Green
+		fill.BorderSizePixel = 0
+		fill.Parent = bgBar
 		local fbc = Instance.new("UICorner")
 		fbc.CornerRadius = UDim.new(1, 0)
-		fbc.Parent = fillBar
+		fbc.Parent = fill
 
 		local knob = Instance.new("Frame")
-		knob.Size = UDim2.new(0, KNOB, 0, KNOB)
-		knob.Position = UDim2.new(0, -KNOB/2, 0.5, -KNOB/2)
+		knob.Size = UDim2.new(0, KN, 0, KN)
+		knob.Position = UDim2.new(0, -KN/2, 0.5, -KN/2)
 		knob.BackgroundColor3 = C.Text
 		knob.BorderSizePixel = 0
 		knob.ZIndex = 2
@@ -2635,48 +2487,38 @@ local function AbrirAutoGari(infoKey)
 		kc.CornerRadius = UDim.new(1, 0)
 		kc.Parent = knob
 
-		local touchArea = Instance.new("TextButton")
-		touchArea.Text = ""
-		touchArea.BackgroundTransparency = 1
-		touchArea.Size = UDim2.new(1, 0, 0, KNOB + 20)
-		touchArea.Position = UDim2.new(0, 0, 0.5, -(KNOB + 20)/2)
-		touchArea.Parent = bgBar
-
 		local valor = default
 		local arrastando = false
 
 		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X
-			local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
-			valor = math.floor(min + (max - min) * percent)
-			valorLabel.Text = tostring(valor) .. (sufixo or "")
-			fillBar.Size = UDim2.new(percent, 0, 1, 0)
-			knob.Position = UDim2.new(percent, -KNOB/2, 0.5, -KNOB/2)
-			if callback then callback(valor) end
+			local a = bgBar.AbsolutePosition.X
+			local s = bgBar.AbsoluteSize.X
+			local p = math.clamp((posX - a) / s, 0, 1)
+			valor = math.floor(min + (max - min) * p)
+			vl.Text = tostring(valor) .. (sufixo or "")
+			fill.Size = UDim2.new(p, 0, 1, 0)
+			knob.Position = UDim2.new(p, -KN/2, 0.5, -KN/2)
+			if cb then task.spawn(function() pcall(cb, valor) end) end
 		end
 
-		local initPercent = (default - min) / (max - min)
-		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
-		knob.Position = UDim2.new(initPercent, -KNOB/2, 0.5, -KNOB/2)
+		local ip = (default - min) / (max - min)
+		fill.Size = UDim2.new(ip, 0, 1, 0)
+		knob.Position = UDim2.new(ip, -KN/2, 0.5, -KN/2)
 
 		bgBar.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				arrastando = true
 				_G.SailentBloquearDrag = true
 				Atualizar(i.Position.X)
 			end
 		end)
 		UserInput.InputChanged:Connect(function(i)
-			if arrastando and (i.UserInputType == Enum.UserInputType.MouseMovement
-				or i.UserInputType == Enum.UserInputType.Touch) then
+			if arrastando and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
 				Atualizar(i.Position.X)
 			end
 		end)
 		UserInput.InputEnded:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseButton1
-				or i.UserInputType == Enum.UserInputType.Touch then
+			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				if arrastando then
 					arrastando = false
 					_G.SailentBloquearDrag = false
@@ -2693,11 +2535,6 @@ local function AbrirAutoGari(infoKey)
 	Stat("Nome: " .. (infoKey.nome or "Cliente"), C.Text)
 	Stat("Nível: " .. string.upper(infoKey.nivel or "normal"),
 		infoKey.nivel == "admin" and C.Gold or (infoKey.nivel == "vip" and C.Purple or C.Green))
-	if infoKey.expira and infoKey.expira < 99999999999 then
-		local restante = infoKey.expira - os.time()
-		local dias = math.floor(restante / 86400)
-		Stat("Expira em: " .. dias .. " dias", restante < 86400 and C.Red or C.Yellow)
-	end
 
 	Sec("🗑️ AUTO GARI", C.Green)
 	local gariStatus = Stat("Status: PARADO", C.Sub)
@@ -2709,7 +2546,7 @@ local function AbrirAutoGari(infoKey)
 	local gariCount = {coletados = 0, entregues = 0}
 	local tempoInicio = 0
 
-	local setGariAtivo = Toggle("Auto Coletar + Entregar", false, function(s)
+	local setGari = Toggle("Auto Coletar + Entregar", false, function(s)
 		gariOn = s
 		if s then
 			gariStatus.Text = "Status: ● ATIVO"
@@ -2720,80 +2557,82 @@ local function AbrirAutoGari(infoKey)
 
 			task.spawn(function()
 				while gariOn do
-					local temLixo = TemLixoNaMao()
-					if temLixo then
-						gariStatus.Text = (Config.vooAtivo and "✈️ Voando pra TRASEIRA..." or "📤 Indo pra TRASEIRA...")
-						local cam = GetCaminhao()
-						if not cam then
-							gariStatus.Text = "⚠️ Spawne o caminhão!"
-							task.wait(2)
-							continue
-						end
-						local traseira = GetTraseira(cam)
-						if traseira then
-							IrAte(traseira.Position, 30, Config.vooAtivo and 5 or 4)
-							task.wait(0.5)
-							gariStatus.Text = "📤 Entregando..."
-							local prompt = GetPrompt(traseira)
-							if prompt then
-								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.8)
-								if not TemLixoNaMao() then
-									gariCount.entregues += 1
-									TocarSom("entregou")
-								end
+					pcall(function()
+						local temLixo = TemLixoNaMao()
+						if temLixo then
+							gariStatus.Text = (Config.vooAtivo and "✈️ Voando pra TRASEIRA..." or "📤 Indo pra TRASEIRA...")
+							local cam = GetCaminhao()
+							if not cam then
+								gariStatus.Text = "⚠️ Spawne o caminhão!"
+								task.wait(2)
+								return
 							end
-						end
-					else
-						gariStatus.Text = "📥 Procurando lixo..."
-						local lixo, total = AcharProximoLixo()
-						if lixo then
-							gariStatus.Text = (Config.vooAtivo and "✈️ Voando pro lixo..." or "📥 Indo pro lixo...")
-							local sucesso = IrAte(lixo.Position, 30, Config.vooAtivo and 5 or 4)
-							task.wait(0.5)
-							if sucesso then
-								gariStatus.Text = "📥 Coletando..."
-								local prompt = GetPrompt(lixo)
+							local traseira = GetTraseira(cam)
+							if traseira then
+								IrAte(traseira.Position, 30, Config.vooAtivo and 5 or 4)
+								task.wait(0.5)
+								gariStatus.Text = "📤 Entregando..."
+								local prompt = GetPrompt(traseira)
 								if prompt then
 									pcall(function() fireproximityprompt(prompt) end)
 									task.wait(0.8)
-									if TemLixoNaMao() then
-										gariCount.coletados += 1
-										lixosUsados[lixo] = true
-										TocarSom("coletou")
+									if not TemLixoNaMao() then
+										gariCount.entregues += 1
+										TocarSom("entregou")
+									end
+								end
+							end
+						else
+							gariStatus.Text = "📥 Procurando lixo..."
+							local lixo = AcharProximoLixo()
+							if lixo then
+								gariStatus.Text = (Config.vooAtivo and "✈️ Voando pro lixo..." or "📥 Indo pro lixo...")
+								local ok = IrAte(lixo.Position, 30, Config.vooAtivo and 5 or 4)
+								task.wait(0.5)
+								if ok then
+									gariStatus.Text = "📥 Coletando..."
+									local prompt = GetPrompt(lixo)
+									if prompt then
+										pcall(function() fireproximityprompt(prompt) end)
+										task.wait(0.8)
+										if TemLixoNaMao() then
+											gariCount.coletados += 1
+											lixosUsados[lixo] = true
+											TocarSom("coletou")
+										else
+											lixosFalhados[lixo] = true
+										end
 									else
 										lixosFalhados[lixo] = true
 									end
 								else
 									lixosFalhados[lixo] = true
 								end
-							else
-								lixosFalhados[lixo] = true
 							end
 						end
-					end
-					local totalUsados = 0
-					for _ in pairs(lixosUsados) do totalUsados += 1 end
-					local totalFalhados = 0
-					for _ in pairs(lixosFalhados) do totalFalhados += 1 end
 
-					local totalLixos = 0
-					local cont = GetLixosContainer()
-					if cont then
-						for _, v in ipairs(cont:GetChildren()) do
-							if v:IsA("BasePart") then totalLixos = totalLixos + 1 end
+						local usados = 0
+						for _ in pairs(lixosUsados) do usados += 1 end
+						local falhas = 0
+						for _ in pairs(lixosFalhados) do falhas += 1 end
+
+						local total = 0
+						local cont = GetLixosContainer()
+						if cont then
+							for _, v in ipairs(cont:GetChildren()) do
+								if v:IsA("BasePart") then total = total + 1 end
+							end
 						end
-					end
 
-					local tempoRodando = tick() - tempoInicio
-					local totalColetado = gariCount.coletados + gariCount.entregues
-					local porMinuto = tempoRodando > 0 and math.floor((totalColetado / tempoRodando) * 60) or 0
+						local tempo = tick() - tempoInicio
+						local tot = gariCount.coletados + gariCount.entregues
+						local porMin = tempo > 0 and math.floor((tot / tempo) * 60) or 0
 
-					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
-					gariLixos.Text = "Lixos: "..totalUsados.."/"..totalLixos..(totalFalhados > 0 and " ("..totalFalhados.." falhas)" or "")
-					gariTempo.Text = "Tempo: "..FormatarTempo(tempoRodando).." | "..porMinuto.."/min"
-
-					task.wait(1)
+						gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
+						gariLixos.Text = "Lixos: "..usados.."/"..total..(falhas > 0 and " ("..falhas.." falhas)" or "")
+						gariTempo.Text = "Tempo: "..FormatarTempo(tempo).." | "..porMin.."/min"
+					end)
+					task.wait(1.2)
 				end
 			end)
 		else
@@ -2804,60 +2643,32 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
-	-- ============================================================
-	-- MODO DE MOVIMENTO (A pé / Voo)
-	-- ============================================================
-	Sec("🚶 MODO DE MOVIMENTO", C.Cyan)
-	Stat("A pé pega o lixo normalmente. Voo é mais rápido e ignora obstáculos.", C.Sub)
-
-	local setVooAtivo = Toggle("✈️ Voo Suave (ignora obstáculos)", false, function(s)
+	Sec("🚶 MODO", C.Cyan)
+	local setVoo = Toggle("✈️ Voo Suave", Config.vooAtivo, function(s)
 		Config.vooAtivo = s
 		SalvarConfig()
-		if s then
-			IniciarVoo()
-		else
-			PararVoo()
-		end
+		if s then IniciarVoo() else PararVoo() end
 	end)
 
 	Sec("✈️ AJUSTES DE VOO", C.Cyan)
+	Slider(Content, 20, 300, Config.vooVelocidade, function(v) Config.vooVelocidade = v end, "✈️ Velocidade", C.Cyan, "")
+	Slider(Content, 3, 60, Config.vooAltura, function(v) Config.vooAltura = v end, "📏 Altura", C.Cyan, "")
+	Slider(Content, 1, 10, Config.vooSuavidade, function(v) Config.vooSuavidade = v end, "🌊 Suavidade", C.Cyan, "")
 
-	CriarSlider(Content, 20, 300, Config.vooVelocidade, function(v)
-		Config.vooVelocidade = v
-	end, "✈️ Velocidade de voo", C.Cyan, " studs/s")
-
-	CriarSlider(Content, 3, 60, Config.vooAltura, function(v)
-		Config.vooAltura = v
-	end, "📏 Altura do voo", C.Cyan, " studs")
-
-	CriarSlider(Content, 1, 10, Config.vooSuavidade, function(v)
-		Config.vooSuavidade = v
-	end, "🌊 Suavidade", C.Cyan, "")
-
-	-- ============================================================
-	-- VELOCIDADE A PÉ
-	-- ============================================================
 	Sec("⚡ VELOCIDADE A PÉ", C.Yellow)
-	CriarSlider(Content, 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
-		Config.velocidade = valor
+	Slider(Content, 16, 200, Config.velocidade, function(v)
+		velocidadeAtual = v
+		Config.velocidade = v
 		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		if hum then hum.WalkSpeed = v end
 	end, "⚡ Velocidade", C.Yellow, "")
 
-	-- ============================================================
-	-- NOCLIP
-	-- ============================================================
 	Sec("👻 NOCLIP", C.Purple)
-	local noclipOn = false
 	local noclipConn
-
-	Toggle("Noclip (atravessar paredes)", false, function(s)
-		noclipOn = s
+	Toggle("Noclip", false, function(s)
 		if s then
 			if noclipConn then noclipConn:Disconnect() end
 			noclipConn = RunService.Stepped:Connect(function()
-				if not noclipOn then return end
 				local c = lp.Character
 				if not c then return end
 				for _, p in ipairs(c:GetDescendants()) do
@@ -2869,44 +2680,25 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
-	Sec("🔊 SOM", C.Blue)
-	Toggle("Sons ativados", Config.somAtivo, function(s)
-		Config.somAtivo = s
-		SalvarConfig()
-	end)
-
 	Sec("🚨 EMERGÊNCIA", C.Red)
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		gariOn = false
-		setGariAtivo(false)
-		noclipOn = false
+		setGari(false)
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 		PararVoo()
-		if setVooAtivo then setVooAtivo(false) end
+		setVoo(false)
 		gariStatus.Text = "Status: PARADO"
 		gariStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
 	end)
 
-	if infoKey.nivel == "admin" then
-		Sec("⚙️ ADMIN", C.Gold)
-		Btn("🚪 Deslogar Key", C.Red, function()
-			PararVoo()
-			LimparKeySalva()
-			SafeDeleteFile(CACHE_FILE)
-			lp:Kick("Key removida. Reabra o script.")
-		end)
-	end
-
-	-- ============================================================
-	-- ABRIR/FECHAR UI
-	-- ============================================================
+	-- UI TOGGLE
 	local uiAberta = true
 	local function FecharUI()
 		uiAberta = false
 		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-		task.wait(0.2)
+		task.wait(0.25)
 		Main.Visible = false
 		FloatBtn.Text = "⚡"
 		Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
@@ -2931,11 +2723,10 @@ local function AbrirAutoGari(infoKey)
 			if uiAberta then FecharUI() else AbrirUI() end
 		elseif input.KeyCode == Enum.KeyCode.F1 then
 			gariOn = false
-			setGariAtivo(false)
-			noclipOn = false
+			setGari(false)
 			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 			PararVoo()
-			if setVooAtivo then setVooAtivo(false) end
+			setVoo(false)
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 			FecharUI()
@@ -2956,53 +2747,32 @@ local function AbrirAutoGari(infoKey)
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
-	if IS_MOBILE then
-		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-			local vp = workspace.CurrentCamera.ViewportSize
-			local nW = math.min(vp.X * 0.92, 420)
-			local nH = math.min(vp.Y * 0.85, 700)
-			UI_W, UI_H = nW, nH
-			if uiAberta and not minimizado then
-				Main.Size = UDim2.new(0, nW, 0, nH)
-				Main.Position = UDim2.new(0.5, -nW/2, 0.5, -nH/2)
-			end
+	-- reconexão
+	lp.CharacterAdded:Connect(function()
+		task.spawn(function()
+			task.wait(2)
+			pcall(function()
+				local hum = GetHum()
+				if hum and gariOn then
+					hum.WalkSpeed = velocidadeAtual
+					if Config.vooAtivo then IniciarVoo() end
+				end
+			end)
 		end)
-	end
-
-	-- ============================================================
-	-- RECONEXÃO
-	-- ============================================================
-	lp.CharacterAdded:Connect(function(char)
-		Log("🔄 Character respawnou, aguardando...")
-		task.wait(2)
-		local hum = char:FindFirstChild("Humanoid")
-		if hum and gariOn then
-			hum.WalkSpeed = velocidadeAtual
-			if Config.vooAtivo then
-				task.wait(0.5)
-				IniciarVoo()
-			end
-			Log("✅ Reconectado, continuando...")
-		end
 	end)
 
-	-- Aplica config inicial
-	if Config.vooAtivo then
-		setVooAtivo(true)
-	end
-
-	Log("🗑️ Sailent Auto Gari v" .. SCRIPT_VERSION .. " | " .. (infoKey.nome or "Cliente") .. " | " .. (IS_MOBILE and "MOBILE" or "PC"))
+	Log("✅ Auto Gari v" .. SCRIPT_VERSION .. " pronto")
 end
 
 -- ============================================================
--- UI DE KEY
+-- UI DE KEY (leve)
 -- ============================================================
 local function AbrirUIKey()
-	local SGScreen = Instance.new("ScreenGui")
-	SGScreen.Name = "SailentKeyUI"
-	SGScreen.ResetOnSpawn = false
-	SGScreen.IgnoreGuiInset = true
-	SGScreen.Parent = CoreGui
+	local SG = Instance.new("ScreenGui")
+	SG.Name = "SailentKeyUI"
+	SG.ResetOnSpawn = false
+	SG.IgnoreGuiInset = true
+	SG.Parent = CoreGui
 
 	local KW, KH
 	if IS_MOBILE then
@@ -3013,31 +2783,29 @@ local function AbrirUIKey()
 		KW, KH = 400, 400
 	end
 
-	local KeyFrame = Instance.new("Frame")
-	KeyFrame.Size = UDim2.new(0, KW, 0, KH)
-	KeyFrame.Position = UDim2.new(0.5, -KW/2, 0.5, -KH/2)
-	KeyFrame.BackgroundColor3 = C.BG
-	KeyFrame.BorderSizePixel = 0
-	KeyFrame.Parent = SGScreen
+	local F = Instance.new("Frame")
+	F.Size = UDim2.new(0, KW, 0, KH)
+	F.Position = UDim2.new(0.5, -KW/2, 0.5, -KH/2)
+	F.BackgroundColor3 = C.BG
+	F.BorderSizePixel = 0
+	F.Parent = SG
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 14)
+	c.Parent = F
+	local s = Instance.new("UIStroke")
+	s.Color = C.Purple
+	s.Thickness = 2
+	s.Parent = F
 
-	local MC = Instance.new("UICorner")
-	MC.CornerRadius = UDim.new(0, 14)
-	MC.Parent = KeyFrame
-
-	local MS = Instance.new("UIStroke")
-	MS.Color = C.Purple
-	MS.Thickness = 2
-	MS.Parent = KeyFrame
-
-	local Titulo = Instance.new("TextLabel")
-	Titulo.Text = "🔐 SAILENT KEY SYSTEM"
-	Titulo.Font = Enum.Font.GothamBold
-	Titulo.TextSize = IS_MOBILE and 18 or 20
-	Titulo.TextColor3 = C.Text
-	Titulo.BackgroundTransparency = 1
-	Titulo.Size = UDim2.new(1, 0, 0, 50)
-	Titulo.Position = UDim2.new(0, 0, 0, 15)
-	Titulo.Parent = KeyFrame
+	local T = Instance.new("TextLabel")
+	T.Text = "🔐 SAILENT KEY SYSTEM"
+	T.Font = Enum.Font.GothamBold
+	T.TextSize = IS_MOBILE and 18 or 20
+	T.TextColor3 = C.Text
+	T.BackgroundTransparency = 1
+	T.Size = UDim2.new(1, 0, 0, 50)
+	T.Position = UDim2.new(0, 0, 0, 15)
+	T.Parent = F
 
 	local Sub = Instance.new("TextLabel")
 	Sub.Text = "Digite sua key abaixo"
@@ -3047,163 +2815,161 @@ local function AbrirUIKey()
 	Sub.BackgroundTransparency = 1
 	Sub.Size = UDim2.new(1, 0, 0, 20)
 	Sub.Position = UDim2.new(0, 0, 0, 62)
-	Sub.Parent = KeyFrame
+	Sub.Parent = F
 
-	local H_INPUT = IS_MOBILE and 54 or 50
-	local H_BTN = IS_MOBILE and 54 or 50
-	local PAD = IS_MOBILE and 20 or 30
+	local HI = IS_MOBILE and 54 or 50
+	local HB = IS_MOBILE and 54 or 50
+	local P = IS_MOBILE and 20 or 30
 
-	local KeyInput = Instance.new("TextBox")
-	KeyInput.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
-	KeyInput.Font = Enum.Font.Code
-	KeyInput.TextSize = IS_MOBILE and 15 or 14
-	KeyInput.TextColor3 = C.Text
-	KeyInput.PlaceholderColor3 = C.Sub
-	KeyInput.BackgroundColor3 = C.Card
-	KeyInput.BorderSizePixel = 0
-	KeyInput.Size = UDim2.new(1, -PAD*2, 0, H_INPUT)
-	KeyInput.Position = UDim2.new(0, PAD, 0, 95)
-	KeyInput.Text = ""
-	KeyInput.ClearTextOnFocus = false
-	KeyInput.Parent = KeyFrame
+	local Input = Instance.new("TextBox")
+	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
+	Input.Font = Enum.Font.Code
+	Input.TextSize = IS_MOBILE and 15 or 14
+	Input.TextColor3 = C.Text
+	Input.PlaceholderColor3 = C.Sub
+	Input.BackgroundColor3 = C.Card
+	Input.BorderSizePixel = 0
+	Input.Size = UDim2.new(1, -P*2, 0, HI)
+	Input.Position = UDim2.new(0, P, 0, 95)
+	Input.Text = ""
+	Input.ClearTextOnFocus = false
+	Input.Parent = F
+	local ic = Instance.new("UICorner")
+	ic.CornerRadius = UDim.new(0, 10)
+	ic.Parent = Input
 
-	local IC = Instance.new("UICorner")
-	IC.CornerRadius = UDim.new(0, 10)
-	IC.Parent = KeyInput
+	local H = Instance.new("TextLabel")
+	H.Text = "HWID: " .. GetHWID():sub(1,16) .. "..."
+	H.Font = Enum.Font.Code
+	H.TextSize = IS_MOBILE and 11 or 10
+	H.TextColor3 = C.Sub
+	H.BackgroundTransparency = 1
+	H.Size = UDim2.new(1, -P*2, 0, 18)
+	H.Position = UDim2.new(0, P, 0, 95 + HI + 8)
+	H.Parent = F
 
-	local HWIDLabel = Instance.new("TextLabel")
-	HWIDLabel.Text = "Seu HWID: " .. GetHWID():sub(1,16) .. "..."
-	HWIDLabel.Font = Enum.Font.Code
-	HWIDLabel.TextSize = IS_MOBILE and 11 or 10
-	HWIDLabel.TextColor3 = C.Sub
-	HWIDLabel.BackgroundTransparency = 1
-	HWIDLabel.Size = UDim2.new(1, -PAD*2, 0, 18)
-	HWIDLabel.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 8)
-	HWIDLabel.Parent = KeyFrame
+	local St = Instance.new("TextLabel")
+	St.Text = "Status: ● Aguardando"
+	St.Font = Enum.Font.GothamBold
+	St.TextSize = IS_MOBILE and 13 or 12
+	St.TextColor3 = C.Yellow
+	St.BackgroundTransparency = 1
+	St.Size = UDim2.new(1, -P*2, 0, 20)
+	St.Position = UDim2.new(0, P, 0, 95 + HI + 32)
+	St.Parent = F
 
-	local Status = Instance.new("TextLabel")
-	Status.Text = "Status: ● Aguardando"
-	Status.Font = Enum.Font.GothamBold
-	Status.TextSize = IS_MOBILE and 13 or 12
-	Status.TextColor3 = C.Yellow
-	Status.BackgroundTransparency = 1
-	Status.Size = UDim2.new(1, -PAD*2, 0, 20)
-	Status.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 32)
-	Status.Parent = KeyFrame
+	local VB = Instance.new("TextButton")
+	VB.Text = "🔓 VALIDAR KEY"
+	VB.Font = Enum.Font.GothamBold
+	VB.TextSize = IS_MOBILE and 16 or 15
+	VB.TextColor3 = C.Text
+	VB.BackgroundColor3 = C.Green
+	VB.BorderSizePixel = 0
+	VB.Size = UDim2.new(1, -P*2, 0, HB)
+	VB.Position = UDim2.new(0, P, 0, 95 + HI + 60)
+	VB.AutoButtonColor = false
+	VB.Parent = F
+	local vc = Instance.new("UICorner")
+	vc.CornerRadius = UDim.new(0, 10)
+	vc.Parent = VB
 
-	local ValidarBtn = Instance.new("TextButton")
-	ValidarBtn.Text = "🔓 VALIDAR KEY"
-	ValidarBtn.Font = Enum.Font.GothamBold
-	ValidarBtn.TextSize = IS_MOBILE and 16 or 15
-	ValidarBtn.TextColor3 = C.Text
-	ValidarBtn.BackgroundColor3 = C.Green
-	ValidarBtn.BorderSizePixel = 0
-	ValidarBtn.Size = UDim2.new(1, -PAD*2, 0, H_BTN)
-	ValidarBtn.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60)
-	ValidarBtn.AutoButtonColor = false
-	ValidarBtn.Parent = KeyFrame
+	local CB = Instance.new("TextButton")
+	CB.Text = "📋 Copiar HWID"
+	CB.Font = Enum.Font.GothamBold
+	CB.TextSize = IS_MOBILE and 12 or 11
+	CB.TextColor3 = C.Text
+	CB.BackgroundColor3 = C.Card
+	CB.BorderSizePixel = 0
+	CB.Size = UDim2.new(1, -P*2, 0, HB - 10)
+	CB.Position = UDim2.new(0, P, 0, 95 + HI + 60 + HB + 10)
+	CB.AutoButtonColor = false
+	CB.Parent = F
+	local cbc = Instance.new("UICorner")
+	cbc.CornerRadius = UDim.new(0, 8)
+	cbc.Parent = CB
 
-	local VC = Instance.new("UICorner")
-	VC.CornerRadius = UDim.new(0, 10)
-	VC.Parent = ValidarBtn
-
-	local CopiarBtn = Instance.new("TextButton")
-	CopiarBtn.Text = "📋 Copiar HWID"
-	CopiarBtn.Font = Enum.Font.GothamBold
-	CopiarBtn.TextSize = IS_MOBILE and 12 or 11
-	CopiarBtn.TextColor3 = C.Text
-	CopiarBtn.BackgroundColor3 = C.Card
-	CopiarBtn.BorderSizePixel = 0
-	CopiarBtn.Size = UDim2.new(1, -PAD*2, 0, H_BTN - 10)
-	CopiarBtn.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60 + H_BTN + 10)
-	CopiarBtn.AutoButtonColor = false
-	CopiarBtn.Parent = KeyFrame
-
-	local CCopiar = Instance.new("UICorner")
-	CCopiar.CornerRadius = UDim.new(0, 8)
-	CCopiar.Parent = CopiarBtn
-
-	CopiarBtn.MouseButton1Click:Connect(function()
+	CB.MouseButton1Click:Connect(function()
 		pcall(function() if setclipboard then setclipboard(GetHWID()) end end)
-		CopiarBtn.Text = "✅ Copiado!"
+		CB.Text = "✅ Copiado!"
 		task.wait(1.5)
-		CopiarBtn.Text = "📋 Copiar HWID"
+		CB.Text = "📋 Copiar HWID"
 	end)
 
-	local Info = Instance.new("TextLabel")
-	Info.Text = "Se não tiver key, fale com o dono"
-	Info.Font = Enum.Font.GothamMedium
-	Info.TextSize = IS_MOBILE and 12 or 11
-	Info.TextColor3 = C.Sub
-	Info.BackgroundTransparency = 1
-	Info.Size = UDim2.new(1, -PAD*2, 0, 20)
-	Info.Position = UDim2.new(0, PAD, 0, 95 + H_INPUT + 60 + H_BTN + 60)
-	Info.Parent = KeyFrame
+	local Inf = Instance.new("TextLabel")
+	Inf.Text = "Se não tiver key, fale com o dono"
+	Inf.Font = Enum.Font.GothamMedium
+	Inf.TextSize = IS_MOBILE and 12 or 11
+	Inf.TextColor3 = C.Sub
+	Inf.BackgroundTransparency = 1
+	Inf.Size = UDim2.new(1, -P*2, 0, 20)
+	Inf.Position = UDim2.new(0, P, 0, 95 + HI + 60 + HB + 60)
+	Inf.Parent = F
 
-	ValidarBtn.MouseEnter:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = Color3.fromRGB(100, 240, 140)}, 0.15)
+	VB.MouseEnter:Connect(function()
+		Tween(VB, {BackgroundColor3 = Color3.fromRGB(100, 240, 140)}, 0.15)
 	end)
-	ValidarBtn.MouseLeave:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = C.Green}, 0.15)
+	VB.MouseLeave:Connect(function()
+		Tween(VB, {BackgroundColor3 = C.Green}, 0.15)
 	end)
 
 	local validando = false
-	ValidarBtn.MouseButton1Click:Connect(function()
+	VB.MouseButton1Click:Connect(function()
 		if validando then return end
-		local key = KeyInput.Text
+		local key = Input.Text
 		if key == "" then
-			Status.Text = "Status: ❌ Digite a key"
-			Status.TextColor3 = C.Red
+			St.Text = "Status: ❌ Digite a key"
+			St.TextColor3 = C.Red
 			return
 		end
 		validando = true
-		Status.Text = "Status: ⏳ Validando..."
-		Status.TextColor3 = C.Yellow
+		St.Text = "Status: ⏳ Validando..."
+		St.TextColor3 = C.Yellow
 
-		local valida, info, hash = ValidarKey(key)
+		task.spawn(function()
+			local valida, info, hash = ValidarKey(key)
+			validando = false
 
-		if valida then
-			Status.Text = "Status: ✅ Key válida!"
-			Status.TextColor3 = C.Green
-			Info.Text = "Bem-vindo, " .. (info.nome or "Cliente") .. "!"
-			SalvarKey(hash or key)
-			task.wait(1.5)
-			SGScreen:Destroy()
-			AbrirAutoGari(info)
-		else
-			Status.Text = "Status: ❌ " .. tostring(info or "Erro")
-			Status.TextColor3 = C.Red
-		end
-		validando = false
+			if valida then
+				St.Text = "Status: ✅ Key válida!"
+				St.TextColor3 = C.Green
+				Inf.Text = "Bem-vindo, " .. (info.nome or "Cliente") .. "!"
+				SalvarKey(hash or key)
+				task.wait(1.5)
+				SG:Destroy()
+				AbrirAutoGari(info)
+			else
+				St.Text = "Status: ❌ " .. tostring(info or "Erro")
+				St.TextColor3 = C.Red
+			end
+		end)
 	end)
 end
 
 -- ============================================================
--- INICIAR
+-- INICIAR (com loading)
 -- ============================================================
 task.spawn(function()
-	Log("🗑️ Sailent Auto Gari v" .. SCRIPT_VERSION)
-	Log("📱 Modo: " .. (IS_MOBILE and (IS_TABLET and "TABLET" or "MOBILE") or "PC"))
-	Log("🔑 HWID: " .. GetHWID())
+	local loading = CriarLoading("🔐 Verificando key...")
+
+	task.wait(0.3)
 
 	local keySalva, hwidSalvo = TemKeySalva()
 
 	if keySalva then
 		if hwidSalvo and hwidSalvo ~= "" and hwidSalvo ~= GetHWID() then
-			Log("⚠️ HWID diferente, limpando...")
 			LimparKeySalva()
 		else
 			local valida, info = ValidarKey(keySalva)
 			if valida then
-				Log("✅ Key salva válida!")
+				loading:Destroy()
 				AbrirAutoGari(info)
 				return
 			else
-				Log("⚠️ " .. tostring(info))
 				LimparKeySalva()
 			end
 		end
 	end
 
+	loading:Destroy()
 	AbrirUIKey()
 end)
