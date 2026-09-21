@@ -1,5 +1,6 @@
 -- ============================================================
--- SAILENT AUTO GARI v6.4 — VOO SUAVE + KEY NOVA
+-- SAILENT AUTO GARI v5.2 — COMPLETO COM KEY SYSTEM
+-- Auto Gari + Keybind + Anti-admin + Stats + Sons + Keys
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -12,11 +13,19 @@ local HttpService = game:GetService("HttpService")
 local lp = Players.LocalPlayer
 
 -- ============================================================
--- CONFIG — LINK DO GITHUB
+-- ⚙️ CONFIGURAÇÃO DO KEY SYSTEM
 -- ============================================================
-local GITHUB_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
-local SAVE_FILE = "sailent_key_salva.txt"
-local KEY_DURACAO_LOCAL = 24 * 60 * 60
+local KEY_CONFIG = {
+	-- 🔗 COLOQUE AQUI A URL RAW DO SEU keys.json NO GITHUB
+	-- Ex: "https://raw.githubusercontent.com/SEU_USER/SEU_REPO/main/keys.json"
+	URL_KEYS = "https://raw.githubusercontent.com/SEU_USER/SEU_REPO/main/keys.json",
+
+	-- Arquivo de cache local (guarda a key validada)
+	ARQUIVO_CACHE = "sailent_gari_key.txt",
+
+	-- Nome que aparece na UI
+	NOME_SCRIPT = "Sailent Auto Gari v5.2",
+}
 
 for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI"}) do
 	if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
@@ -33,7 +42,6 @@ local C = {
 	Yellow = Color3.fromRGB(255,200,80),
 	Blue = Color3.fromRGB(80,160,240),
 	Purple = Color3.fromRGB(180,120,255),
-	Cyan = Color3.fromRGB(80,220,240),
 	Black = Color3.fromRGB(10, 10, 15),
 }
 
@@ -47,6 +55,417 @@ local function Log(msg)
 	print("[Gari] " .. tostring(msg))
 end
 
+-- ============================================================
+-- 🔐 HASH SHA-256 (compatível com o gerador HTML)
+-- ============================================================
+local function Sha256(msg)
+	-- Lua puro: implementação SHA-256
+	local K = {
+		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+		0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+		0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+		0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+		0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+		0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+		0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+		0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+	}
+	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
+
+	local function ror(x, n) return bit32.bor(bit32.rshift(x, n), bit32.lshift(x, 32 - n)) end
+
+	local len = #msg
+	local bitLen = len * 8
+	msg = msg .. "\128"
+	while (#msg % 64) ~= 56 do msg = msg .. "\0" end
+	-- length em 64 bits big-endian
+	local hi = math.floor(bitLen / 4294967296)
+	local lo = bitLen % 4294967296
+	local function u32be(n)
+		return string.char(
+			bit32.band(bit32.rshift(n, 24), 0xFF),
+			bit32.band(bit32.rshift(n, 16), 0xFF),
+			bit32.band(bit32.rshift(n, 8), 0xFF),
+			bit32.band(n, 0xFF)
+		)
+	end
+	msg = msg .. u32be(hi) .. u32be(lo)
+
+	for chunk = 1, #msg, 64 do
+		local w = {}
+		for i = 0, 15 do
+			local a, b, c, d = msg:byte(chunk + i*4, chunk + i*4 + 3)
+			w[i] = bit32.bor(bit32.lshift(a, 24), bit32.lshift(b, 16), bit32.lshift(c, 8), d)
+		end
+		for i = 16, 63 do
+			local s0 = bit32.bxor(ror(w[i-15], 7), ror(w[i-15], 18), bit32.rshift(w[i-15], 3))
+			local s1 = bit32.bxor(ror(w[i-2], 17), ror(w[i-2], 19), bit32.rshift(w[i-2], 10))
+			w[i] = (w[i-16] + s0 + w[i-7] + s1) % 4294967296
+		end
+		local a,b,c,d,e,f,g,h = table.unpack(H)
+		for i = 0, 63 do
+			local S1 = bit32.bxor(ror(e, 6), ror(e, 11), ror(e, 25))
+			local ch = bit32.bxor(bit32.band(e, f), bit32.band(bit32.bnot(e), g))
+			local t1 = (h + S1 + ch + K[i+1] + w[i]) % 4294967296
+			local S0 = bit32.bxor(ror(a, 2), ror(a, 13), ror(a, 22))
+			local mj = bit32.bxor(bit32.band(a, b), bit32.band(a, c), bit32.band(b, c))
+			local t2 = (S0 + mj) % 4294967296
+			h,g,f,e,d,c,b,a = g,f,e,(d + t1) % 4294967296,c,b,a,(t1 + t2) % 4294967296
+		end
+		H[1] = (H[1] + a) % 4294967296
+		H[2] = (H[2] + b) % 4294967296
+		H[3] = (H[3] + c) % 4294967296
+		H[4] = (H[4] + d) % 4294967296
+		H[5] = (H[5] + e) % 4294967296
+		H[6] = (H[6] + f) % 4294967296
+		H[7] = (H[7] + g) % 4294967296
+		H[8] = (H[8] + h) % 4294967296
+	end
+	local out = {}
+	for i = 1, 8 do out[#out+1] = string.format("%08x", H[i]) end
+	return table.concat(out)
+end
+
+local function GetHWID()
+	local hwid = ""
+	pcall(function()
+		hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+	end)
+	if hwid == "" then
+		pcall(function() hwid = gethwid and gethwid() or "" end)
+	end
+	if hwid == "" then
+		hwid = "UNKNOWN-" .. tostring(lp.UserId)
+	end
+	return hwid
+end
+
+-- ============================================================
+-- 🔑 VALIDAÇÃO DA KEY
+-- ============================================================
+local KeyState = {
+	valida = false,
+	nivel = "normal",
+	nome = "Cliente",
+	expira = 0,
+	hash = "",
+	key = "",
+}
+
+local function SalvarKeyLocal(key)
+	pcall(function()
+		if writefile then
+			writefile(KEY_CONFIG.ARQUIVO_CACHE, key)
+		end
+	end)
+end
+
+local function CarregarKeyLocal()
+	local k = nil
+	pcall(function()
+		if isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) and readfile then
+			k = readfile(KEY_CONFIG.ARQUIVO_CACHE)
+		end
+	end)
+	return k
+end
+
+local function LimparKeyLocal()
+	pcall(function()
+		if delfile and isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) then
+			delfile(KEY_CONFIG.ARQUIVO_CACHE)
+		end
+	end)
+end
+
+local function BaixarKeys()
+	if not (request or http_request or syn and syn.request or fluxus and fluxus.request) then
+		return nil, "Executor sem suporte a HTTP request!"
+	end
+	local httpFn = request or http_request or syn.request or fluxus.request
+	local ok, resp = pcall(function()
+		return httpFn({ Url = KEY_CONFIG.URL_KEYS, Method = "GET" })
+	end)
+	if not ok or not resp then
+		return nil, "Falha ao baixar keys.json (rede)"
+	end
+	local body = resp.Body or resp.body
+	if not body or body == "" then
+		return nil, "keys.json vazio ou inacessível"
+	end
+	local ok2, decoded = pcall(function() return HttpService:JSONDecode(body) end)
+	if not ok2 or not decoded then
+		return nil, "JSON inválido"
+	end
+	return decoded, nil
+end
+
+local function ValidarKey(keyInput)
+	if not keyInput or keyInput == "" then
+		return false, "Digite uma key!"
+	end
+	keyInput = keyInput:gsub("%s+", "")
+
+	local dados, err = BaixarKeys()
+	if not dados then return false, err end
+
+	local hash = Sha256(keyInput)
+	local entry = dados.keys and dados.keys[hash]
+
+	if not entry then
+		return false, "❌ Key inválida ou não encontrada"
+	end
+
+	-- Verifica expiração
+	local agora = os.time()
+	if entry.expira and entry.expira < agora and entry.expira < 99999999999 then
+		return false, "⏰ Key expirada"
+	end
+
+	-- Verifica status
+	if entry.status and entry.status ~= "ativa" then
+		return false, "🚫 Key desativada"
+	end
+
+	-- Verifica usos
+	if entry.max_usos and entry.max_usos ~= -1 then
+		if entry.usos and entry.usos >= entry.max_usos then
+			return false, "🔁 Limite de usos atingido"
+		end
+	end
+
+	-- Verifica HWID
+	local meuHWID = GetHWID()
+	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= meuHWID then
+		return false, "🔒 Key não pertence a este dispositivo"
+	end
+
+	-- OK!
+	KeyState.valida = true
+	KeyState.nivel = entry.nivel or "normal"
+	KeyState.nome = entry.nome or "Cliente"
+	KeyState.expira = entry.expira or 0
+	KeyState.hash = hash
+	KeyState.key = keyInput
+
+	SalvarKeyLocal(keyInput)
+	return true, entry
+end
+
+local function TentarKeySalva()
+	local k = CarregarKeyLocal()
+	if k and k ~= "" then
+		local ok = ValidarKey(k)
+		return ok
+	end
+	return false
+end
+
+-- ============================================================
+-- UI DE LOGIN (Key)
+-- ============================================================
+local function MostrarUILogin(callbackSucesso)
+	local SGK = Instance.new("ScreenGui")
+	SGK.Name = "SailentKeyUI"
+	SGK.ResetOnSpawn = false
+	SGK.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	SGK.IgnoreGuiInset = true
+	SGK.Parent = CoreGui
+
+	local BG = Instance.new("Frame")
+	BG.Size = UDim2.new(1, 0, 1, 0)
+	BG.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	BG.BackgroundTransparency = 0.4
+	BG.BorderSizePixel = 0
+	BG.Parent = SGK
+
+	local Box = Instance.new("Frame")
+	Box.Size = UDim2.new(0, 380, 0, 340)
+	Box.Position = UDim2.new(0.5, -190, 0.5, -170)
+	Box.BackgroundColor3 = C.BG
+	Box.BorderSizePixel = 0
+	Box.Parent = SGK
+	local BC = Instance.new("UICorner")
+	BC.CornerRadius = UDim.new(0, 14)
+	BC.Parent = Box
+	local BS = Instance.new("UIStroke")
+	BS.Color = C.Accent
+	BS.Thickness = 2
+	BS.Parent = Box
+
+	local Title = Instance.new("TextLabel")
+	Title.Text = "🔑 SAILENT — AUTH"
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 18
+	Title.TextColor3 = C.Accent
+	Title.BackgroundTransparency = 1
+	Title.Position = UDim2.new(0, 0, 0, 18)
+	Title.Size = UDim2.new(1, 0, 0, 26)
+	Title.Parent = Box
+
+	local Sub = Instance.new("TextLabel")
+	Sub.Text = "Cole sua key para liberar o script"
+	Sub.Font = Enum.Font.Gotham
+	Sub.TextSize = 12
+	Sub.TextColor3 = C.Sub
+	Sub.BackgroundTransparency = 1
+	Sub.Position = UDim2.new(0, 0, 0, 48)
+	Sub.Size = UDim2.new(1, 0, 0, 18)
+	Sub.Parent = Box
+
+	-- Info HWID
+	local hwidLbl = Instance.new("TextLabel")
+	hwidLbl.Text = "HWID: " .. GetHWID():sub(1, 26) .. "..."
+	hwidLbl.Font = Enum.Font.Code
+	hwidLbl.TextSize = 10
+	hwidLbl.TextColor3 = Color3.fromRGB(100,100,120)
+	hwidLbl.BackgroundTransparency = 1
+	hwidLbl.Position = UDim2.new(0, 0, 0, 68)
+	hwidLbl.Size = UDim2.new(1, 0, 0, 14)
+	hwidLbl.Parent = Box
+
+	local Input = Instance.new("TextBox")
+	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
+	Input.Font = Enum.Font.Code
+	Input.TextSize = 13
+	Input.TextColor3 = C.Text
+	Input.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+	Input.BackgroundColor3 = C.Card
+	Input.BorderSizePixel = 0
+	Input.ClearTextOnFocus = false
+	Input.Text = ""
+	Input.Position = UDim2.new(0, 20, 0, 100)
+	Input.Size = UDim2.new(1, -40, 0, 42)
+	Input.Parent = Box
+	local IC = Instance.new("UICorner")
+	IC.CornerRadius = UDim.new(0, 8)
+	IC.Parent = Input
+	local IS = Instance.new("UIStroke")
+	IS.Color = Color3.fromRGB(50,50,70)
+	IS.Thickness = 1
+	IS.Parent = Input
+
+	local Status = Instance.new("TextLabel")
+	Status.Text = ""
+	Status.Font = Enum.Font.GothamBold
+	Status.TextSize = 11
+	Status.TextColor3 = C.Red
+	Status.BackgroundTransparency = 1
+	Status.Position = UDim2.new(0, 20, 0, 150)
+	Status.Size = UDim2.new(1, -40, 0, 40)
+	Status.TextWrapped = true
+	Status.TextYAlignment = Enum.TextYAlignment.Top
+	Status.Parent = Box
+
+	local BtnValidar = Instance.new("TextButton")
+	BtnValidar.Text = "✅ VALIDAR KEY"
+	BtnValidar.Font = Enum.Font.GothamBold
+	BtnValidar.TextSize = 14
+	BtnValidar.TextColor3 = C.Black
+	BtnValidar.BackgroundColor3 = C.Green
+	BtnValidar.BorderSizePixel = 0
+	BtnValidar.Position = UDim2.new(0, 20, 0, 200)
+	BtnValidar.Size = UDim2.new(1, -40, 0, 46)
+	BtnValidar.Parent = Box
+	local BtnC = Instance.new("UICorner")
+	BtnC.CornerRadius = UDim.new(0, 8)
+	BtnC.Parent = BtnValidar
+
+	local BtnComprar = Instance.new("TextButton")
+	BtnComprar.Text = "🛒 OBTER KEY"
+	BtnComprar.Font = Enum.Font.GothamBold
+	BtnComprar.TextSize = 12
+	BtnComprar.TextColor3 = C.Text
+	BtnComprar.BackgroundColor3 = C.Card
+	BtnComprar.BorderSizePixel = 0
+	BtnComprar.Position = UDim2.new(0, 20, 0, 256)
+	BtnComprar.Size = UDim2.new(1, -40, 0, 36)
+	BtnComprar.Parent = Box
+	local BtnCC = Instance.new("UICorner")
+	BtnCC.CornerRadius = UDim.new(0, 8)
+	BtnCC.Parent = BtnComprar
+
+	local BtnLimpar = Instance.new("TextButton")
+	BtnLimpar.Text = "🗑️ Limpar key salva"
+	BtnLimpar.Font = Enum.Font.Gotham
+	BtnLimpar.TextSize = 10
+	BtnLimpar.TextColor3 = Color3.fromRGB(120,120,140)
+	BtnLimpar.BackgroundTransparency = 1
+	BtnLimpar.Position = UDim2.new(0, 20, 0, 300)
+	BtnLimpar.Size = UDim2.new(1, -40, 0, 20)
+	BtnLimpar.Parent = Box
+
+	-- Verificação automática de key salva
+	task.spawn(function()
+		local k = CarregarKeyLocal()
+		if k and k ~= "" then
+			Input.Text = k
+			Status.Text = "🔄 Verificando key salva..."
+			Status.TextColor3 = C.Yellow
+			local ok, res = ValidarKey(k)
+			if ok then
+				Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
+				Status.TextColor3 = C.Green
+				task.wait(1)
+				SGK:Destroy()
+				callbackSucesso()
+			else
+				Status.Text = "❌ " .. tostring(res)
+				Status.TextColor3 = C.Red
+				LimparKeyLocal()
+			end
+		end
+	end)
+
+	BtnValidar.MouseButton1Click:Connect(function()
+		local k = Input.Text:gsub("%s+", "")
+		if k == "" then
+			Status.Text = "⚠️ Cole uma key primeiro!"
+			Status.TextColor3 = C.Yellow
+			return
+		end
+		Status.Text = "🔄 Validando..."
+		Status.TextColor3 = C.Yellow
+		BtnValidar.Text = "⏳ AGUARDE..."
+		BtnValidar.BackgroundColor3 = C.Yellow
+		task.spawn(function()
+			local ok, res = ValidarKey(k)
+			if ok then
+				Status.Text = "✅ Key válida! Bem-vindo, " .. KeyState.nome .. "!"
+				Status.TextColor3 = C.Green
+				BtnValidar.Text = "✅ SUCESSO!"
+				BtnValidar.BackgroundColor3 = C.Green
+				task.wait(1)
+				SGK:Destroy()
+				callbackSucesso()
+			else
+				Status.Text = "❌ " .. tostring(res)
+				Status.TextColor3 = C.Red
+				BtnValidar.Text = "✅ VALIDAR KEY"
+				BtnValidar.BackgroundColor3 = C.Green
+			end
+		end)
+	end)
+
+	BtnComprar.MouseButton1Click:Connect(function()
+		Status.Text = "💬 Fale com o admin no Discord para obter uma key!"
+		Status.TextColor3 = C.Blue
+		pcall(function()
+			setclipboard("Olá! Quero comprar uma key do Sailent Auto Gari.")
+		end)
+	end)
+
+	BtnLimpar.MouseButton1Click:Connect(function()
+		LimparKeyLocal()
+		Input.Text = ""
+		Status.Text = "🗑️ Key local removida."
+		Status.TextColor3 = C.Sub
+	end)
+end
+
+-- ============================================================
+-- LÓGICA DE MOVIMENTO (original)
+-- ============================================================
 local function GetHRP()
 	local c = lp.Character
 	return c and c:FindFirstChild("HumanoidRootPart")
@@ -62,429 +481,164 @@ local function GetPrompt(item)
 	return item:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
--- ============================================================
--- SHA-256 (para o sistema de key)
--- ============================================================
-local function sha256(msg)
-	local K = {
-		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-		0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-		0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-		0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-		0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-		0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-		0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-		0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2,
-	}
-	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
-	local function rrot(x,n) return (x >> n) | (x << (32-n)) & 0xffffffff end
-	local function uint32(x) return x & 0xffffffff end
-	local s = msg .. "\128"
-	local l = #msg * 8
-	while #s % 64 ~= 56 do s = s .. "\0" end
-	for i = 7, 0, -1 do s = s .. string.char((l >> (i*8)) & 0xff) end
-	for ci = 0, (#s / 64) - 1 do
-		local chunk = s:sub(ci*64+1, ci*64+64)
-		local w = {}
-		for i = 1, 16 do
-			local b1,b2,b3,b4 = chunk:byte((i-1)*4+1, i*4)
-			w[i] = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
-		end
-		for i = 17, 64 do
-			local s0 = rrot(w[i-15],7) ~ rrot(w[i-15],18) ~ (w[i-15] >> 3)
-			local s1 = rrot(w[i-2],17) ~ rrot(w[i-2],19) ~ (w[i-2] >> 10)
-			w[i] = uint32(w[i-16] + s0 + w[i-7] + s1)
-		end
-		local a,b,c,d,e,f,g,h = H[1],H[2],H[3],H[4],H[5],H[6],H[7],H[8]
-		for i = 1, 64 do
-			local S1 = rrot(e,6) ~ rrot(e,11) ~ rrot(e,25)
-			local ch = (e & f) ~ ((~e) & g)
-			local t1 = uint32(h + S1 + ch + K[i] + w[i])
-			local S0 = rrot(a,2) ~ rrot(a,13) ~ rrot(a,22)
-			local maj = (a & b) ~ (a & c) ~ (b & c)
-			local t2 = uint32(S0 + maj)
-			h=g; g=f; f=e; e=uint32(d+t1); d=c; c=b; b=a; a=uint32(t1+t2)
-		end
-		H[1]=uint32(H[1]+a); H[2]=uint32(H[2]+b); H[3]=uint32(H[3]+c); H[4]=uint32(H[4]+d)
-		H[5]=uint32(H[5]+e); H[6]=uint32(H[6]+f); H[7]=uint32(H[7]+g); H[8]=uint32(H[8]+h)
+local CONFIG_FILE = "sailent_gari_config.txt"
+
+local Config = {
+	velocidade = 100,
+	noclip = false,
+	autoGari = false,
+	somAtivo = true,
+	antiAdmin = true,
+}
+
+local function SalvarConfig()
+	local str = ""
+	for k, v in pairs(Config) do
+		str = str .. k .. "=" .. tostring(v) .. "\n"
 	end
-	local out = {}
-	for _, v in ipairs(H) do out[#out+1] = string.format("%08x", v) end
-	return table.concat(out)
-end
-
--- ============================================================
--- HWID
--- ============================================================
-local cachedHwid = nil
-local function GetHWID()
-	if cachedHwid then return cachedHwid end
-	local parts = {}
-	pcall(function() parts[#parts+1] = tostring(lp.UserId) end)
-	pcall(function() parts[#parts+1] = tostring(game.PlaceId) end)
-	pcall(function() parts[#parts+1] = tostring(game.JobId) end)
-	pcall(function() parts[#parts+1] = gethwid and gethwid() or "" end)
-	cachedHwid = sha256(table.concat(parts, "|")):sub(1, 32)
-	return cachedHwid
-end
-
--- ============================================================
--- SISTEMA DE KEY
--- ============================================================
-local function TemKeySalva()
-	local dados
 	pcall(function()
-		if isfile and isfile(SAVE_FILE) and readfile then
-			dados = readfile(SAVE_FILE)
-		end
+		if writefile then writefile(CONFIG_FILE, str) end
 	end)
-	if not dados or dados == "" then return nil end
-	local key, expira, hwid = dados:match("([^|]+)|(%d+)|(.*)")
-	if key and expira then
-		expira = tonumber(expira)
-		if expira and os.time() < expira then return key, hwid end
-	end
-	return nil
+	_G.SailentConfig = Config
 end
 
-local function SalvarKey(key)
+local function CarregarConfig()
 	pcall(function()
-		if writefile then
-			writefile(SAVE_FILE, key .. "|" .. (os.time() + KEY_DURACAO_LOCAL) .. "|" .. GetHWID())
-		end
-	end)
-end
-
-local function LimparKeySalva()
-	pcall(function()
-		if delfile and isfile and isfile(SAVE_FILE) then delfile(SAVE_FILE) end
-	end)
-end
-
-local function BaixarKeys()
-	local ok, resultado = pcall(function()
-		return game:HttpGet(GITHUB_URL, true)
-	end)
-	if not ok or not resultado then return nil, "Erro ao baixar" end
-
-	local ok2, dados = pcall(function()
-		return HttpService:JSONDecode(resultado)
-	end)
-	if not ok2 or not dados then return nil, "Erro no JSON" end
-	return dados
-end
-
-local function ValidarKey(key)
-	if not key or key == "" then return false, "Key vazia" end
-
-	local hashKey = sha256(key)
-	local dados, erro = BaixarKeys()
-	if not dados then return false, erro end
-	if not dados.keys then return false, "Keys não encontradas" end
-
-	-- procura pelo hash (novo) ou pelo texto (compatibilidade)
-	local info = dados.keys[hashKey] or dados.keys[key]
-	if not info then return false, "Key inválida" end
-	if info.status ~= "ativa" then return false, "Key bloqueada" end
-	if info.expira and tonumber(info.expira) and os.time() > tonumber(info.expira) then
-		return false, "Key expirada"
-	end
-
-	local meuHwid = GetHWID()
-	if info.hwid and info.hwid ~= "" and info.hwid ~= meuHwid then
-		return false, "Key vinculada a outro dispositivo"
-	end
-
-	return true, info, hashKey
-end
-
--- ============================================================
--- FUNÇÃO QUE ABRE O AUTO GARI
--- ============================================================
-local function AbrirAutoGari(infoKey)
-	infoKey = infoKey or {nome = "Cliente", nivel = "normal"}
-
-	local CONFIG_FILE = "sailent_gari_config.txt"
-	local Config = {
-		velocidade = 100,
-		noclip = false,
-		autoGari = false,
-		somAtivo = true,
-		vooAtivo = false,
-		vooVelocidade = 80,
-		vooAltura = 12,
-		vooSuavidade = 3,
-	}
-
-	local function SalvarConfig()
-		local str = ""
-		for k, v in pairs(Config) do
-			str = str .. k .. "=" .. tostring(v) .. "\n"
-		end
-		pcall(function() if writefile then writefile(CONFIG_FILE, str) end end)
-	end
-
-	local function CarregarConfig()
-		pcall(function()
-			if isfile and isfile(CONFIG_FILE) and readfile then
-				local str = readfile(CONFIG_FILE)
-				for linha in str:gmatch("[^\n]+") do
-					local k, v = linha:match("([^=]+)=(.+)")
-					if k and v then
-						if v == "true" then v = true
-						elseif v == "false" then v = false
-						elseif tonumber(v) then v = tonumber(v) end
-						Config[k] = v
-					end
+		if isfile and isfile(CONFIG_FILE) and readfile then
+			local str = readfile(CONFIG_FILE)
+			for linha in str:gmatch("[^\n]+") do
+				local k, v = linha:match("([^=]+)=(.+)")
+				if k and v then
+					if v == "true" then v = true
+					elseif v == "false" then v = false
+					elseif tonumber(v) then v = tonumber(v) end
+					Config[k] = v
 				end
 			end
-		end)
-	end
-
-	CarregarConfig()
-
-	local function TocarSom(tipo)
-		if not Config.somAtivo then return end
-		pcall(function()
-			local s = Instance.new("Sound")
-			s.Parent = SoundService
-			if tipo == "coletou" then s.SoundId = "rbxassetid://4612375230"
-			elseif tipo == "entregou" then s.SoundId = "rbxassetid://4612384334"
-			elseif tipo == "reset" then s.SoundId = "rbxassetid://6042053626" end
-			s.Volume = 0.5
-			s:Play()
-			task.delay(2, function() s:Destroy() end)
-		end)
-	end
-
-	-- ============================================================
-	-- SISTEMA DE VOO SUAVE
-	-- ============================================================
-	local BodyVel = nil
-	local BodyGy = nil
-
-	local function IniciarVoo()
-		local hrp = GetHRP()
-		if not hrp then return end
-		pcall(function()
-			local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
-			local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
-		end)
-		local bv = Instance.new("BodyVelocity")
-		bv.Name = "SailentVooVel"
-		bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-		bv.Velocity = Vector3.zero
-		bv.P = 1250
-		bv.Parent = hrp
-		BodyVel = bv
-		local bg = Instance.new("BodyGyro")
-		bg.Name = "SailentVooGyro"
-		bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-		bg.P = 3000
-		bg.D = 100
-		bg.CFrame = hrp.CFrame
-		bg.Parent = hrp
-		BodyGy = bg
-	end
-
-	local function PararVoo()
-		pcall(function()
-			local hrp = GetHRP()
-			if hrp then
-				local a = hrp:FindFirstChild("SailentVooVel"); if a then a:Destroy() end
-				local b = hrp:FindFirstChild("SailentVooGyro"); if b then b:Destroy() end
-			end
-		end)
-		BodyVel = nil
-		BodyGy = nil
-	end
-
-	local function VoarAte(posAlvo, timeout, distParada)
-		if not posAlvo then return false end
-		local hrp = GetHRP()
-		if not hrp then return false end
-		if not BodyVel or not BodyVel.Parent then IniciarVoo() end
-
-		timeout = timeout or 30
-		distParada = distParada or 5
-		local vel = Config.vooVelocidade or 80
-		local alt = Config.vooAltura or 12
-		local suav = Config.vooSuavidade or 3
-
-		local destino = Vector3.new(posAlvo.X, posAlvo.Y + alt, posAlvo.Z)
-		local t0 = tick()
-		local ultimaPos = hrp.Position
-		local parado = 0
-		local travou = 0
-
-		while tick() - t0 < timeout do
-			local h = GetHRP()
-			if not h then return false end
-			if not BodyVel or not BodyVel.Parent then IniciarVoo(); task.wait(0.1) end
-
-			local pos = h.Position
-			local diff = destino - pos
-			local dist = diff.Magnitude
-			local plano = Vector3.new(pos.X - posAlvo.X, 0, pos.Z - posAlvo.Z)
-
-			if plano.Magnitude < distParada then
-				if BodyVel then BodyVel.Velocity = Vector3.zero end
-				return true
-			end
-
-			local fator = math.clamp(dist / 30, 0.3, 1)
-			local velFinal = diff.Unit * vel * fator
-
-			if BodyVel then
-				BodyVel.Velocity = BodyVel.Velocity:Lerp(velFinal, math.clamp(suav * 0.1, 0.05, 0.5))
-			end
-
-			if BodyGy and BodyGy.Parent then
-				local d = Vector3.new(diff.X, 0, diff.Z)
-				if d.Magnitude > 1 then
-					local look = CFrame.new(pos, pos + d.Unit)
-					BodyGy.CFrame = BodyGy.CFrame:Lerp(look, 0.15)
-				end
-			end
-
-			local moveu = (pos - ultimaPos).Magnitude
-			if moveu < 0.5 then
-				parado = parado + 0.1
-				if parado > 1.5 then
-					travou = travou + 1
-					if BodyVel then BodyVel.Velocity = Vector3.new(0, vel * 0.6, 0) end
-					task.wait(0.3)
-					parado = 0
-					if travou >= 4 then return false end
-				end
-			else
-				parado = 0
-			end
-
-			ultimaPos = pos
-			task.wait(0.1)
 		end
-		return false
-	end
+	end)
+	_G.SailentConfig = Config
+end
 
-	-- ============================================================
-	-- ANDAR A PÉ
-	-- ============================================================
-	local function AndarAte(posAlvo, timeout, distParada)
-		if not posAlvo then return false end
-		local hrp = GetHRP()
-		local hum = GetHum()
-		if not hrp or not hum then return false end
-		timeout = timeout or 30
-		distParada = distParada or 4
-		local t0 = tick()
-		local ultimaPos = hrp.Position
-		local tempoParado = 0
-		local tentativas = 0
+CarregarConfig()
+
+local function TocarSom(tipo)
+	if not Config.somAtivo then return end
+	pcall(function()
+		local sound = Instance.new("Sound")
+		sound.Parent = SoundService
+		if tipo == "coletou" then
+			sound.SoundId = "rbxassetid://4612375230"
+		elseif tipo == "entregou" then
+			sound.SoundId = "rbxassetid://4612384334"
+		elseif tipo == "reset" then
+			sound.SoundId = "rbxassetid://6042053626"
+		end
+		sound.Volume = 0.5
+		sound:Play()
+		task.delay(2, function() sound:Destroy() end)
+	end)
+end
+
+local Stats = {
+	tempoInicio = tick(),
+	coletados = 0,
+	entregues = 0,
+	lixosMinuto = 0,
+	ultimaContagem = 0,
+	ultimoTempo = tick(),
+}
+
+local function AndarAte(posAlvo, timeout, distParada)
+	if not posAlvo then return false end
+	local hrp = GetHRP()
+	local hum = GetHum()
+	if not hrp or not hum then return false end
+	timeout = timeout or 30
+	distParada = distParada or 4
+	local t0 = tick()
+	hum:MoveTo(posAlvo)
+	while tick() - t0 < timeout do
+		local h = GetHRP()
+		if not h then return false end
+		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
+		if diff.Magnitude < distParada then
+			hum:MoveTo(h.Position)
+			return true
+		end
 		hum:MoveTo(posAlvo)
+		task.wait(0.1)
+	end
+	return false
+end
 
-		while tick() - t0 < timeout do
-			local h = GetHRP()
-			if not h then return false end
-			local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
-			if diff.Magnitude < distParada then
-				hum:MoveTo(h.Position)
-				return true
-			end
+local lixosUsados = {}
 
-			local moveu = (h.Position - ultimaPos).Magnitude
-			if moveu < 0.5 then
-				tempoParado = tempoParado + 0.1
-				if tempoParado > 1.5 then
-					tentativas = tentativas + 1
-					pcall(function() hum.Jump = true end)
-					task.wait(0.3)
-					hum:MoveTo(posAlvo)
-					tempoParado = 0
-					if tentativas >= 3 then return false end
-				end
-			else
-				tempoParado = 0
-			end
+local function GetLixosContainer()
+	local w = workspace
+	for _, n in ipairs({"Construcoes","SistemaGari","Lixos"}) do
+		w = w:FindFirstChild(n)
+		if not w then return nil end
+	end
+	return w
+end
 
-			ultimaPos = h.Position
-			hum:MoveTo(posAlvo)
-			task.wait(0.1)
+local function GetCaminhao()
+	local s = workspace:FindFirstChild("CarrosSpawnados")
+	return s and s:FindFirstChild("Lixeiro")
+end
+
+local function GetTraseira(cam)
+	if not cam then return nil end
+	local body = cam:FindFirstChild("Body")
+	if not body then return nil end
+	return body:FindFirstChild("Proximitikk")
+end
+
+local function TemLixoNaMao()
+	if not lp.Character then return false end
+	for _, o in ipairs(lp.Character:GetChildren()) do
+		if o:IsA("Tool") and o.Name == "Lixo" then return true end
+	end
+	return false
+end
+
+local function AcharProximoLixo()
+	local cont = GetLixosContainer()
+	if not cont then return nil end
+	local hrp = GetHRP()
+	if not hrp then return nil end
+	local disponiveis = {}
+	for _, lixo in ipairs(cont:GetChildren()) do
+		if lixo:IsA("BasePart") and not lixosUsados[lixo] then
+			table.insert(disponiveis, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 		end
-		return false
 	end
-
-	-- ============================================================
-	-- IR ATÉ (voo ou pé)
-	-- ============================================================
-	local function IrAte(posAlvo, timeout, distParada)
-		if Config.vooAtivo then
-			return VoarAte(posAlvo, timeout, distParada or 5)
-		else
-			return AndarAte(posAlvo, timeout, distParada or 4)
-		end
-	end
-
-	local lixosUsados = {}
-
-	local function GetLixosContainer()
-		local w = workspace
-		for _, n in ipairs({"Construcoes","SistemaGari","Lixos"}) do
-			w = w:FindFirstChild(n)
-			if not w then return nil end
-		end
-		return w
-	end
-
-	local function GetCaminhao()
-		local s = workspace:FindFirstChild("CarrosSpawnados")
-		return s and s:FindFirstChild("Lixeiro")
-	end
-
-	local function GetTraseira(cam)
-		if not cam then return nil end
-		local body = cam:FindFirstChild("Body")
-		if not body then return nil end
-		return body:FindFirstChild("Proximitikk")
-	end
-
-	local function TemLixoNaMao()
-		if not lp.Character then return false end
-		for _, o in ipairs(lp.Character:GetChildren()) do
-			if o:IsA("Tool") and o.Name == "Lixo" then return true end
-		end
-		return false
-	end
-
-	local function AcharProximoLixo()
-		local cont = GetLixosContainer()
-		if not cont then return nil end
-		local hrp = GetHRP()
-		if not hrp then return nil end
-		local disp = {}
+	if #disponiveis == 0 then
+		TocarSom("reset")
+		lixosUsados = {}
 		for _, lixo in ipairs(cont:GetChildren()) do
-			if lixo:IsA("BasePart") and not lixosUsados[lixo] then
-				table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
+			if lixo:IsA("BasePart") then
+				table.insert(disponiveis, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
 			end
 		end
-		if #disp == 0 then
-			TocarSom("reset")
-			lixosUsados = {}
-			for _, lixo in ipairs(cont:GetChildren()) do
-				if lixo:IsA("BasePart") then
-					table.insert(disp, {lixo = lixo, dist = (lixo.Position - hrp.Position).Magnitude})
-				end
-			end
-		end
-		table.sort(disp, function(a, b) return a.dist < b.dist end)
-		if #disp > 0 then return disp[1].lixo end
-		return nil
 	end
+	table.sort(disponiveis, function(a, b) return a.dist < b.dist end)
+	return disponiveis[1] and disponiveis[1].lixo or nil
+end
 
+-- ============================================================
+-- 🚀 INICIALIZAÇÃO PRINCIPAL (após validar key)
+-- ============================================================
+local function IniciarScript()
+
+	-- ═══════════════════════════════════════════
 	-- BOTÃO FLUTUANTE
+	-- ═══════════════════════════════════════════
 	local SGBtn = Instance.new("ScreenGui")
 	SGBtn.Name = "SailentFloatBtn"
 	SGBtn.ResetOnSpawn = false
+	SGBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	SGBtn.IgnoreGuiInset = true
 	SGBtn.Parent = CoreGui
 
@@ -506,17 +660,15 @@ local function AbrirAutoGari(infoKey)
 	BtnCorner.Parent = FloatBtn
 
 	local BtnStroke = Instance.new("UIStroke")
-	BtnStroke.Color = infoKey.nivel == "admin" and Color3.fromRGB(255,215,0) or (infoKey.nivel == "vip" and C.Purple or C.Green)
+	BtnStroke.Color = C.Purple
 	BtnStroke.Thickness = 2
 	BtnStroke.Parent = FloatBtn
 
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			btnDragging = true
-			btnMoveuSe = false
-			btnDragStart = input.Position
-			btnStartPos = FloatBtn.Position
+			btnDragging = true; btnMoveuSe = false
+			btnDragStart = input.Position; btnStartPos = FloatBtn.Position
 		end
 	end)
 	FloatBtn.InputChanged:Connect(function(input)
@@ -532,16 +684,19 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
+	-- ═══════════════════════════════════════════
 	-- UI PRINCIPAL
+	-- ═══════════════════════════════════════════
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentGari"
 	SG.ResetOnSpawn = false
+	SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	SG.IgnoreGuiInset = true
 	SG.Parent = CoreGui
 
 	local Main = Instance.new("Frame")
-	Main.Size = UDim2.new(0, 400, 0, 640)
-	Main.Position = UDim2.new(0.5, -200, 0.5, -320)
+	Main.Size = UDim2.new(0, 400, 0, 560)
+	Main.Position = UDim2.new(0.5, -200, 0.5, -280)
 	Main.BackgroundColor3 = C.BG
 	Main.BorderSizePixel = 0
 	Main.Parent = SG
@@ -609,13 +764,13 @@ local function AbrirAutoGari(infoKey)
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v6.4"
+	TTitle.Text = "Auto Gari v5.2 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
-	TTitle.TextSize = 16
+	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
 	TTitle.BackgroundTransparency = 1
 	TTitle.Position = UDim2.new(0, 55, 0, 0)
-	TTitle.Size = UDim2.new(0, 160, 1, 0)
+	TTitle.Size = UDim2.new(0, 200, 1, 0)
 	TTitle.TextXAlignment = Enum.TextXAlignment.Left
 	TTitle.Parent = TB
 
@@ -792,7 +947,7 @@ local function AbrirAutoGari(infoKey)
 
 	local velocidadeAtual = Config.velocidade
 
-	local function CriarSlider(parent, min, max, default, callback, tituloTexto, corTitulo)
+	local function CriarSlider(parent, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58)
 		frame.BackgroundColor3 = C.Card
@@ -803,10 +958,10 @@ local function AbrirAutoGari(infoKey)
 		fc.Parent = frame
 
 		local titulo = Instance.new("TextLabel")
-		titulo.Text = tituloTexto or "⚡ Valor"
+		titulo.Text = "⚡ Velocidade"
 		titulo.Font = Enum.Font.GothamBold
 		titulo.TextSize = 12
-		titulo.TextColor3 = corTitulo or C.Text
+		titulo.TextColor3 = C.Text
 		titulo.BackgroundTransparency = 1
 		titulo.Position = UDim2.new(0, 12, 0, 6)
 		titulo.Size = UDim2.new(0.7, 0, 0, 18)
@@ -817,7 +972,7 @@ local function AbrirAutoGari(infoKey)
 		valorLabel.Text = tostring(default)
 		valorLabel.Font = Enum.Font.GothamBold
 		valorLabel.TextSize = 14
-		valorLabel.TextColor3 = corTitulo or C.Green
+		valorLabel.TextColor3 = C.Green
 		valorLabel.BackgroundTransparency = 1
 		valorLabel.Position = UDim2.new(0.7, 0, 0, 6)
 		valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
@@ -836,7 +991,7 @@ local function AbrirAutoGari(infoKey)
 
 		local fillBar = Instance.new("Frame")
 		fillBar.Size = UDim2.new(0, 0, 1, 0)
-		fillBar.BackgroundColor3 = corTitulo or C.Green
+		fillBar.BackgroundColor3 = C.Green
 		fillBar.BorderSizePixel = 0
 		fillBar.Parent = bgBar
 		local fbc = Instance.new("UICorner")
@@ -859,7 +1014,6 @@ local function AbrirAutoGari(infoKey)
 		local function Atualizar(posX)
 			local bgAbs = bgBar.AbsolutePosition.X
 			local bgSize = bgBar.AbsoluteSize.X
-			if bgSize == 0 then return end
 			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
@@ -889,18 +1043,24 @@ local function AbrirAutoGari(infoKey)
 				if arrastando then
 					arrastando = false
 					_G.SailentBloquearDrag = false
+					Config.velocidade = valor
 					SalvarConfig()
 				end
 			end
 		end)
 	end
 
-	Sec("👤 USUÁRIO", infoKey.nivel == "admin" and Color3.fromRGB(255,215,0) or C.Purple)
-	Stat("Nome: " .. (infoKey.nome or "Cliente"), C.Text)
-	Stat("Nível: " .. string.upper(infoKey.nivel or "normal"),
-		infoKey.nivel == "admin" and Color3.fromRGB(255,215,0) or (infoKey.nivel == "vip" and C.Purple or C.Green))
+	-- ═══════════════════════════════════════════
+	-- SEÇÕES
+	-- ═══════════════════════════════════════════
+	Sec("👤 CONTA: " .. KeyState.nome, C.Purple)
+	Sec("📊 ESTATÍSTICAS", C.Blue)
+
+	local statTempo = Stat("⏱️ Tempo: 0h 0min", C.Sub)
+	local statLixosMin = Stat("📈 Lixos/min: 0", C.Sub)
 
 	Sec("🗑️ AUTO GARI", C.Green)
+
 	local gariStatus = Stat("Status: PARADO", C.Sub)
 	local gariStats = Stat("Coletados: 0 | Entregues: 0", C.Sub)
 	local gariLixos = Stat("Lixos usados: 0/39", C.Sub)
@@ -908,30 +1068,28 @@ local function AbrirAutoGari(infoKey)
 	local gariOn = false
 	local gariCount = {coletados = 0, entregues = 0}
 
-	local setGariAtivo
-	setGariAtivo = Toggle("Auto Coletar + Entregar", false, function(s)
+	local setGariAtivo = Toggle("Auto Gari (ordem + noclip)", Config.autoGari, function(s)
 		gariOn = s
+		Config.autoGari = s
+		SalvarConfig()
 		if s then
 			gariStatus.Text = "Status: ● ATIVO"
 			gariStatus.TextColor3 = C.Green
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = velocidadeAtual end
-
 			task.spawn(function()
 				while gariOn do
 					local temLixo = TemLixoNaMao()
-
 					if temLixo then
-						gariStatus.Text = (Config.vooAtivo and "✈️ Voando pra TRASEIRA..." or "📤 Indo pra TRASEIRA...")
+						gariStatus.Text = "📤 Indo pra TRASEIRA..."
 						local cam = GetCaminhao()
 						if not cam then
 							gariStatus.Text = "⚠️ Spawne o caminhão!"
-							task.wait(2)
-							continue
+							task.wait(2); continue
 						end
 						local traseira = GetTraseira(cam)
 						if traseira then
-							IrAte(traseira.Position, 30, Config.vooAtivo and 5 or 4)
+							AndarAte(traseira.Position, 30, 4)
 							task.wait(0.5)
 							gariStatus.Text = "📤 Entregando..."
 							local prompt = GetPrompt(traseira)
@@ -940,6 +1098,7 @@ local function AbrirAutoGari(infoKey)
 								task.wait(0.8)
 								if not TemLixoNaMao() then
 									gariCount.entregues += 1
+									Stats.entregues += 1
 									TocarSom("entregou")
 								end
 							end
@@ -948,8 +1107,8 @@ local function AbrirAutoGari(infoKey)
 						gariStatus.Text = "📥 Procurando lixo..."
 						local lixo = AcharProximoLixo()
 						if lixo then
-							gariStatus.Text = (Config.vooAtivo and "✈️ Voando pro lixo..." or "📥 Indo pro lixo...")
-							IrAte(lixo.Position, 30, Config.vooAtivo and 5 or 4)
+							gariStatus.Text = "📥 Indo pro lixo..."
+							AndarAte(lixo.Position, 30, 4)
 							task.wait(0.5)
 							gariStatus.Text = "📥 Coletando..."
 							local prompt = GetPrompt(lixo)
@@ -958,13 +1117,13 @@ local function AbrirAutoGari(infoKey)
 								task.wait(0.8)
 								if TemLixoNaMao() then
 									gariCount.coletados += 1
+									Stats.coletados += 1
 									lixosUsados[lixo] = true
 									TocarSom("coletou")
 								end
 							end
 						end
 					end
-
 					local totalUsados = 0
 					for _ in pairs(lixosUsados) do totalUsados += 1 end
 					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
@@ -980,44 +1139,24 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
-	Sec("🚶 MODO DE MOVIMENTO", C.Cyan)
-	Stat("A pé pega o lixo normal. Voo é mais rápido e ignora obstáculos.", C.Sub)
+	Sec("⚡ VELOCIDADE", C.Yellow)
 
-	local setVooAtivo
-	setVooAtivo = Toggle("✈️ Voo Suave (ignora obstáculos)", Config.vooAtivo, function(s)
-		Config.vooAtivo = s
-		SalvarConfig()
-		if s then IniciarVoo() else PararVoo() end
-	end)
-
-	Sec("✈️ AJUSTES DE VOO", C.Cyan)
-
-	CriarSlider(Content, 20, 300, Config.vooVelocidade, function(v)
-		Config.vooVelocidade = v
-	end, "✈️ Velocidade de voo", C.Cyan)
-
-	CriarSlider(Content, 3, 60, Config.vooAltura, function(v)
-		Config.vooAltura = v
-	end, "📏 Altura do voo", C.Cyan)
-
-	CriarSlider(Content, 1, 10, Config.vooSuavidade, function(v)
-		Config.vooSuavidade = v
-	end, "🌊 Suavidade", C.Cyan)
-
-	Sec("⚡ VELOCIDADE A PÉ", C.Yellow)
 	CriarSlider(Content, 16, 200, Config.velocidade, function(valor)
 		velocidadeAtual = valor
 		Config.velocidade = valor
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = valor end
-	end, "⚡ Velocidade", C.Yellow)
+	end)
 
 	Sec("👻 NOCLIP", C.Purple)
+
 	local noclipOn = false
 	local noclipConn
 
-	Toggle("Noclip (atravessar paredes)", false, function(s)
+	Toggle("Noclip (atravessar paredes)", Config.noclip, function(s)
 		noclipOn = s
+		Config.noclip = s
+		SalvarConfig()
 		if s then
 			if noclipConn then noclipConn:Disconnect() end
 			noclipConn = RunService.Stepped:Connect(function()
@@ -1033,21 +1172,59 @@ local function AbrirAutoGari(infoKey)
 		end
 	end)
 
+	Sec("🎵 SOM", C.Accent)
+
+	Toggle("Notificações sonoras", Config.somAtivo, function(s)
+		Config.somAtivo = s
+		SalvarConfig()
+	end)
+
+	Sec("🛡️ ANTI-ADMIN", C.Red)
+
+	Toggle("Parar Auto Gari se admin entrar", Config.antiAdmin, function(s)
+		Config.antiAdmin = s
+		SalvarConfig()
+	end)
+
 	Sec("🚨 EMERGÊNCIA", C.Red)
+
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		gariOn = false
 		setGariAtivo(false)
 		noclipOn = false
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-		PararVoo()
-		setVooAtivo(false)
 		gariStatus.Text = "Status: PARADO"
 		gariStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
 	end)
 
+	-- ═══════════════════════════════════════════
+	-- ATUALIZA ESTATÍSTICAS
+	-- ═══════════════════════════════════════════
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(1)
+			local tempoTotal = tick() - Stats.tempoInicio
+			local horas = math.floor(tempoTotal / 3600)
+			local mins = math.floor((tempoTotal % 3600) / 60)
+			statTempo.Text = "⏱️ Tempo: "..horas.."h "..mins.."min"
+			local diffT = tick() - Stats.ultimoTempo
+			local diffL = Stats.coletados - Stats.ultimaContagem
+			if diffT >= 10 then
+				Stats.lixosMinuto = math.floor((diffL / diffT) * 60)
+				Stats.ultimaContagem = Stats.coletados
+				Stats.ultimoTempo = tick()
+			end
+			statLixosMin.Text = "📈 Lixos/min: "..Stats.lixosMinuto
+		end
+	end)
+
+	-- ═══════════════════════════════════════════
+	-- KEYBIND
+	-- ═══════════════════════════════════════════
 	local uiAberta = true
+
 	local function FecharUI()
 		uiAberta = false
 		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
@@ -1056,11 +1233,12 @@ local function AbrirAutoGari(infoKey)
 		FloatBtn.Text = "⚡"
 		Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
 	end
+
 	local function AbrirUI()
 		uiAberta = true
 		Main.Visible = true
 		Main.Size = UDim2.new(0, 0, 0, 0)
-		Tween(Main, {Size = UDim2.new(0, 400, 0, 640)}, 0.25)
+		Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
 		FloatBtn.Text = "✕"
 		Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15)
 	end
@@ -1074,13 +1252,16 @@ local function AbrirAutoGari(infoKey)
 		if gp then return end
 		if input.KeyCode == Enum.KeyCode.F2 then
 			if uiAberta then FecharUI() else AbrirUI() end
-		elseif input.KeyCode == Enum.KeyCode.F1 then
+		end
+	end)
+
+	UserInput.InputBegan:Connect(function(input, gp)
+		if gp then return end
+		if input.KeyCode == Enum.KeyCode.F1 then
 			gariOn = false
 			setGariAtivo(false)
 			noclipOn = false
 			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-			PararVoo()
-			setVooAtivo(false)
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 			FecharUI()
@@ -1094,7 +1275,7 @@ local function AbrirAutoGari(infoKey)
 			Tween(Main, {Size = UDim2.new(0, 400, 0, 56)}, 0.25)
 			MinBtn.Text = "+"
 		else
-			Tween(Main, {Size = UDim2.new(0, 400, 0, 640)}, 0.25)
+			Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
 			MinBtn.Text = "−"
 		end
 	end)
@@ -1103,203 +1284,65 @@ local function AbrirAutoGari(infoKey)
 		FecharUI()
 	end)
 
-	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v6.4 — VOO + KEY")
-	Log("═══════════════════════════════════")
-end
-
--- ============================================================
--- UI DE KEY
--- ============================================================
-local function AbrirUIKey()
-	local SGScreen = Instance.new("ScreenGui")
-	SGScreen.Name = "SailentKeyUI"
-	SGScreen.ResetOnSpawn = false
-	SGScreen.IgnoreGuiInset = true
-	SGScreen.Parent = CoreGui
-
-	local KeyFrame = Instance.new("Frame")
-	KeyFrame.Size = UDim2.new(0, 400, 0, 400)
-	KeyFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
-	KeyFrame.BackgroundColor3 = C.BG
-	KeyFrame.BorderSizePixel = 0
-	KeyFrame.Parent = SGScreen
-
-	local MC = Instance.new("UICorner")
-	MC.CornerRadius = UDim.new(0, 14)
-	MC.Parent = KeyFrame
-
-	local MS = Instance.new("UIStroke")
-	MS.Color = C.Purple
-	MS.Thickness = 2
-	MS.Parent = KeyFrame
-
-	local Titulo = Instance.new("TextLabel")
-	Titulo.Text = "🔐 SAILENT GERAL KEY"
-	Titulo.Font = Enum.Font.GothamBold
-	Titulo.TextSize = 20
-	Titulo.TextColor3 = C.Text
-	Titulo.BackgroundTransparency = 1
-	Titulo.Size = UDim2.new(1, 0, 0, 50)
-	Titulo.Position = UDim2.new(0, 0, 0, 20)
-	Titulo.Parent = KeyFrame
-
-	local Sub = Instance.new("TextLabel")
-	Sub.Text = "Digite sua key abaixo"
-	Sub.Font = Enum.Font.GothamMedium
-	Sub.TextSize = 12
-	Sub.TextColor3 = C.Sub
-	Sub.BackgroundTransparency = 1
-	Sub.Size = UDim2.new(1, 0, 0, 20)
-	Sub.Position = UDim2.new(0, 0, 0, 70)
-	Sub.Parent = KeyFrame
-
-	local KeyInput = Instance.new("TextBox")
-	KeyInput.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
-	KeyInput.Font = Enum.Font.Code
-	KeyInput.TextSize = 14
-	KeyInput.TextColor3 = C.Text
-	KeyInput.PlaceholderColor3 = C.Sub
-	KeyInput.BackgroundColor3 = C.Card
-	KeyInput.BorderSizePixel = 0
-	KeyInput.Size = UDim2.new(1, -60, 0, 50)
-	KeyInput.Position = UDim2.new(0, 30, 0, 110)
-	KeyInput.Text = ""
-	KeyInput.ClearTextOnFocus = false
-	KeyInput.Parent = KeyFrame
-
-	local IC = Instance.new("UICorner")
-	IC.CornerRadius = UDim.new(0, 10)
-	IC.Parent = KeyInput
-
-	local HWIDLabel = Instance.new("TextLabel")
-	HWIDLabel.Text = "Seu HWID: " .. GetHWID():sub(1,16) .. "..."
-	HWIDLabel.Font = Enum.Font.Code
-	HWIDLabel.TextSize = 10
-	HWIDLabel.TextColor3 = C.Sub
-	HWIDLabel.BackgroundTransparency = 1
-	HWIDLabel.Size = UDim2.new(1, -60, 0, 18)
-	HWIDLabel.Position = UDim2.new(0, 30, 0, 168)
-	HWIDLabel.Parent = KeyFrame
-
-	local Status = Instance.new("TextLabel")
-	Status.Text = "Status: ● Aguardando"
-	Status.Font = Enum.Font.GothamBold
-	Status.TextSize = 12
-	Status.TextColor3 = C.Yellow
-	Status.BackgroundTransparency = 1
-	Status.Size = UDim2.new(1, -60, 0, 20)
-	Status.Position = UDim2.new(0, 30, 0, 195)
-	Status.Parent = KeyFrame
-
-	local ValidarBtn = Instance.new("TextButton")
-	ValidarBtn.Text = "🔓 VALIDAR KEY"
-	ValidarBtn.Font = Enum.Font.GothamBold
-	ValidarBtn.TextSize = 15
-	ValidarBtn.TextColor3 = C.Text
-	ValidarBtn.BackgroundColor3 = C.Green
-	ValidarBtn.BorderSizePixel = 0
-	ValidarBtn.Size = UDim2.new(1, -60, 0, 50)
-	ValidarBtn.Position = UDim2.new(0, 30, 0, 225)
-	ValidarBtn.AutoButtonColor = false
-	ValidarBtn.Parent = KeyFrame
-
-	local VC = Instance.new("UICorner")
-	VC.CornerRadius = UDim.new(0, 10)
-	VC.Parent = ValidarBtn
-
-	local CopiarBtn = Instance.new("TextButton")
-	CopiarBtn.Text = "📋 Copiar HWID"
-	CopiarBtn.Font = Enum.Font.GothamBold
-	CopiarBtn.TextSize = 11
-	CopiarBtn.TextColor3 = C.Text
-	CopiarBtn.BackgroundColor3 = C.Card
-	CopiarBtn.BorderSizePixel = 0
-	CopiarBtn.Size = UDim2.new(1, -60, 0, 32)
-	CopiarBtn.Position = UDim2.new(0, 30, 0, 290)
-	CopiarBtn.AutoButtonColor = false
-	CopiarBtn.Parent = KeyFrame
-
-	local CCopiar = Instance.new("UICorner")
-	CCopiar.CornerRadius = UDim.new(0, 8)
-	CCopiar.Parent = CopiarBtn
-
-	CopiarBtn.MouseButton1Click:Connect(function()
-		pcall(function() if setclipboard then setclipboard(GetHWID()) end end)
-		CopiarBtn.Text = "✅ Copiado!"
-		task.wait(1.5)
-		CopiarBtn.Text = "📋 Copiar HWID"
-	end)
-
-	local Info = Instance.new("TextLabel")
-	Info.Text = "Se não tiver key, fale com o dono"
-	Info.Font = Enum.Font.GothamMedium
-	Info.TextSize = 11
-	Info.TextColor3 = C.Sub
-	Info.BackgroundTransparency = 1
-	Info.Size = UDim2.new(1, -60, 0, 20)
-	Info.Position = UDim2.new(0, 30, 0, 335)
-	Info.Parent = KeyFrame
-
-	ValidarBtn.MouseEnter:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = Color3.fromRGB(100, 240, 140)}, 0.15)
-	end)
-	ValidarBtn.MouseLeave:Connect(function()
-		Tween(ValidarBtn, {BackgroundColor3 = C.Green}, 0.15)
-	end)
-
-	ValidarBtn.MouseButton1Click:Connect(function()
-		local key = KeyInput.Text
-		if key == "" then
-			Status.Text = "Status: ❌ Digite a key"
-			Status.TextColor3 = C.Red
-			return
-		end
-
-		Status.Text = "Status: ⏳ Validando..."
-		Status.TextColor3 = C.Yellow
-
-		local valida, info, hash = ValidarKey(key)
-
-		if valida then
-			Status.Text = "Status: ✅ Key válida!"
-			Status.TextColor3 = C.Green
-			Info.Text = "Bem-vindo, " .. (info.nome or "Cliente") .. "!"
-			SalvarKey(hash or key)
-			task.wait(1.5)
-			SGScreen:Destroy()
-			AbrirAutoGari(info)
-		else
-			Status.Text = "Status: ❌ " .. (info or "Erro")
-			Status.TextColor3 = C.Red
-		end
-	end)
-end
-
--- ============================================================
--- INICIAR
--- ============================================================
-task.spawn(function()
-	local keySalva, hwidSalvo = TemKeySalva()
-
-	if keySalva then
-		Log("🔐 Key salva encontrada, validando...")
-		if hwidSalvo and hwidSalvo ~= "" and hwidSalvo ~= GetHWID() then
-			Log("⚠️ HWID diferente, limpando...")
-			LimparKeySalva()
-		else
-			local valida, info = ValidarKey(keySalva)
-			if valida then
-				Log("✅ Key salva válida!")
-				AbrirAutoGari(info)
-				return
-			else
-				Log("⚠️ " .. tostring(info))
-				LimparKeySalva()
+	-- ═══════════════════════════════════════════
+	-- ANTI-ADMIN
+	-- ═══════════════════════════════════════════
+	local function ChecarAdmins()
+		if not Config.antiAdmin then return end
+		local admins = {"admin", "mod", "owner", "staff", "adm", "moderator"}
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= lp then
+				local nome = p.Name:lower()
+				for _, kw in ipairs(admins) do
+					if nome:find(kw) then
+						if gariOn then
+							gariOn = false
+							setGariAtivo(false)
+							Log("🚨 ADMIN DETECTADO: " .. p.Name)
+						end
+						break
+					end
+				end
 			end
 		end
 	end
 
-	Log("🔐 Precisa validar key")
-	AbrirUIKey()
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(5)
+			ChecarAdmins()
+		end
+	end)
+
+	Log("═══════════════════════════════════")
+	Log("🗑️ Sailent Auto Gari v5.2 [KEY OK]")
+	Log("👤 Cliente: " .. KeyState.nome .. " | Nível: " .. KeyState.nivel:upper())
+	Log("⚡ F2 = Abre/fecha UI")
+	Log("🚨 F1 = Panic")
+	Log("═══════════════════════════════════")
+end
+
+-- ============================================================
+-- 🚪 ENTRY POINT — Valida key e inicia script
+-- ============================================================
+Log("🔐 Verificando key...")
+
+task.spawn(function()
+	-- Tenta key salva primeiro
+	local k = CarregarKeyLocal()
+	if k and k ~= "" then
+		local ok = ValidarKey(k)
+		if ok then
+			Log("✅ Key salva válida! Iniciando...")
+			IniciarScript()
+			return
+		else
+			Log("⚠️ Key salva inválida, pedindo nova...")
+		end
+	end
+
+	-- Se não tem key válida, mostra UI de login
+	MostrarUILogin(function()
+		IniciarScript()
+	end)
 end)
