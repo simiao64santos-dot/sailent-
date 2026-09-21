@@ -1,11 +1,5 @@
 {
-  "keys": {
-    "SAILENT-TEST-0001": {
-      "nome": "Teste",
-      "criada": 0,
-      "expira": 99999999999,
-      "status": "ativa"
-    }
-  },
-  "ultima_atualizacao": 0
+  "versao": "2.0",
+  "ultima_atualizacao": 0,
+  "keys": {}
 }
