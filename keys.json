@@ -1,5 +1,15 @@
 {
   "versao": "2.0",
-  "ultima_atualizacao": 0,
-  "keys": {}
+  "ultima_atualizacao": 1730000000,
+  "keys": {
+    "COLE_O_HASH_DA_KEY_DE_TESTE": {
+      "nome": "Teste",
+      "nivel": "admin",
+      "criada": 0,
+      "expira": 99999999999,
+      "status": "ativa",
+      "max_usos": -1,
+      "usos": 0
+    }
+  }
 }
