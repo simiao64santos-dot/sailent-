@@ -1,5 +1,5 @@
 -- ============================================================
--- SAILENT AUTO GARI v5.2 — COMPLETO COM KEY SYSTEM
+-- SAILENT AUTO GARI v5.3 — OTIMIZADO
 -- Auto Gari + Keybind + Anti-admin + Stats + Sons + Keys
 -- ============================================================
 
@@ -13,22 +13,18 @@ local HttpService = game:GetService("HttpService")
 local lp = Players.LocalPlayer
 
 -- ============================================================
--- ⚙️ CONFIGURAÇÃO DO KEY SYSTEM
+-- ⚙️ CONFIG
 -- ============================================================
 local KEY_CONFIG = {
-	-- 🔗 COLOQUE AQUI A URL RAW DO SEU keys.json NO GITHUB
-	-- Ex: "https://raw.githubusercontent.com/SEU_USER/SEU_REPO/main/keys.json"
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
-
-	-- Arquivo de cache local (guarda a key validada)
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-
-	-- Nome que aparece na UI
-	NOME_SCRIPT = "Sailent Auto Gari v5.2",
+	NOME_SCRIPT = "Sailent Auto Gari v5.3",
 }
 
-for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI"}) do
-	if CoreGui:FindFirstChild(name) then CoreGui[name]:Destroy() end
+-- Limpa TUDO que possa ter ficado de execuções anteriores
+for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader"}) do
+	local old = CoreGui:FindFirstChild(name)
+	if old then pcall(function() old:Destroy() end) end
 end
 
 local C = {
@@ -56,10 +52,9 @@ local function Log(msg)
 end
 
 -- ============================================================
--- 🔐 HASH SHA-256 (compatível com o gerador HTML)
+-- 🔐 SHA-256
 -- ============================================================
 local function Sha256(msg)
-	-- Lua puro: implementação SHA-256
 	local K = {
 		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
 		0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
@@ -71,14 +66,11 @@ local function Sha256(msg)
 		0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 	}
 	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
-
 	local function ror(x, n) return bit32.bor(bit32.rshift(x, n), bit32.lshift(x, 32 - n)) end
-
 	local len = #msg
 	local bitLen = len * 8
 	msg = msg .. "\128"
 	while (#msg % 64) ~= 56 do msg = msg .. "\0" end
-	-- length em 64 bits big-endian
 	local hi = math.floor(bitLen / 4294967296)
 	local lo = bitLen % 4294967296
 	local function u32be(n)
@@ -90,7 +82,6 @@ local function Sha256(msg)
 		)
 	end
 	msg = msg .. u32be(hi) .. u32be(lo)
-
 	for chunk = 1, #msg, 64 do
 		local w = {}
 		for i = 0, 15 do
@@ -141,7 +132,7 @@ local function GetHWID()
 end
 
 -- ============================================================
--- 🔑 VALIDAÇÃO DA KEY
+-- 🔑 KEY STATE
 -- ============================================================
 local KeyState = {
 	valida = false,
@@ -154,9 +145,7 @@ local KeyState = {
 
 local function SalvarKeyLocal(key)
 	pcall(function()
-		if writefile then
-			writefile(KEY_CONFIG.ARQUIVO_CACHE, key)
-		end
+		if writefile then writefile(KEY_CONFIG.ARQUIVO_CACHE, key) end
 	end)
 end
 
@@ -179,90 +168,56 @@ local function LimparKeyLocal()
 end
 
 local function BaixarKeys()
-	if not (request or http_request or syn and syn.request or fluxus and fluxus.request) then
-		return nil, "Executor sem suporte a HTTP request!"
-	end
-	local httpFn = request or http_request or syn.request or fluxus.request
+	local httpFn = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+	if not httpFn then return nil, "Executor sem HTTP request!" end
 	local ok, resp = pcall(function()
-		return httpFn({ Url = KEY_CONFIG.URL_KEYS, Method = "GET" })
+		return httpFn({
+			Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(),
+			Method = "GET"
+		})
 	end)
-	if not ok or not resp then
-		return nil, "Falha ao baixar keys.json (rede)"
-	end
+	if not ok or not resp then return nil, "Falha na rede" end
 	local body = resp.Body or resp.body
-	if not body or body == "" then
-		return nil, "keys.json vazio ou inacessível"
-	end
+	if not body or body == "" then return nil, "keys.json vazio" end
 	local ok2, decoded = pcall(function() return HttpService:JSONDecode(body) end)
-	if not ok2 or not decoded then
-		return nil, "JSON inválido"
-	end
+	if not ok2 or not decoded then return nil, "JSON inválido" end
 	return decoded, nil
 end
 
 local function ValidarKey(keyInput)
-	if not keyInput or keyInput == "" then
-		return false, "Digite uma key!"
-	end
+	if not keyInput or keyInput == "" then return false, "Digite uma key!" end
 	keyInput = keyInput:gsub("%s+", "")
-
 	local dados, err = BaixarKeys()
 	if not dados then return false, err end
-
 	local hash = Sha256(keyInput)
 	local entry = dados.keys and dados.keys[hash]
-
-	if not entry then
-		return false, "❌ Key inválida ou não encontrada"
-	end
-
-	-- Verifica expiração
+	if not entry then return false, "❌ Key inválida" end
 	local agora = os.time()
 	if entry.expira and entry.expira < agora and entry.expira < 99999999999 then
 		return false, "⏰ Key expirada"
 	end
-
-	-- Verifica status
-	if entry.status and entry.status ~= "ativa" then
-		return false, "🚫 Key desativada"
-	end
-
-	-- Verifica usos
+	if entry.status and entry.status ~= "ativa" then return false, "🚫 Key desativada" end
 	if entry.max_usos and entry.max_usos ~= -1 then
 		if entry.usos and entry.usos >= entry.max_usos then
-			return false, "🔁 Limite de usos atingido"
+			return false, "🔁 Limite de usos"
 		end
 	end
-
-	-- Verifica HWID
 	local meuHWID = GetHWID()
 	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= meuHWID then
-		return false, "🔒 Key não pertence a este dispositivo"
+		return false, "🔒 Key de outro dispositivo"
 	end
-
-	-- OK!
 	KeyState.valida = true
 	KeyState.nivel = entry.nivel or "normal"
 	KeyState.nome = entry.nome or "Cliente"
 	KeyState.expira = entry.expira or 0
 	KeyState.hash = hash
 	KeyState.key = keyInput
-
 	SalvarKeyLocal(keyInput)
 	return true, entry
 end
 
-local function TentarKeySalva()
-	local k = CarregarKeyLocal()
-	if k and k ~= "" then
-		local ok = ValidarKey(k)
-		return ok
-	end
-	return false
-end
-
 -- ============================================================
--- UI DE LOGIN (Key)
+-- 🖥️ UI DE LOGIN — RÁPIDA
 -- ============================================================
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
@@ -270,6 +225,7 @@ local function MostrarUILogin(callbackSucesso)
 	SGK.ResetOnSpawn = false
 	SGK.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	SGK.IgnoreGuiInset = true
+	SGK.DisplayOrder = 999
 	SGK.Parent = CoreGui
 
 	local BG = Instance.new("Frame")
@@ -313,7 +269,6 @@ local function MostrarUILogin(callbackSucesso)
 	Sub.Size = UDim2.new(1, 0, 0, 18)
 	Sub.Parent = Box
 
-	-- Info HWID
 	local hwidLbl = Instance.new("TextLabel")
 	hwidLbl.Text = "HWID: " .. GetHWID():sub(1, 26) .. "..."
 	hwidLbl.Font = Enum.Font.Code
@@ -395,8 +350,25 @@ local function MostrarUILogin(callbackSucesso)
 	BtnLimpar.Size = UDim2.new(1, -40, 0, 20)
 	BtnLimpar.Parent = Box
 
-	-- Verificação automática de key salva
+	-- ═══════════════════════════════════════════
+	-- FUNÇÃO DE SUCESSO — LIMPA E CHAMA
+	-- ═══════════════════════════════════════════
+	local function SucessoLogin()
+		Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
+		Status.TextColor3 = C.Green
+		BtnValidar.Text = "✅ SUCESSO!"
+		BtnValidar.BackgroundColor3 = C.Green
+		task.wait(0.3)  -- ✅ rápido
+		pcall(function() SGK:Destroy() end)
+		task.wait(0.1)
+		callbackSucesso()
+	end
+
+	-- ═══════════════════════════════════════════
+	-- AUTO-VERIFICA KEY SALVA (em paralelo, rápido)
+	-- ═══════════════════════════════════════════
 	task.spawn(function()
+		task.wait(0.2)  -- ✅ rápido, sem travar UI
 		local k = CarregarKeyLocal()
 		if k and k ~= "" then
 			Input.Text = k
@@ -404,11 +376,7 @@ local function MostrarUILogin(callbackSucesso)
 			Status.TextColor3 = C.Yellow
 			local ok, res = ValidarKey(k)
 			if ok then
-				Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
-				Status.TextColor3 = C.Green
-				task.wait(1)
-				SGK:Destroy()
-				callbackSucesso()
+				SucessoLogin()
 			else
 				Status.Text = "❌ " .. tostring(res)
 				Status.TextColor3 = C.Red
@@ -431,13 +399,7 @@ local function MostrarUILogin(callbackSucesso)
 		task.spawn(function()
 			local ok, res = ValidarKey(k)
 			if ok then
-				Status.Text = "✅ Key válida! Bem-vindo, " .. KeyState.nome .. "!"
-				Status.TextColor3 = C.Green
-				BtnValidar.Text = "✅ SUCESSO!"
-				BtnValidar.BackgroundColor3 = C.Green
-				task.wait(1)
-				SGK:Destroy()
-				callbackSucesso()
+				SucessoLogin()
 			else
 				Status.Text = "❌ " .. tostring(res)
 				Status.TextColor3 = C.Red
@@ -448,7 +410,7 @@ local function MostrarUILogin(callbackSucesso)
 	end)
 
 	BtnComprar.MouseButton1Click:Connect(function()
-		Status.Text = "💬 Fale com o admin no Discord para obter uma key!"
+		Status.Text = "💬 Fale com o admin para obter uma key!"
 		Status.TextColor3 = C.Blue
 		pcall(function()
 			setclipboard("Olá! Quero comprar uma key do Sailent Auto Gari.")
@@ -464,7 +426,7 @@ local function MostrarUILogin(callbackSucesso)
 end
 
 -- ============================================================
--- LÓGICA DE MOVIMENTO (original)
+-- 🎮 LÓGICA DE MOVIMENTO
 -- ============================================================
 local function GetHRP()
 	local c = lp.Character
@@ -628,9 +590,16 @@ local function AcharProximoLixo()
 end
 
 -- ============================================================
--- 🚀 INICIALIZAÇÃO PRINCIPAL (após validar key)
+-- 🚀 INICIALIZAÇÃO PRINCIPAL
 -- ============================================================
 local function IniciarScript()
+
+	-- ═══ LIMPEZA FINAL DE GUIs FANTASMAS ═══
+	for _, name in ipairs({"SailentKeyUI", "SailentGari", "SailentFloatBtn"}) do
+		local old = CoreGui:FindFirstChild(name)
+		if old then pcall(function() old:Destroy() end) end
+	end
+	task.wait(0.05)
 
 	-- ═══════════════════════════════════════════
 	-- BOTÃO FLUTUANTE
@@ -640,6 +609,7 @@ local function IniciarScript()
 	SGBtn.ResetOnSpawn = false
 	SGBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	SGBtn.IgnoreGuiInset = true
+	SGBtn.DisplayOrder = 5
 	SGBtn.Parent = CoreGui
 
 	local FloatBtn = Instance.new("TextButton")
@@ -692,6 +662,7 @@ local function IniciarScript()
 	SG.ResetOnSpawn = false
 	SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	SG.IgnoreGuiInset = true
+	SG.DisplayOrder = 10
 	SG.Parent = CoreGui
 
 	local Main = Instance.new("Frame")
@@ -764,7 +735,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v5.2 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Gari v5.3 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -1053,7 +1024,7 @@ local function IniciarScript()
 	-- ═══════════════════════════════════════════
 	-- SEÇÕES
 	-- ═══════════════════════════════════════════
-	Sec("👤 CONTA: " .. KeyState.nome, C.Purple)
+	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 	Sec("📊 ESTATÍSTICAS", C.Blue)
 
 	local statTempo = Stat("⏱️ Tempo: 0h 0min", C.Sub)
@@ -1090,12 +1061,12 @@ local function IniciarScript()
 						local traseira = GetTraseira(cam)
 						if traseira then
 							AndarAte(traseira.Position, 30, 4)
-							task.wait(0.5)
+							task.wait(0.3)
 							gariStatus.Text = "📤 Entregando..."
 							local prompt = GetPrompt(traseira)
 							if prompt then
 								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.8)
+								task.wait(0.5)
 								if not TemLixoNaMao() then
 									gariCount.entregues += 1
 									Stats.entregues += 1
@@ -1109,12 +1080,12 @@ local function IniciarScript()
 						if lixo then
 							gariStatus.Text = "📥 Indo pro lixo..."
 							AndarAte(lixo.Position, 30, 4)
-							task.wait(0.5)
+							task.wait(0.3)
 							gariStatus.Text = "📥 Coletando..."
 							local prompt = GetPrompt(lixo)
 							if prompt then
 								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.8)
+								task.wait(0.5)
 								if TemLixoNaMao() then
 									gariCount.coletados += 1
 									Stats.coletados += 1
@@ -1128,7 +1099,7 @@ local function IniciarScript()
 					for _ in pairs(lixosUsados) do totalUsados += 1 end
 					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
 					gariLixos.Text = "Lixos usados: "..totalUsados.."/39"
-					task.wait(1)
+					task.wait(0.5)
 				end
 			end)
 		else
@@ -1315,20 +1286,18 @@ local function IniciarScript()
 	end)
 
 	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v5.2 [KEY OK]")
-	Log("👤 Cliente: " .. KeyState.nome .. " | Nível: " .. KeyState.nivel:upper())
-	Log("⚡ F2 = Abre/fecha UI")
-	Log("🚨 F1 = Panic")
+	Log("🗑️ Sailent Auto Gari v5.3 [KEY OK]")
+	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
+	Log("⚡ F2 = UI | F1 = Panic")
 	Log("═══════════════════════════════════")
 end
 
 -- ============================================================
--- 🚪 ENTRY POINT — Valida key e inicia script
+-- 🚪 ENTRY POINT
 -- ============================================================
 Log("🔐 Verificando key...")
 
 task.spawn(function()
-	-- Tenta key salva primeiro
 	local k = CarregarKeyLocal()
 	if k and k ~= "" then
 		local ok = ValidarKey(k)
@@ -1340,8 +1309,6 @@ task.spawn(function()
 			Log("⚠️ Key salva inválida, pedindo nova...")
 		end
 	end
-
-	-- Se não tem key válida, mostra UI de login
 	MostrarUILogin(function()
 		IniciarScript()
 	end)
