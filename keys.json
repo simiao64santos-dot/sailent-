@@ -1,14 +1,14 @@
 {
   "versao": "2.0",
-  "ultima_atualizacao": 1790010317,
+  "ultima_atualizacao": 1790035372,
   "keys": {
-    "53d6139143ca40dc64bd0bdb110932cb5c54f6022a144a6b6b2e78b9a853afca": {
-      "nome": "simiao",
+    "6b2934eb6d7d1dd06ec5004c0d5e93efa5f5cdb7e2422fab9f11719de764bbce": {
+      "nome": "dono",
       "nivel": "admin",
-      "criada": 1790010308,
-      "expira": 1792602308,
+      "criada": 1790035365,
+      "expira": 8.64e+26,
       "status": "ativa",
-      "max_usos": -1,
+      "max_usos": 1e+33,
       "usos": 0
     }
   }
