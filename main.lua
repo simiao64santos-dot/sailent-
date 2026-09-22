@@ -18,7 +18,7 @@ local lp = Players.LocalPlayer
 local KEY_CONFIG = {
 	-- 🔗 COLOQUE AQUI A URL RAW DO SEU keys.json NO GITHUB
 	-- Ex: "https://raw.githubusercontent.com/SEU_USER/SEU_REPO/main/keys.json"
-	URL_KEYS = "",
+	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 
 	-- Arquivo de cache local (guarda a key validada)
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
