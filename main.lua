@@ -646,7 +646,6 @@ local function AtivarVoo(hrp)
 	if vooAtivo then return end
 	vooAtivo = true
 
-	-- Cria BodyVelocity e BodyGyro no HRP
 	vooBodyVel = Instance.new("BodyVelocity")
 	vooBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	vooBodyVel.Velocity = Vector3.new(0, 0, 0)
@@ -668,7 +667,6 @@ local function DesativarVoo()
 	if vooConn then pcall(function() vooConn:Disconnect() end); vooConn = nil end
 end
 
--- Fly direto: sobe, desliza até o alvo, pousa
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP()
@@ -680,7 +678,6 @@ local function VoarAte(posAlvo, timeout)
 
 	AtivarVoo(hrp)
 
-	-- Salva estados originais
 	local colideOriginal = {}
 	for _, p in ipairs(lp.Character:GetDescendants()) do
 		if p:IsA("BasePart") then
@@ -699,7 +696,6 @@ local function VoarAte(posAlvo, timeout)
 		local dist = diff.Magnitude
 
 		if dist < 4 then
-			-- Chegou, pousa
 			pcall(function()
 				vooBodyVel.Velocity = Vector3.new(0, -20, 0)
 			end)
@@ -707,7 +703,6 @@ local function VoarAte(posAlvo, timeout)
 			break
 		end
 
-		-- Direção direta até o alvo
 		local direcao = diff.Unit
 		pcall(function()
 			vooBodyVel.Velocity = direcao * velocidadeVoo
@@ -718,7 +713,6 @@ local function VoarAte(posAlvo, timeout)
 
 	DesativarVoo()
 
-	-- Restaura colisão
 	task.wait(0.1)
 	for p, v in pairs(colideOriginal) do
 		if p and p.Parent then
@@ -726,7 +720,6 @@ local function VoarAte(posAlvo, timeout)
 		end
 	end
 
-	-- Garante que pousou
 	local h = GetHRP()
 	if h then
 		pcall(function()
@@ -763,7 +756,6 @@ local function AndarAte(posAlvo, timeout, distParada)
 	return false
 end
 
--- Decide se voa ou anda baseado no modo
 local function IrPara(posAlvo, timeout)
 	if Config.modoVoo then
 		return VoarAte(posAlvo, timeout)
@@ -813,7 +805,6 @@ local function AtivarGodModeNoChar(char)
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
 
-	-- CAMADA 1: Loop Heartbeat
 	local connLoop = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
 		local h = char:FindFirstChildOfClass("Humanoid")
@@ -825,7 +816,6 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connLoop)
 
-	-- CAMADA 2: HealthChanged
 	local connHealth = hum.HealthChanged:Connect(function(novaVida)
 		if not godModeAtivo then return end
 		if novaVida < hum.MaxHealth and novaVida > 0 then
@@ -834,7 +824,6 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connHealth)
 
-	-- CAMADA 3: FallingDamage
 	local function DesativarFalling()
 		pcall(function() hum:SetAttribute("FallingDamage", false) end)
 		pcall(function() hum:SetAttribute("FallDamage", false) end)
@@ -850,7 +839,6 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connFalling)
 
-	-- CAMADA 4: Anti-queda
 	local connQueda = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -886,14 +874,12 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connQueda)
 
-	-- CAMADA 5: Died
 	local connDied = hum.Died:Connect(function()
 		if not godModeAtivo then return end
 		Stats.mortesEvitadas = Stats.mortesEvitadas + 1
 	end)
 	table.insert(GodModeConns, connDied)
 
-	-- CAMADA 6: Health = 0
 	local connZero = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
 		local h = char:FindFirstChildOfClass("Humanoid")
@@ -904,7 +890,6 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connZero)
 
-	-- CAMADA 7: MaxHealth 10000
 	pcall(function()
 		hum.MaxHealth = 10000
 		hum.Health = 10000
@@ -974,7 +959,6 @@ local function IniciarScript()
 	end
 	task.wait(0.05)
 
-	-- BOTÃO FLUTUANTE
 	local SGBtn = Instance.new("ScreenGui")
 	SGBtn.Name = "SailentFloatBtn"
 	SGBtn.ResetOnSpawn = false
@@ -1025,7 +1009,6 @@ local function IniciarScript()
 		end
 	end)
 
-	-- UI PRINCIPAL
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentGari"
 	SG.ResetOnSpawn = false
@@ -1388,7 +1371,6 @@ local function IniciarScript()
 		end)
 	end
 
-	-- ═══ SEÇÕES ═══
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 	Sec("📊 ESTATÍSTICAS", C.Blue)
 
@@ -1420,7 +1402,6 @@ local function IniciarScript()
 		Notificar("🚁 Modo VOAR ativado", C.Blue, 1.5)
 	end)
 
-	-- Aplica estado salvo
 	if Config.modoVoo then
 		modoStatus.Text = "Modo atual: 🚁 VOANDO"
 		modoStatus.TextColor3 = C.Blue
@@ -1465,7 +1446,6 @@ local function IniciarScript()
 		Config.autoGari = s
 		SalvarConfig()
 		if s then
-			-- Noclip automático entra junto
 			AtivarNoclipGari()
 
 			gariStatus.Text = "Status: ● ATIVO (noclip ON)"
@@ -1530,7 +1510,6 @@ local function IniciarScript()
 				end
 			end)
 		else
-			-- Desliga noclip do Gari
 			DesativarNoclipGari()
 
 			gariStatus.Text = "Status: PARADO"
@@ -1604,7 +1583,6 @@ local function IniciarScript()
 		SalvarConfig()
 	end)
 
-	-- ═══ ESTATÍSTICAS + FPS/PING ═══
 	task.spawn(function()
 		local fpsFrame = 0
 		local fpsTime = tick()
@@ -1637,7 +1615,6 @@ local function IniciarScript()
 		end
 	end)
 
-	-- ═══ KEYBIND ═══
 	local uiAberta = true
 
 	local function FecharUI()
@@ -1685,7 +1662,6 @@ local function IniciarScript()
 		elseif input.KeyCode == Enum.KeyCode.G then
 			if setGariAtivoGlobal then setGariAtivoGlobal(not gariOn) end
 		elseif input.KeyCode == Enum.KeyCode.F then
-			-- Toggle rápido do modo voo
 			Config.modoVoo = not Config.modoVoo
 			if Config.modoVoo then
 				modoStatus.Text = "Modo atual: 🚁 VOANDO"
@@ -1716,7 +1692,6 @@ local function IniciarScript()
 		FecharUI()
 	end)
 
-	-- ═══ ANTI-ADMIN ═══
 	local function ChecarAdmins()
 		if not Config.antiAdmin then return end
 		local admins = {"admin", "mod", "owner", "staff", "adm", "moderator"}
@@ -1745,7 +1720,6 @@ local function IniciarScript()
 		end
 	end)
 
-	-- ═══ ATIVA GOD MODE ═══
 	AtivarGodMode()
 	godStatus.Text = "Status: ● ATIVO (7 camadas)"
 	godStatus.TextColor3 = C.Green
