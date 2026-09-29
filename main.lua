@@ -1,6 +1,6 @@
 -- ============================================================
--- SAILENT AUTO GARI v5.3 — OTIMIZADO
--- Auto Gari + Keybind + Anti-admin + Stats + Sons + Keys
+-- SAILENT AUTO GARI v6.4 — FLY + A PÉ
+-- Auto Gari + Fly + Noclip auto + God Mode + Toast
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -18,11 +18,10 @@ local lp = Players.LocalPlayer
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Gari v5.3",
+	NOME_SCRIPT = "Sailent Auto Gari v6.4",
 }
 
--- Limpa TUDO que possa ter ficado de execuções anteriores
-for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader"}) do
+for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader", "SailentToast"}) do
 	local old = CoreGui:FindFirstChild(name)
 	if old then pcall(function() old:Destroy() end) end
 end
@@ -42,6 +41,7 @@ local C = {
 }
 
 local function Tween(o, p, t)
+	if not o or not o.Parent then return end
 	local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p)
 	tw:Play()
 	return tw
@@ -217,7 +217,77 @@ local function ValidarKey(keyInput)
 end
 
 -- ============================================================
--- 🖥️ UI DE LOGIN — RÁPIDA
+-- 🍞 TOAST (com anti-duplicação)
+-- ============================================================
+local SGBToast = Instance.new("ScreenGui")
+SGBToast.Name = "SailentToast"
+SGBToast.ResetOnSpawn = false
+SGBToast.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+SGBToast.IgnoreGuiInset = true
+SGBToast.DisplayOrder = 999
+SGBToast.Parent = CoreGui
+
+local toastContainer = Instance.new("Frame")
+toastContainer.Size = UDim2.new(0, 300, 1, 0)
+toastContainer.Position = UDim2.new(1, -320, 0, 0)
+toastContainer.BackgroundTransparency = 1
+toastContainer.Parent = SGBToast
+
+local toastLay = Instance.new("UIListLayout")
+toastLay.VerticalAlignment = Enum.VerticalAlignment.Bottom
+toastLay.HorizontalAlignment = Enum.HorizontalAlignment.Right
+toastLay.Padding = UDim.new(0, 6)
+toastLay.SortOrder = Enum.SortOrder.LayoutOrder
+toastLay.Parent = toastContainer
+
+local toastCounter = 0
+local ultimoToast = {}
+local function Notificar(txt, cor, duracao)
+	cor = cor or C.Accent
+	duracao = duracao or 2.5
+
+	local agora = tick()
+	if ultimoToast[tostring(txt)] and (agora - ultimoToast[tostring(txt)]) < 1 then
+		return
+	end
+	ultimoToast[tostring(txt)] = agora
+
+	toastCounter = toastCounter + 1
+
+	local t = Instance.new("TextLabel")
+	t.Text = tostring(txt)
+	t.Font = Enum.Font.GothamBold
+	t.TextSize = 12
+	t.TextColor3 = C.Black
+	t.BackgroundColor3 = cor
+	t.BackgroundTransparency = 1
+	t.TextTransparency = 1
+	t.Size = UDim2.new(1, 0, 0, 34)
+	t.TextWrapped = true
+	t.LayoutOrder = toastCounter
+	t.Parent = toastContainer
+
+	local tc = Instance.new("UICorner")
+	tc.CornerRadius = UDim.new(0, 8)
+	tc.Parent = t
+
+	local tp = Instance.new("UIPadding")
+	tp.PaddingLeft = UDim.new(0, 10)
+	tp.PaddingRight = UDim.new(0, 10)
+	tp.PaddingTop = UDim.new(0, 6)
+	tp.PaddingBottom = UDim.new(0, 6)
+	tp.Parent = t
+
+	Tween(t, {BackgroundTransparency = 0.1, TextTransparency = 0}, 0.2)
+	task.delay(duracao, function()
+		Tween(t, {BackgroundTransparency = 1, TextTransparency = 1}, 0.4)
+		task.wait(0.5)
+		pcall(function() t:Destroy() end)
+	end)
+end
+
+-- ============================================================
+-- 🖥️ UI DE LOGIN
 -- ============================================================
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
@@ -350,25 +420,19 @@ local function MostrarUILogin(callbackSucesso)
 	BtnLimpar.Size = UDim2.new(1, -40, 0, 20)
 	BtnLimpar.Parent = Box
 
-	-- ═══════════════════════════════════════════
-	-- FUNÇÃO DE SUCESSO — LIMPA E CHAMA
-	-- ═══════════════════════════════════════════
 	local function SucessoLogin()
 		Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
 		Status.TextColor3 = C.Green
 		BtnValidar.Text = "✅ SUCESSO!"
 		BtnValidar.BackgroundColor3 = C.Green
-		task.wait(0.3)  -- ✅ rápido
+		task.wait(0.3)
 		pcall(function() SGK:Destroy() end)
 		task.wait(0.1)
 		callbackSucesso()
 	end
 
-	-- ═══════════════════════════════════════════
-	-- AUTO-VERIFICA KEY SALVA (em paralelo, rápido)
-	-- ═══════════════════════════════════════════
 	task.spawn(function()
-		task.wait(0.2)  -- ✅ rápido, sem travar UI
+		task.wait(0.2)
 		local k = CarregarKeyLocal()
 		if k and k ~= "" then
 			Input.Text = k
@@ -447,10 +511,14 @@ local CONFIG_FILE = "sailent_gari_config.txt"
 
 local Config = {
 	velocidade = 100,
+	velFly = 60,
 	noclip = false,
 	autoGari = false,
 	somAtivo = true,
 	antiAdmin = true,
+	godMode = true,
+	debug = false,
+	modoVoo = false,
 }
 
 local function SalvarConfig()
@@ -461,7 +529,6 @@ local function SalvarConfig()
 	pcall(function()
 		if writefile then writefile(CONFIG_FILE, str) end
 	end)
-	_G.SailentConfig = Config
 end
 
 local function CarregarConfig()
@@ -479,7 +546,7 @@ local function CarregarConfig()
 			end
 		end
 	end)
-	_G.SailentConfig = Config
+	Config.godMode = true
 end
 
 CarregarConfig()
@@ -496,7 +563,7 @@ local function TocarSom(tipo)
 		elseif tipo == "reset" then
 			sound.SoundId = "rbxassetid://6042053626"
 		end
-		sound.Volume = 0.5
+		sound.Volume = 0.15
 		sound:Play()
 		task.delay(2, function() sound:Destroy() end)
 	end)
@@ -509,30 +576,8 @@ local Stats = {
 	lixosMinuto = 0,
 	ultimaContagem = 0,
 	ultimoTempo = tick(),
+	mortesEvitadas = 0,
 }
-
-local function AndarAte(posAlvo, timeout, distParada)
-	if not posAlvo then return false end
-	local hrp = GetHRP()
-	local hum = GetHum()
-	if not hrp or not hum then return false end
-	timeout = timeout or 30
-	distParada = distParada or 4
-	local t0 = tick()
-	hum:MoveTo(posAlvo)
-	while tick() - t0 < timeout do
-		local h = GetHRP()
-		if not h then return false end
-		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
-		if diff.Magnitude < distParada then
-			hum:MoveTo(h.Position)
-			return true
-		end
-		hum:MoveTo(posAlvo)
-		task.wait(0.1)
-	end
-	return false
-end
 
 local lixosUsados = {}
 
@@ -590,20 +635,346 @@ local function AcharProximoLixo()
 end
 
 -- ============================================================
+-- 🚁 SISTEMA DE FLY (voo direto com pouso)
+-- ============================================================
+local vooAtivo = false
+local vooConn = nil
+local vooBodyVel = nil
+local vooBodyGyro = nil
+
+local function AtivarVoo(hrp)
+	if vooAtivo then return end
+	vooAtivo = true
+
+	-- Cria BodyVelocity e BodyGyro no HRP
+	vooBodyVel = Instance.new("BodyVelocity")
+	vooBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	vooBodyVel.Velocity = Vector3.new(0, 0, 0)
+	vooBodyVel.P = 1250
+	vooBodyVel.Parent = hrp
+
+	vooBodyGyro = Instance.new("BodyGyro")
+	vooBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	vooBodyGyro.P = 3000
+	vooBodyGyro.D = 500
+	vooBodyGyro.CFrame = hrp.CFrame
+	vooBodyGyro.Parent = hrp
+end
+
+local function DesativarVoo()
+	vooAtivo = false
+	if vooBodyVel then pcall(function() vooBodyVel:Destroy() end); vooBodyVel = nil end
+	if vooBodyGyro then pcall(function() vooBodyGyro:Destroy() end); vooBodyGyro = nil end
+	if vooConn then pcall(function() vooConn:Disconnect() end); vooConn = nil end
+end
+
+-- Fly direto: sobe, desliza até o alvo, pousa
+local function VoarAte(posAlvo, timeout)
+	if not posAlvo then return false end
+	local hrp = GetHRP()
+	local hum = GetHum()
+	if not hrp or not hum then return false end
+
+	timeout = timeout or 20
+	local t0 = tick()
+
+	AtivarVoo(hrp)
+
+	-- Salva estados originais
+	local colideOriginal = {}
+	for _, p in ipairs(lp.Character:GetDescendants()) do
+		if p:IsA("BasePart") then
+			colideOriginal[p] = p.CanCollide
+			p.CanCollide = false
+		end
+	end
+
+	local velocidadeVoo = Config.velFly or 60
+
+	while tick() - t0 < timeout do
+		local h = GetHRP()
+		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
+
+		local diff = posAlvo - h.Position
+		local dist = diff.Magnitude
+
+		if dist < 4 then
+			-- Chegou, pousa
+			pcall(function()
+				vooBodyVel.Velocity = Vector3.new(0, -20, 0)
+			end)
+			task.wait(0.3)
+			break
+		end
+
+		-- Direção direta até o alvo
+		local direcao = diff.Unit
+		pcall(function()
+			vooBodyVel.Velocity = direcao * velocidadeVoo
+		end)
+
+		task.wait(0.05)
+	end
+
+	DesativarVoo()
+
+	-- Restaura colisão
+	task.wait(0.1)
+	for p, v in pairs(colideOriginal) do
+		if p and p.Parent then
+			pcall(function() p.CanCollide = v end)
+		end
+	end
+
+	-- Garante que pousou
+	local h = GetHRP()
+	if h then
+		pcall(function()
+			h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+		end)
+	end
+
+	return true
+end
+
+-- ============================================================
+-- 🚶 ANDAR A PÉ (modo original)
+-- ============================================================
+local function AndarAte(posAlvo, timeout, distParada)
+	if not posAlvo then return false end
+	local hrp = GetHRP()
+	local hum = GetHum()
+	if not hrp or not hum then return false end
+	timeout = timeout or 30
+	distParada = distParada or 4
+	local t0 = tick()
+	hum:MoveTo(posAlvo)
+	while tick() - t0 < timeout do
+		local h = GetHRP()
+		if not h then return false end
+		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
+		if diff.Magnitude < distParada then
+			hum:MoveTo(h.Position)
+			return true
+		end
+		hum:MoveTo(posAlvo)
+		task.wait(0.1)
+	end
+	return false
+end
+
+-- Decide se voa ou anda baseado no modo
+local function IrPara(posAlvo, timeout)
+	if Config.modoVoo then
+		return VoarAte(posAlvo, timeout)
+	else
+		return AndarAte(posAlvo, timeout)
+	end
+end
+
+-- ============================================================
+-- 🛡️ GOD MODE — 7 CAMADAS
+-- ============================================================
+local GodModeConns = {}
+local ultimaPosSegura = nil
+local ultimoReset = 0
+local godModeAtivo = true
+local velocidadeAtual = Config.velocidade
+local gariOn = false
+local gariCount = {coletados = 0, entregues = 0}
+local setGariAtivoGlobal = nil
+local noclipGariAtivo = false
+local noclipConnGari = nil
+
+local function AtivarNoclipGari()
+	if noclipGariAtivo then return end
+	noclipGariAtivo = true
+	if noclipConnGari then pcall(function() noclipConnGari:Disconnect() end) end
+	noclipConnGari = RunService.Stepped:Connect(function()
+		if not noclipGariAtivo then return end
+		local c = lp.Character
+		if not c then return end
+		for _, p in ipairs(c:GetDescendants()) do
+			if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end
+		end
+	end)
+end
+
+local function DesativarNoclipGari()
+	noclipGariAtivo = false
+	if noclipConnGari then
+		pcall(function() noclipConnGari:Disconnect() end)
+		noclipConnGari = nil
+	end
+end
+
+local function AtivarGodModeNoChar(char)
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+
+	-- CAMADA 1: Loop Heartbeat
+	local connLoop = RunService.Heartbeat:Connect(function()
+		if not godModeAtivo then return end
+		local h = char:FindFirstChildOfClass("Humanoid")
+		if not h then return end
+		if h.Health > 0 and h.Health < h.MaxHealth then
+			h.Health = h.MaxHealth
+			Stats.mortesEvitadas = Stats.mortesEvitadas + 1
+		end
+	end)
+	table.insert(GodModeConns, connLoop)
+
+	-- CAMADA 2: HealthChanged
+	local connHealth = hum.HealthChanged:Connect(function(novaVida)
+		if not godModeAtivo then return end
+		if novaVida < hum.MaxHealth and novaVida > 0 then
+			hum.Health = hum.MaxHealth
+		end
+	end)
+	table.insert(GodModeConns, connHealth)
+
+	-- CAMADA 3: FallingDamage
+	local function DesativarFalling()
+		pcall(function() hum:SetAttribute("FallingDamage", false) end)
+		pcall(function() hum:SetAttribute("FallDamage", false) end)
+		pcall(function() hum:SetAttribute("TakeFallDamage", false) end)
+		pcall(function() hum:SetAttribute("FallDamageEnabled", false) end)
+		pcall(function() hum:SetAttribute("CanFallDamage", false) end)
+		pcall(function() hum:SetAttribute("EnableFallDamage", false) end)
+	end
+	DesativarFalling()
+	local connFalling = RunService.Heartbeat:Connect(function()
+		if not godModeAtivo then return end
+		DesativarFalling()
+	end)
+	table.insert(GodModeConns, connFalling)
+
+	-- CAMADA 4: Anti-queda
+	local connQueda = RunService.Heartbeat:Connect(function()
+		if not godModeAtivo then return end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local h = char:FindFirstChildOfClass("Humanoid")
+		if not hrp or not h or h.Health <= 0 then return end
+
+		local vel = hrp.AssemblyLinearVelocity
+		local pos = hrp.Position
+
+		if h.FloorMaterial ~= Enum.Material.Air and vel.Y > -10 then
+			ultimaPosSegura = pos
+			return
+		end
+
+		if vel.Y < -70 then
+			pcall(function()
+				hrp.AssemblyLinearVelocity = Vector3.new(vel.X, -15, vel.Z)
+			end)
+		end
+
+		if ultimaPosSegura and (ultimaPosSegura.Y - pos.Y) > 30 then
+			local agora = tick()
+			if agora - ultimoReset > 0.5 then
+				ultimoReset = agora
+				pcall(function()
+					hrp.CFrame = CFrame.new(ultimaPosSegura + Vector3.new(0, 5, 0))
+					hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+					h.Health = h.MaxHealth
+				end)
+				Stats.mortesEvitadas = Stats.mortesEvitadas + 1
+			end
+		end
+	end)
+	table.insert(GodModeConns, connQueda)
+
+	-- CAMADA 5: Died
+	local connDied = hum.Died:Connect(function()
+		if not godModeAtivo then return end
+		Stats.mortesEvitadas = Stats.mortesEvitadas + 1
+	end)
+	table.insert(GodModeConns, connDied)
+
+	-- CAMADA 6: Health = 0
+	local connZero = RunService.Heartbeat:Connect(function()
+		if not godModeAtivo then return end
+		local h = char:FindFirstChildOfClass("Humanoid")
+		if not h then return end
+		if h.Health <= 0 and h:GetState() ~= Enum.HumanoidStateType.Dead then
+			pcall(function() h.Health = h.MaxHealth end)
+		end
+	end)
+	table.insert(GodModeConns, connZero)
+
+	-- CAMADA 7: MaxHealth 10000
+	pcall(function()
+		hum.MaxHealth = 10000
+		hum.Health = 10000
+	end)
+	local connMaxH = hum:GetPropertyChangedSignal("MaxHealth"):Connect(function()
+		pcall(function()
+			if hum.MaxHealth < 10000 then
+				hum.MaxHealth = 10000
+				hum.Health = 10000
+			end
+		end)
+	end)
+	table.insert(GodModeConns, connMaxH)
+
+	pcall(function()
+		hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+	end)
+end
+
+local function ReconectarAposMorte()
+	if not lp.Character then return end
+	task.wait(0.5)
+	AtivarGodModeNoChar(lp.Character)
+	if gariOn and setGariAtivoGlobal then
+		task.wait(0.3)
+		pcall(function() setGariAtivoGlobal(false) end)
+		task.wait(0.2)
+		pcall(function() setGariAtivoGlobal(true) end)
+	end
+	local hum = GetHum()
+	if hum then
+		pcall(function() hum.WalkSpeed = velocidadeAtual end)
+	end
+	Notificar("💀 Morreu — reconectando...", C.Red, 1.5)
+end
+
+local function AtivarGodMode()
+	for _, c in ipairs(GodModeConns) do
+		pcall(function() c:Disconnect() end)
+	end
+	GodModeConns = {}
+
+	if lp.Character then
+		AtivarGodModeNoChar(lp.Character)
+	end
+
+	if _G.SailentCharConn then
+		pcall(function() _G.SailentCharConn:Disconnect() end)
+		_G.SailentCharConn = nil
+	end
+	_G.SailentCharConn = lp.CharacterAdded:Connect(function(novoChar)
+		task.wait(0.3)
+		ultimaPosSegura = nil
+		AtivarGodModeNoChar(novoChar)
+		task.spawn(ReconectarAposMorte)
+	end)
+end
+
+-- ============================================================
 -- 🚀 INICIALIZAÇÃO PRINCIPAL
 -- ============================================================
 local function IniciarScript()
 
-	-- ═══ LIMPEZA FINAL DE GUIs FANTASMAS ═══
 	for _, name in ipairs({"SailentKeyUI", "SailentGari", "SailentFloatBtn"}) do
 		local old = CoreGui:FindFirstChild(name)
 		if old then pcall(function() old:Destroy() end) end
 	end
 	task.wait(0.05)
 
-	-- ═══════════════════════════════════════════
 	-- BOTÃO FLUTUANTE
-	-- ═══════════════════════════════════════════
 	local SGBtn = Instance.new("ScreenGui")
 	SGBtn.Name = "SailentFloatBtn"
 	SGBtn.ResetOnSpawn = false
@@ -654,9 +1025,7 @@ local function IniciarScript()
 		end
 	end)
 
-	-- ═══════════════════════════════════════════
 	-- UI PRINCIPAL
-	-- ═══════════════════════════════════════════
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentGari"
 	SG.ResetOnSpawn = false
@@ -735,7 +1104,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v5.3 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Gari v6.4 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -916,9 +1285,7 @@ local function IniciarScript()
 		return set
 	end
 
-	local velocidadeAtual = Config.velocidade
-
-	local function CriarSlider(parent, min, max, default, callback)
+	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58)
 		frame.BackgroundColor3 = C.Card
@@ -929,7 +1296,7 @@ local function IniciarScript()
 		fc.Parent = frame
 
 		local titulo = Instance.new("TextLabel")
-		titulo.Text = "⚡ Velocidade"
+		titulo.Text = label
 		titulo.Font = Enum.Font.GothamBold
 		titulo.TextSize = 12
 		titulo.TextColor3 = C.Text
@@ -1014,38 +1381,98 @@ local function IniciarScript()
 				if arrastando then
 					arrastando = false
 					_G.SailentBloquearDrag = false
-					Config.velocidade = valor
+					if callback then callback(valor) end
 					SalvarConfig()
 				end
 			end
 		end)
 	end
 
-	-- ═══════════════════════════════════════════
-	-- SEÇÕES
-	-- ═══════════════════════════════════════════
+	-- ═══ SEÇÕES ═══
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 	Sec("📊 ESTATÍSTICAS", C.Blue)
 
 	local statTempo = Stat("⏱️ Tempo: 0h 0min", C.Sub)
 	local statLixosMin = Stat("📈 Lixos/min: 0", C.Sub)
+	local statPerf = Stat("🎮 FPS: -- | Ping: --", C.Sub)
+	local statMortes = Stat("🛡️ Mortes evitadas: 0", C.Green)
 
-	Sec("🗑️ AUTO GARI", C.Green)
+	Sec("🛡️ GOD MODE (7 camadas)", C.Green)
+	local godStatus = Stat("Status: ● ATIVO", C.Green)
+
+	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
+
+	local modoStatus = Stat("Modo atual: 🚶 A PÉ", C.Yellow)
+
+	Btn("🚶 A PÉ (padrão)", C.Green, function()
+		Config.modoVoo = false
+		modoStatus.Text = "Modo atual: 🚶 A PÉ"
+		modoStatus.TextColor3 = C.Green
+		SalvarConfig()
+		Notificar("🚶 Modo A PÉ ativado", C.Green, 1.5)
+	end)
+
+	Btn("🚁 VOAR (fly direto)", C.Blue, function()
+		Config.modoVoo = true
+		modoStatus.Text = "Modo atual: 🚁 VOANDO"
+		modoStatus.TextColor3 = C.Blue
+		SalvarConfig()
+		Notificar("🚁 Modo VOAR ativado", C.Blue, 1.5)
+	end)
+
+	-- Aplica estado salvo
+	if Config.modoVoo then
+		modoStatus.Text = "Modo atual: 🚁 VOANDO"
+		modoStatus.TextColor3 = C.Blue
+	end
+
+	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
+
+	CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
+		velocidadeAtual = valor
+		Config.velocidade = valor
+		local hum = GetHum()
+		if hum then hum.WalkSpeed = valor end
+	end)
+
+	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
+
+	CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 60, function(valor)
+		Config.velFly = valor
+	end)
+
+	Sec("🗑️ AUTO GARI (noclip embutido)", C.Green)
 
 	local gariStatus = Stat("Status: PARADO", C.Sub)
 	local gariStats = Stat("Coletados: 0 | Entregues: 0", C.Sub)
 	local gariLixos = Stat("Lixos usados: 0/39", C.Sub)
+	local gariProgresso = Stat("Progresso: ░░░░░░░░░░ 0%", C.Sub)
 
-	local gariOn = false
-	local gariCount = {coletados = 0, entregues = 0}
+	local function AtualizarProgresso()
+		local total = 0
+		for _ in pairs(lixosUsados) do total = total + 1 end
+		local pct = math.floor((total / 39) * 100)
+		pct = math.clamp(pct, 0, 100)
+		local cheio = math.floor(pct / 10)
+		local vazio = 10 - cheio
+		local barra = string.rep("█", cheio) .. string.rep("░", vazio)
+		gariProgresso.Text = "Progresso: " .. barra .. " " .. pct .. "%"
+		gariLixos.Text = "Lixos usados: " .. total .. "/39"
+	end
 
-	local setGariAtivo = Toggle("Auto Gari (ordem + noclip)", Config.autoGari, function(s)
+	setGariAtivoGlobal = Toggle("Auto Gari (noclip auto)", Config.autoGari, function(s)
 		gariOn = s
 		Config.autoGari = s
 		SalvarConfig()
 		if s then
-			gariStatus.Text = "Status: ● ATIVO"
+			-- Noclip automático entra junto
+			AtivarNoclipGari()
+
+			gariStatus.Text = "Status: ● ATIVO (noclip ON)"
 			gariStatus.TextColor3 = C.Green
+			Notificar("🗑️ Auto Gari ATIVADO + Noclip", C.Green)
+			Tween(FloatBtn, {BackgroundColor3 = C.Green}, 0.25)
+			BtnStroke.Color = C.Green
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = velocidadeAtual end
 			task.spawn(function()
@@ -1060,7 +1487,7 @@ local function IniciarScript()
 						end
 						local traseira = GetTraseira(cam)
 						if traseira then
-							AndarAte(traseira.Position, 30, 4)
+							IrPara(traseira.Position, 25)
 							task.wait(0.3)
 							gariStatus.Text = "📤 Entregando..."
 							local prompt = GetPrompt(traseira)
@@ -1071,6 +1498,7 @@ local function IniciarScript()
 									gariCount.entregues += 1
 									Stats.entregues += 1
 									TocarSom("entregou")
+									Notificar("📤 Lixo entregue!", C.Blue, 1.5)
 								end
 							end
 						end
@@ -1079,7 +1507,7 @@ local function IniciarScript()
 						local lixo = AcharProximoLixo()
 						if lixo then
 							gariStatus.Text = "📥 Indo pro lixo..."
-							AndarAte(lixo.Position, 30, 4)
+							IrPara(lixo.Position, 25)
 							task.wait(0.3)
 							gariStatus.Text = "📥 Coletando..."
 							local prompt = GetPrompt(lixo)
@@ -1091,40 +1519,36 @@ local function IniciarScript()
 									Stats.coletados += 1
 									lixosUsados[lixo] = true
 									TocarSom("coletou")
+									Notificar("📥 Lixo coletado!", C.Green, 1.2)
 								end
 							end
 						end
 					end
-					local totalUsados = 0
-					for _ in pairs(lixosUsados) do totalUsados += 1 end
 					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
-					gariLixos.Text = "Lixos usados: "..totalUsados.."/39"
-					task.wait(0.5)
+					AtualizarProgresso()
+					task.wait(0.3)
 				end
 			end)
 		else
+			-- Desliga noclip do Gari
+			DesativarNoclipGari()
+
 			gariStatus.Text = "Status: PARADO"
 			gariStatus.TextColor3 = C.Sub
+			Notificar("⏸️ Auto Gari DESATIVADO", C.Yellow, 1.5)
+			Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.25)
+			BtnStroke.Color = C.Purple
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 		end
 	end)
 
-	Sec("⚡ VELOCIDADE", C.Yellow)
-
-	CriarSlider(Content, 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
-		Config.velocidade = valor
-		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
-	end)
-
-	Sec("👻 NOCLIP", C.Purple)
+	Sec("👻 NOCLIP MANUAL", C.Purple)
 
 	local noclipOn = false
 	local noclipConn
 
-	Toggle("Noclip (atravessar paredes)", Config.noclip, function(s)
+	Toggle("Noclip manual (extra)", Config.noclip, function(s)
 		noclipOn = s
 		Config.noclip = s
 		SalvarConfig()
@@ -1161,19 +1585,30 @@ local function IniciarScript()
 
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		gariOn = false
-		setGariAtivo(false)
+		if setGariAtivoGlobal then setGariAtivoGlobal(false) end
 		noclipOn = false
+		DesativarVoo()
+		DesativarNoclipGari()
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 		gariStatus.Text = "Status: PARADO"
 		gariStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
+		Notificar("🛑 Tudo parado!", C.Red, 2)
 	end)
 
-	-- ═══════════════════════════════════════════
-	-- ATUALIZA ESTATÍSTICAS
-	-- ═══════════════════════════════════════════
+	Sec("🐛 DEBUG", C.Yellow)
+
+	Toggle("Modo Debug (log no console)", Config.debug, function(s)
+		Config.debug = s
+		SalvarConfig()
+	end)
+
+	-- ═══ ESTATÍSTICAS + FPS/PING ═══
 	task.spawn(function()
+		local fpsFrame = 0
+		local fpsTime = tick()
+		local fps = 60
 		while SG.Parent do
 			task.wait(1)
 			local tempoTotal = tick() - Stats.tempoInicio
@@ -1188,12 +1623,21 @@ local function IniciarScript()
 				Stats.ultimoTempo = tick()
 			end
 			statLixosMin.Text = "📈 Lixos/min: "..Stats.lixosMinuto
+			statMortes.Text = "🛡️ Mortes evitadas: "..Stats.mortesEvitadas
+			fpsFrame = fpsFrame + 1
+			local now = tick()
+			if now - fpsTime >= 1 then
+				fps = math.floor(fpsFrame / (now - fpsTime))
+				fpsFrame = 0
+				fpsTime = now
+			end
+			local ping = 0
+			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
+			statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
 		end
 	end)
 
-	-- ═══════════════════════════════════════════
-	-- KEYBIND
-	-- ═══════════════════════════════════════════
+	-- ═══ KEYBIND ═══
 	local uiAberta = true
 
 	local function FecharUI()
@@ -1202,7 +1646,9 @@ local function IniciarScript()
 		task.wait(0.2)
 		Main.Visible = false
 		FloatBtn.Text = "⚡"
-		Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
+		if not gariOn then
+			Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
+		end
 	end
 
 	local function AbrirUI()
@@ -1211,7 +1657,9 @@ local function IniciarScript()
 		Main.Size = UDim2.new(0, 0, 0, 0)
 		Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
 		FloatBtn.Text = "✕"
-		Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15)
+		if not gariOn then
+			Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15)
+		end
 	end
 
 	FloatBtn.MouseButton1Click:Connect(function()
@@ -1223,19 +1671,32 @@ local function IniciarScript()
 		if gp then return end
 		if input.KeyCode == Enum.KeyCode.F2 then
 			if uiAberta then FecharUI() else AbrirUI() end
-		end
-	end)
-
-	UserInput.InputBegan:Connect(function(input, gp)
-		if gp then return end
-		if input.KeyCode == Enum.KeyCode.F1 then
+		elseif input.KeyCode == Enum.KeyCode.F1 then
 			gariOn = false
-			setGariAtivo(false)
+			if setGariAtivoGlobal then setGariAtivoGlobal(false) end
 			noclipOn = false
+			DesativarVoo()
+			DesativarNoclipGari()
 			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 			FecharUI()
+			Notificar("🚨 PANIC — Tudo parado", C.Red, 2)
+		elseif input.KeyCode == Enum.KeyCode.G then
+			if setGariAtivoGlobal then setGariAtivoGlobal(not gariOn) end
+		elseif input.KeyCode == Enum.KeyCode.F then
+			-- Toggle rápido do modo voo
+			Config.modoVoo = not Config.modoVoo
+			if Config.modoVoo then
+				modoStatus.Text = "Modo atual: 🚁 VOANDO"
+				modoStatus.TextColor3 = C.Blue
+				Notificar("🚁 VOAR ativado (tecla F)", C.Blue, 1.5)
+			else
+				modoStatus.Text = "Modo atual: 🚶 A PÉ"
+				modoStatus.TextColor3 = C.Green
+				Notificar("🚶 A PÉ ativado (tecla F)", C.Green, 1.5)
+			end
+			SalvarConfig()
 		end
 	end)
 
@@ -1255,9 +1716,7 @@ local function IniciarScript()
 		FecharUI()
 	end)
 
-	-- ═══════════════════════════════════════════
-	-- ANTI-ADMIN
-	-- ═══════════════════════════════════════════
+	-- ═══ ANTI-ADMIN ═══
 	local function ChecarAdmins()
 		if not Config.antiAdmin then return end
 		local admins = {"admin", "mod", "owner", "staff", "adm", "moderator"}
@@ -1268,8 +1727,9 @@ local function IniciarScript()
 					if nome:find(kw) then
 						if gariOn then
 							gariOn = false
-							setGariAtivo(false)
+							if setGariAtivoGlobal then setGariAtivoGlobal(false) end
 							Log("🚨 ADMIN DETECTADO: " .. p.Name)
+							Notificar("🚨 Admin: "..p.Name, C.Red, 3)
 						end
 						break
 					end
@@ -1285,10 +1745,18 @@ local function IniciarScript()
 		end
 	end)
 
+	-- ═══ ATIVA GOD MODE ═══
+	AtivarGodMode()
+	godStatus.Text = "Status: ● ATIVO (7 camadas)"
+	godStatus.TextColor3 = C.Green
+	Notificar("🛡️ God Mode ATIVADO (7 camadas)", C.Green, 2)
+
 	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v5.3 [KEY OK]")
+	Log("🗑️ Sailent Auto Gari v6.4 [FLY + A PÉ]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
-	Log("⚡ F2 = UI | F1 = Panic")
+	Log("🛡️ God Mode: 7 camadas ativas")
+	Log("🚁 Modo: " .. (Config.modoVoo and "VOAR" or "A PÉ"))
+	Log("⚡ F2 = UI | F1 = Panic | G = Gari | F = Alternar Voo")
 	Log("═══════════════════════════════════")
 end
 
