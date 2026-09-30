@@ -1,5 +1,5 @@
 -- ============================================================
--- SAILENT AUTO GARI v6.4 — FLY + A PÉ
+-- SAILENT AUTO GARI v6.6 — FLY CORRIGIDO
 -- Auto Gari + Fly + Noclip auto + God Mode + Toast
 -- ============================================================
 
@@ -12,13 +12,10 @@ local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
 local lp = Players.LocalPlayer
 
--- ============================================================
--- ⚙️ CONFIG
--- ============================================================
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Gari v6.4",
+	NOME_SCRIPT = "Sailent Auto Gari v6.6",
 }
 
 for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader", "SailentToast"}) do
@@ -47,13 +44,8 @@ local function Tween(o, p, t)
 	return tw
 end
 
-local function Log(msg)
-	print("[Gari] " .. tostring(msg))
-end
+local function Log(msg) print("[Gari] " .. tostring(msg)) end
 
--- ============================================================
--- 🔐 SHA-256
--- ============================================================
 local function Sha256(msg)
 	local K = {
 		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -119,62 +111,29 @@ end
 
 local function GetHWID()
 	local hwid = ""
-	pcall(function()
-		hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-	end)
-	if hwid == "" then
-		pcall(function() hwid = gethwid and gethwid() or "" end)
-	end
-	if hwid == "" then
-		hwid = "UNKNOWN-" .. tostring(lp.UserId)
-	end
+	pcall(function() hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
+	if hwid == "" then pcall(function() hwid = gethwid and gethwid() or "" end) end
+	if hwid == "" then hwid = "UNKNOWN-" .. tostring(lp.UserId) end
 	return hwid
 end
 
--- ============================================================
--- 🔑 KEY STATE
--- ============================================================
-local KeyState = {
-	valida = false,
-	nivel = "normal",
-	nome = "Cliente",
-	expira = 0,
-	hash = "",
-	key = "",
-}
+local KeyState = { valida = false, nivel = "normal", nome = "Cliente", expira = 0, hash = "", key = "" }
 
-local function SalvarKeyLocal(key)
-	pcall(function()
-		if writefile then writefile(KEY_CONFIG.ARQUIVO_CACHE, key) end
-	end)
-end
-
+local function SalvarKeyLocal(key) pcall(function() if writefile then writefile(KEY_CONFIG.ARQUIVO_CACHE, key) end end) end
 local function CarregarKeyLocal()
 	local k = nil
-	pcall(function()
-		if isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) and readfile then
-			k = readfile(KEY_CONFIG.ARQUIVO_CACHE)
-		end
-	end)
+	pcall(function() if isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) and readfile then k = readfile(KEY_CONFIG.ARQUIVO_CACHE) end end)
 	return k
 end
-
 local function LimparKeyLocal()
-	pcall(function()
-		if delfile and isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) then
-			delfile(KEY_CONFIG.ARQUIVO_CACHE)
-		end
-	end)
+	pcall(function() if delfile and isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) then delfile(KEY_CONFIG.ARQUIVO_CACHE) end end)
 end
 
 local function BaixarKeys()
 	local httpFn = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
 	if not httpFn then return nil, "Executor sem HTTP request!" end
 	local ok, resp = pcall(function()
-		return httpFn({
-			Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(),
-			Method = "GET"
-		})
+		return httpFn({ Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(), Method = "GET" })
 	end)
 	if not ok or not resp then return nil, "Falha na rede" end
 	local body = resp.Body or resp.body
@@ -193,19 +152,13 @@ local function ValidarKey(keyInput)
 	local entry = dados.keys and dados.keys[hash]
 	if not entry then return false, "❌ Key inválida" end
 	local agora = os.time()
-	if entry.expira and entry.expira < agora and entry.expira < 99999999999 then
-		return false, "⏰ Key expirada"
-	end
+	if entry.expira and entry.expira < agora and entry.expira < 99999999999 then return false, "⏰ Key expirada" end
 	if entry.status and entry.status ~= "ativa" then return false, "🚫 Key desativada" end
 	if entry.max_usos and entry.max_usos ~= -1 then
-		if entry.usos and entry.usos >= entry.max_usos then
-			return false, "🔁 Limite de usos"
-		end
+		if entry.usos and entry.usos >= entry.max_usos then return false, "🔁 Limite de usos" end
 	end
 	local meuHWID = GetHWID()
-	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= meuHWID then
-		return false, "🔒 Key de outro dispositivo"
-	end
+	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= meuHWID then return false, "🔒 Key de outro dispositivo" end
 	KeyState.valida = true
 	KeyState.nivel = entry.nivel or "normal"
 	KeyState.nome = entry.nome or "Cliente"
@@ -216,9 +169,6 @@ local function ValidarKey(keyInput)
 	return true, entry
 end
 
--- ============================================================
--- 🍞 TOAST (com anti-duplicação)
--- ============================================================
 local SGBToast = Instance.new("ScreenGui")
 SGBToast.Name = "SailentToast"
 SGBToast.ResetOnSpawn = false
@@ -245,15 +195,10 @@ local ultimoToast = {}
 local function Notificar(txt, cor, duracao)
 	cor = cor or C.Accent
 	duracao = duracao or 2.5
-
 	local agora = tick()
-	if ultimoToast[tostring(txt)] and (agora - ultimoToast[tostring(txt)]) < 1 then
-		return
-	end
+	if ultimoToast[tostring(txt)] and (agora - ultimoToast[tostring(txt)]) < 1 then return end
 	ultimoToast[tostring(txt)] = agora
-
 	toastCounter = toastCounter + 1
-
 	local t = Instance.new("TextLabel")
 	t.Text = tostring(txt)
 	t.Font = Enum.Font.GothamBold
@@ -266,29 +211,17 @@ local function Notificar(txt, cor, duracao)
 	t.TextWrapped = true
 	t.LayoutOrder = toastCounter
 	t.Parent = toastContainer
-
-	local tc = Instance.new("UICorner")
-	tc.CornerRadius = UDim.new(0, 8)
-	tc.Parent = t
-
+	local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0, 8); tc.Parent = t
 	local tp = Instance.new("UIPadding")
-	tp.PaddingLeft = UDim.new(0, 10)
-	tp.PaddingRight = UDim.new(0, 10)
-	tp.PaddingTop = UDim.new(0, 6)
-	tp.PaddingBottom = UDim.new(0, 6)
-	tp.Parent = t
-
+	tp.PaddingLeft = UDim.new(0, 10); tp.PaddingRight = UDim.new(0, 10)
+	tp.PaddingTop = UDim.new(0, 6); tp.PaddingBottom = UDim.new(0, 6); tp.Parent = t
 	Tween(t, {BackgroundTransparency = 0.1, TextTransparency = 0}, 0.2)
 	task.delay(duracao, function()
 		Tween(t, {BackgroundTransparency = 1, TextTransparency = 1}, 0.4)
-		task.wait(0.5)
-		pcall(function() t:Destroy() end)
+		task.wait(0.5); pcall(function() t:Destroy() end)
 	end)
 end
 
--- ============================================================
--- 🖥️ UI DE LOGIN
--- ============================================================
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
 	SGK.Name = "SailentKeyUI"
@@ -311,13 +244,8 @@ local function MostrarUILogin(callbackSucesso)
 	Box.BackgroundColor3 = C.BG
 	Box.BorderSizePixel = 0
 	Box.Parent = SGK
-	local BC = Instance.new("UICorner")
-	BC.CornerRadius = UDim.new(0, 14)
-	BC.Parent = Box
-	local BS = Instance.new("UIStroke")
-	BS.Color = C.Accent
-	BS.Thickness = 2
-	BS.Parent = Box
+	local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 14); BC.Parent = Box
+	local BS = Instance.new("UIStroke"); BS.Color = C.Accent; BS.Thickness = 2; BS.Parent = Box
 
 	local Title = Instance.new("TextLabel")
 	Title.Text = "🔑 SAILENT — AUTH"
@@ -362,13 +290,8 @@ local function MostrarUILogin(callbackSucesso)
 	Input.Position = UDim2.new(0, 20, 0, 100)
 	Input.Size = UDim2.new(1, -40, 0, 42)
 	Input.Parent = Box
-	local IC = Instance.new("UICorner")
-	IC.CornerRadius = UDim.new(0, 8)
-	IC.Parent = Input
-	local IS = Instance.new("UIStroke")
-	IS.Color = Color3.fromRGB(50,50,70)
-	IS.Thickness = 1
-	IS.Parent = Input
+	local IC = Instance.new("UICorner"); IC.CornerRadius = UDim.new(0, 8); IC.Parent = Input
+	local IS = Instance.new("UIStroke"); IS.Color = Color3.fromRGB(50,50,70); IS.Thickness = 1; IS.Parent = Input
 
 	local Status = Instance.new("TextLabel")
 	Status.Text = ""
@@ -392,23 +315,7 @@ local function MostrarUILogin(callbackSucesso)
 	BtnValidar.Position = UDim2.new(0, 20, 0, 200)
 	BtnValidar.Size = UDim2.new(1, -40, 0, 46)
 	BtnValidar.Parent = Box
-	local BtnC = Instance.new("UICorner")
-	BtnC.CornerRadius = UDim.new(0, 8)
-	BtnC.Parent = BtnValidar
-
-	local BtnComprar = Instance.new("TextButton")
-	BtnComprar.Text = "🛒 OBTER KEY"
-	BtnComprar.Font = Enum.Font.GothamBold
-	BtnComprar.TextSize = 12
-	BtnComprar.TextColor3 = C.Text
-	BtnComprar.BackgroundColor3 = C.Card
-	BtnComprar.BorderSizePixel = 0
-	BtnComprar.Position = UDim2.new(0, 20, 0, 256)
-	BtnComprar.Size = UDim2.new(1, -40, 0, 36)
-	BtnComprar.Parent = Box
-	local BtnCC = Instance.new("UICorner")
-	BtnCC.CornerRadius = UDim.new(0, 8)
-	BtnCC.Parent = BtnComprar
+	local BtnC = Instance.new("UICorner"); BtnC.CornerRadius = UDim.new(0, 8); BtnC.Parent = BtnValidar
 
 	local BtnLimpar = Instance.new("TextButton")
 	BtnLimpar.Text = "🗑️ Limpar key salva"
@@ -424,7 +331,6 @@ local function MostrarUILogin(callbackSucesso)
 		Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
 		Status.TextColor3 = C.Green
 		BtnValidar.Text = "✅ SUCESSO!"
-		BtnValidar.BackgroundColor3 = C.Green
 		task.wait(0.3)
 		pcall(function() SGK:Destroy() end)
 		task.wait(0.1)
@@ -439,9 +345,7 @@ local function MostrarUILogin(callbackSucesso)
 			Status.Text = "🔄 Verificando key salva..."
 			Status.TextColor3 = C.Yellow
 			local ok, res = ValidarKey(k)
-			if ok then
-				SucessoLogin()
-			else
+			if ok then SucessoLogin() else
 				Status.Text = "❌ " .. tostring(res)
 				Status.TextColor3 = C.Red
 				LimparKeyLocal()
@@ -451,20 +355,12 @@ local function MostrarUILogin(callbackSucesso)
 
 	BtnValidar.MouseButton1Click:Connect(function()
 		local k = Input.Text:gsub("%s+", "")
-		if k == "" then
-			Status.Text = "⚠️ Cole uma key primeiro!"
-			Status.TextColor3 = C.Yellow
-			return
-		end
-		Status.Text = "🔄 Validando..."
-		Status.TextColor3 = C.Yellow
-		BtnValidar.Text = "⏳ AGUARDE..."
-		BtnValidar.BackgroundColor3 = C.Yellow
+		if k == "" then Status.Text = "⚠️ Cole uma key!"; Status.TextColor3 = C.Yellow; return end
+		Status.Text = "🔄 Validando..."; Status.TextColor3 = C.Yellow
+		BtnValidar.Text = "⏳ AGUARDE..."; BtnValidar.BackgroundColor3 = C.Yellow
 		task.spawn(function()
 			local ok, res = ValidarKey(k)
-			if ok then
-				SucessoLogin()
-			else
+			if ok then SucessoLogin() else
 				Status.Text = "❌ " .. tostring(res)
 				Status.TextColor3 = C.Red
 				BtnValidar.Text = "✅ VALIDAR KEY"
@@ -473,25 +369,12 @@ local function MostrarUILogin(callbackSucesso)
 		end)
 	end)
 
-	BtnComprar.MouseButton1Click:Connect(function()
-		Status.Text = "💬 Fale com o admin para obter uma key!"
-		Status.TextColor3 = C.Blue
-		pcall(function()
-			setclipboard("Olá! Quero comprar uma key do Sailent Auto Gari.")
-		end)
-	end)
-
 	BtnLimpar.MouseButton1Click:Connect(function()
-		LimparKeyLocal()
-		Input.Text = ""
-		Status.Text = "🗑️ Key local removida."
-		Status.TextColor3 = C.Sub
+		LimparKeyLocal(); Input.Text = ""
+		Status.Text = "🗑️ Removida."; Status.TextColor3 = C.Sub
 	end)
 end
 
--- ============================================================
--- 🎮 LÓGICA DE MOVIMENTO
--- ============================================================
 local function GetHRP()
 	local c = lp.Character
 	return c and c:FindFirstChild("HumanoidRootPart")
@@ -508,7 +391,6 @@ local function GetPrompt(item)
 end
 
 local CONFIG_FILE = "sailent_gari_config.txt"
-
 local Config = {
 	velocidade = 100,
 	velFly = 60,
@@ -523,12 +405,8 @@ local Config = {
 
 local function SalvarConfig()
 	local str = ""
-	for k, v in pairs(Config) do
-		str = str .. k .. "=" .. tostring(v) .. "\n"
-	end
-	pcall(function()
-		if writefile then writefile(CONFIG_FILE, str) end
-	end)
+	for k, v in pairs(Config) do str = str .. k .. "=" .. tostring(v) .. "\n" end
+	pcall(function() if writefile then writefile(CONFIG_FILE, str) end end)
 end
 
 local function CarregarConfig()
@@ -556,13 +434,9 @@ local function TocarSom(tipo)
 	pcall(function()
 		local sound = Instance.new("Sound")
 		sound.Parent = SoundService
-		if tipo == "coletou" then
-			sound.SoundId = "rbxassetid://4612375230"
-		elseif tipo == "entregou" then
-			sound.SoundId = "rbxassetid://4612384334"
-		elseif tipo == "reset" then
-			sound.SoundId = "rbxassetid://6042053626"
-		end
+		if tipo == "coletou" then sound.SoundId = "rbxassetid://4612375230"
+		elseif tipo == "entregou" then sound.SoundId = "rbxassetid://4612384334"
+		elseif tipo == "reset" then sound.SoundId = "rbxassetid://6042053626" end
 		sound.Volume = 0.15
 		sound:Play()
 		task.delay(2, function() sound:Destroy() end)
@@ -570,13 +444,8 @@ local function TocarSom(tipo)
 end
 
 local Stats = {
-	tempoInicio = tick(),
-	coletados = 0,
-	entregues = 0,
-	lixosMinuto = 0,
-	ultimaContagem = 0,
-	ultimoTempo = tick(),
-	mortesEvitadas = 0,
+	tempoInicio = tick(), coletados = 0, entregues = 0,
+	lixosMinuto = 0, ultimaContagem = 0, ultimoTempo = tick(), mortesEvitadas = 0,
 }
 
 local lixosUsados = {}
@@ -634,24 +503,18 @@ local function AcharProximoLixo()
 	return disponiveis[1] and disponiveis[1].lixo or nil
 end
 
--- ============================================================
--- 🚁 SISTEMA DE FLY (voo direto com pouso)
--- ============================================================
 local vooAtivo = false
-local vooConn = nil
 local vooBodyVel = nil
 local vooBodyGyro = nil
 
 local function AtivarVoo(hrp)
 	if vooAtivo then return end
 	vooAtivo = true
-
 	vooBodyVel = Instance.new("BodyVelocity")
 	vooBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	vooBodyVel.Velocity = Vector3.new(0, 0, 0)
 	vooBodyVel.P = 1250
 	vooBodyVel.Parent = hrp
-
 	vooBodyGyro = Instance.new("BodyGyro")
 	vooBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 	vooBodyGyro.P = 3000
@@ -664,7 +527,6 @@ local function DesativarVoo()
 	vooAtivo = false
 	if vooBodyVel then pcall(function() vooBodyVel:Destroy() end); vooBodyVel = nil end
 	if vooBodyGyro then pcall(function() vooBodyGyro:Destroy() end); vooBodyGyro = nil end
-	if vooConn then pcall(function() vooConn:Disconnect() end); vooConn = nil end
 end
 
 local function VoarAte(posAlvo, timeout)
@@ -672,12 +534,9 @@ local function VoarAte(posAlvo, timeout)
 	local hrp = GetHRP()
 	local hum = GetHum()
 	if not hrp or not hum then return false end
-
 	timeout = timeout or 20
 	local t0 = tick()
-
 	AtivarVoo(hrp)
-
 	local colideOriginal = {}
 	for _, p in ipairs(lp.Character:GetDescendants()) do
 		if p:IsA("BasePart") then
@@ -685,54 +544,52 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-
-	local velocidadeVoo = Config.velFly or 60
-
+	local velVoo = Config.velFly or 60
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
-
 		local diff = posAlvo - h.Position
-		local dist = diff.Magnitude
-
-		if dist < 4 then
-			pcall(function()
-				vooBodyVel.Velocity = Vector3.new(0, -20, 0)
-			end)
-			task.wait(0.3)
+		if diff.Magnitude < 6 then
+			pcall(function() vooBodyVel.Velocity = Vector3.new(0, 0, 0) end)
 			break
 		end
-
-		local direcao = diff.Unit
-		pcall(function()
-			vooBodyVel.Velocity = direcao * velocidadeVoo
-		end)
-
+		pcall(function() vooBodyVel.Velocity = diff.Unit * velVoo end)
 		task.wait(0.05)
 	end
-
-	DesativarVoo()
-
-	task.wait(0.1)
-	for p, v in pairs(colideOriginal) do
-		if p and p.Parent then
-			pcall(function() p.CanCollide = v end)
+	local tChao = tick()
+	local ultimaY = nil
+	local parado = 0
+	while tick() - tChao < 6 do
+		local h = GetHRP()
+		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
+		local yAtual = h.Position.Y
+		if ultimaY then
+			if math.abs(yAtual - ultimaY) < 0.05 then
+				parado = parado + 1
+				if parado >= 4 then
+					pcall(function() vooBodyVel.Velocity = Vector3.new(0, 0, 0) end)
+					break
+				end
+			else
+				parado = 0
+			end
 		end
+		ultimaY = yAtual
+		pcall(function() vooBodyVel.Velocity = Vector3.new(0, -25, 0) end)
+		task.wait(0.08)
 	end
-
+	pcall(function() if vooBodyVel then vooBodyVel.Velocity = Vector3.new(0, 0, 0) end end)
+	task.wait(0.2)
+	DesativarVoo()
 	local h = GetHRP()
-	if h then
-		pcall(function()
-			h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-		end)
+	if h then pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end) end
+	task.wait(0.25)
+	for p, v in pairs(colideOriginal) do
+		if p and p.Parent then pcall(function() p.CanCollide = v end) end
 	end
-
 	return true
 end
 
--- ============================================================
--- 🚶 ANDAR A PÉ (modo original)
--- ============================================================
 local function AndarAte(posAlvo, timeout, distParada)
 	if not posAlvo then return false end
 	local hrp = GetHRP()
@@ -746,10 +603,7 @@ local function AndarAte(posAlvo, timeout, distParada)
 		local h = GetHRP()
 		if not h then return false end
 		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
-		if diff.Magnitude < distParada then
-			hum:MoveTo(h.Position)
-			return true
-		end
+		if diff.Magnitude < distParada then hum:MoveTo(h.Position); return true end
 		hum:MoveTo(posAlvo)
 		task.wait(0.1)
 	end
@@ -757,16 +611,10 @@ local function AndarAte(posAlvo, timeout, distParada)
 end
 
 local function IrPara(posAlvo, timeout)
-	if Config.modoVoo then
-		return VoarAte(posAlvo, timeout)
-	else
-		return AndarAte(posAlvo, timeout)
-	end
+	if Config.modoVoo then return VoarAte(posAlvo, timeout)
+	else return AndarAte(posAlvo, timeout) end
 end
 
--- ============================================================
--- 🛡️ GOD MODE — 7 CAMADAS
--- ============================================================
 local GodModeConns = {}
 local ultimaPosSegura = nil
 local ultimoReset = 0
@@ -794,10 +642,7 @@ end
 
 local function DesativarNoclipGari()
 	noclipGariAtivo = false
-	if noclipConnGari then
-		pcall(function() noclipConnGari:Disconnect() end)
-		noclipConnGari = nil
-	end
+	if noclipConnGari then pcall(function() noclipConnGari:Disconnect() end); noclipConnGari = nil end
 end
 
 local function AtivarGodModeNoChar(char)
@@ -818,9 +663,7 @@ local function AtivarGodModeNoChar(char)
 
 	local connHealth = hum.HealthChanged:Connect(function(novaVida)
 		if not godModeAtivo then return end
-		if novaVida < hum.MaxHealth and novaVida > 0 then
-			hum.Health = hum.MaxHealth
-		end
+		if novaVida < hum.MaxHealth and novaVida > 0 then hum.Health = hum.MaxHealth end
 	end)
 	table.insert(GodModeConns, connHealth)
 
@@ -844,21 +687,15 @@ local function AtivarGodModeNoChar(char)
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		local h = char:FindFirstChildOfClass("Humanoid")
 		if not hrp or not h or h.Health <= 0 then return end
-
 		local vel = hrp.AssemblyLinearVelocity
 		local pos = hrp.Position
-
 		if h.FloorMaterial ~= Enum.Material.Air and vel.Y > -10 then
 			ultimaPosSegura = pos
 			return
 		end
-
 		if vel.Y < -70 then
-			pcall(function()
-				hrp.AssemblyLinearVelocity = Vector3.new(vel.X, -15, vel.Z)
-			end)
+			pcall(function() hrp.AssemblyLinearVelocity = Vector3.new(vel.X, -15, vel.Z) end)
 		end
-
 		if ultimaPosSegura and (ultimaPosSegura.Y - pos.Y) > 30 then
 			local agora = tick()
 			if agora - ultimoReset > 0.5 then
@@ -890,23 +727,14 @@ local function AtivarGodModeNoChar(char)
 	end)
 	table.insert(GodModeConns, connZero)
 
-	pcall(function()
-		hum.MaxHealth = 10000
-		hum.Health = 10000
-	end)
+	pcall(function() hum.MaxHealth = 10000; hum.Health = 10000 end)
 	local connMaxH = hum:GetPropertyChangedSignal("MaxHealth"):Connect(function()
 		pcall(function()
-			if hum.MaxHealth < 10000 then
-				hum.MaxHealth = 10000
-				hum.Health = 10000
-			end
+			if hum.MaxHealth < 10000 then hum.MaxHealth = 10000; hum.Health = 10000 end
 		end)
 	end)
 	table.insert(GodModeConns, connMaxH)
-
-	pcall(function()
-		hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-	end)
+	pcall(function() hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end)
 end
 
 local function ReconectarAposMorte()
@@ -920,26 +748,15 @@ local function ReconectarAposMorte()
 		pcall(function() setGariAtivoGlobal(true) end)
 	end
 	local hum = GetHum()
-	if hum then
-		pcall(function() hum.WalkSpeed = velocidadeAtual end)
-	end
+	if hum then pcall(function() hum.WalkSpeed = velocidadeAtual end) end
 	Notificar("💀 Morreu — reconectando...", C.Red, 1.5)
 end
 
 local function AtivarGodMode()
-	for _, c in ipairs(GodModeConns) do
-		pcall(function() c:Disconnect() end)
-	end
+	for _, c in ipairs(GodModeConns) do pcall(function() c:Disconnect() end) end
 	GodModeConns = {}
-
-	if lp.Character then
-		AtivarGodModeNoChar(lp.Character)
-	end
-
-	if _G.SailentCharConn then
-		pcall(function() _G.SailentCharConn:Disconnect() end)
-		_G.SailentCharConn = nil
-	end
+	if lp.Character then AtivarGodModeNoChar(lp.Character) end
+	if _G.SailentCharConn then pcall(function() _G.SailentCharConn:Disconnect() end); _G.SailentCharConn = nil end
 	_G.SailentCharConn = lp.CharacterAdded:Connect(function(novoChar)
 		task.wait(0.3)
 		ultimaPosSegura = nil
@@ -948,9 +765,6 @@ local function AtivarGodMode()
 	end)
 end
 
--- ============================================================
--- 🚀 INICIALIZAÇÃO PRINCIPAL
--- ============================================================
 local function IniciarScript()
 
 	for _, name in ipairs({"SailentKeyUI", "SailentGari", "SailentFloatBtn"}) do
@@ -980,14 +794,8 @@ local function IniciarScript()
 	FloatBtn.Active = true
 	FloatBtn.Parent = SGBtn
 
-	local BtnCorner = Instance.new("UICorner")
-	BtnCorner.CornerRadius = UDim.new(1, 0)
-	BtnCorner.Parent = FloatBtn
-
-	local BtnStroke = Instance.new("UIStroke")
-	BtnStroke.Color = C.Purple
-	BtnStroke.Thickness = 2
-	BtnStroke.Parent = FloatBtn
+	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
+	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Purple; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
 
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
@@ -1024,18 +832,10 @@ local function IniciarScript()
 	Main.BorderSizePixel = 0
 	Main.Parent = SG
 
-	local MC = Instance.new("UICorner")
-	MC.CornerRadius = UDim.new(0, 14)
-	MC.Parent = Main
-
-	local MS = Instance.new("UIStroke")
-	MS.Color = C.Accent
-	MS.Thickness = 1.5
-	MS.Transparency = 0.3
-	MS.Parent = Main
+	local MC = Instance.new("UICorner"); MC.CornerRadius = UDim.new(0, 14); MC.Parent = Main
+	local MS = Instance.new("UIStroke"); MS.Color = C.Accent; MS.Thickness = 1.5; MS.Transparency = 0.3; MS.Parent = Main
 
 	_G.SailentBloquearDrag = false
-
 	do
 		local d, di, ds, sp
 		local function up(i)
@@ -1067,9 +867,7 @@ local function IniciarScript()
 	TB.BackgroundColor3 = C.Card
 	TB.BorderSizePixel = 0
 	TB.Parent = Main
-	local TBC = Instance.new("UICorner")
-	TBC.CornerRadius = UDim.new(0, 14)
-	TBC.Parent = TB
+	local TBC = Instance.new("UICorner"); TBC.CornerRadius = UDim.new(0, 14); TBC.Parent = TB
 	local TBov = Instance.new("Frame")
 	TBov.Size = UDim2.new(1, 0, 0, 14)
 	TBov.Position = UDim2.new(0, 0, 1, -14)
@@ -1087,7 +885,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v6.4 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Gari v6.6 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -1107,9 +905,7 @@ local function IniciarScript()
 	MinBtn.Size = UDim2.new(0, 36, 1, 0)
 	MinBtn.Position = UDim2.new(1, -92, 0, 0)
 	MinBtn.Parent = TB
-	local MinC = Instance.new("UICorner")
-	MinC.CornerRadius = UDim.new(0, 14)
-	MinC.Parent = MinBtn
+	local MinC = Instance.new("UICorner"); MinC.CornerRadius = UDim.new(0, 14); MinC.Parent = MinBtn
 
 	local CloseBtn = Instance.new("TextButton")
 	CloseBtn.Text = "✕"
@@ -1121,9 +917,7 @@ local function IniciarScript()
 	CloseBtn.Size = UDim2.new(0, 56, 1, 0)
 	CloseBtn.Position = UDim2.new(1, -56, 0, 0)
 	CloseBtn.Parent = TB
-	local CC = Instance.new("UICorner")
-	CC.CornerRadius = UDim.new(0, 14)
-	CC.Parent = CloseBtn
+	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 14); CC.Parent = CloseBtn
 
 	local Content = Instance.new("ScrollingFrame")
 	Content.Size = UDim2.new(1, -20, 1, -76)
@@ -1136,9 +930,7 @@ local function IniciarScript()
 	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	Content.Parent = Main
 
-	local Lay = Instance.new("UIListLayout")
-	Lay.Padding = UDim.new(0, 8)
-	Lay.Parent = Content
+	local Lay = Instance.new("UIListLayout"); Lay.Padding = UDim.new(0, 8); Lay.Parent = Content
 
 	local function Sec(txt, color)
 		local f = Instance.new("Frame")
@@ -1146,9 +938,7 @@ local function IniciarScript()
 		f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0
 		f.Parent = Content
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 6)
-		c.Parent = f
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
 		local l = Instance.new("TextLabel")
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
@@ -1167,9 +957,7 @@ local function IniciarScript()
 		f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0
 		f.Parent = Content
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 6)
-		c.Parent = f
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
 		local l = Instance.new("TextLabel")
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
@@ -1194,9 +982,7 @@ local function IniciarScript()
 		b.Size = UDim2.new(1, 0, 0, 38)
 		b.AutoButtonColor = false
 		b.Parent = Content
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 8)
-		c.Parent = b
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = b
 		b.MouseButton1Click:Connect(function()
 			Tween(b, {BackgroundColor3 = color or C.Accent}, 0.08)
 			task.wait(0.12)
@@ -1212,9 +998,7 @@ local function IniciarScript()
 		f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0
 		f.Parent = Content
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(0, 8)
-		c.Parent = f
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = f
 		local l = Instance.new("TextLabel")
 		l.Text = txt
 		l.Font = Enum.Font.GothamBold
@@ -1231,18 +1015,14 @@ local function IniciarScript()
 		bg.BackgroundColor3 = Color3.fromRGB(50,50,60)
 		bg.BorderSizePixel = 0
 		bg.Parent = f
-		local bc = Instance.new("UICorner")
-		bc.CornerRadius = UDim.new(1, 0)
-		bc.Parent = bg
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(1, 0); bc.Parent = bg
 		local k = Instance.new("Frame")
 		k.Size = UDim2.new(0, 18, 0, 18)
 		k.Position = UDim2.new(0, 2, 0.5, -9)
 		k.BackgroundColor3 = C.Text
 		k.BorderSizePixel = 0
 		k.Parent = bg
-		local kc = Instance.new("UICorner")
-		kc.CornerRadius = UDim.new(1, 0)
-		kc.Parent = k
+		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = k
 		local st = default or false
 		local function set(v)
 			st = v
@@ -1255,10 +1035,7 @@ local function IniciarScript()
 			end
 			if cb then cb(st) end
 		end
-		if st then
-			bg.BackgroundColor3 = C.Green
-			k.Position = UDim2.new(1, -20, 0.5, -9)
-		end
+		if st then bg.BackgroundColor3 = C.Green; k.Position = UDim2.new(1, -20, 0.5, -9) end
 		local cl = Instance.new("TextButton")
 		cl.Text = ""
 		cl.BackgroundTransparency = 1
@@ -1274,9 +1051,7 @@ local function IniciarScript()
 		frame.BackgroundColor3 = C.Card
 		frame.BorderSizePixel = 0
 		frame.Parent = parent
-		local fc = Instance.new("UICorner")
-		fc.CornerRadius = UDim.new(0, 8)
-		fc.Parent = frame
+		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
 
 		local titulo = Instance.new("TextLabel")
 		titulo.Text = label
@@ -1306,18 +1081,14 @@ local function IniciarScript()
 		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 		bgBar.BorderSizePixel = 0
 		bgBar.Parent = frame
-		local bbc = Instance.new("UICorner")
-		bbc.CornerRadius = UDim.new(1, 0)
-		bbc.Parent = bgBar
+		local bbc = Instance.new("UICorner"); bbc.CornerRadius = UDim.new(1, 0); bbc.Parent = bgBar
 
 		local fillBar = Instance.new("Frame")
 		fillBar.Size = UDim2.new(0, 0, 1, 0)
 		fillBar.BackgroundColor3 = C.Green
 		fillBar.BorderSizePixel = 0
 		fillBar.Parent = bgBar
-		local fbc = Instance.new("UICorner")
-		fbc.CornerRadius = UDim.new(1, 0)
-		fbc.Parent = fillBar
+		local fbc = Instance.new("UICorner"); fbc.CornerRadius = UDim.new(1, 0); fbc.Parent = fillBar
 
 		local knob = Instance.new("Frame")
 		knob.Size = UDim2.new(0, 22, 0, 22)
@@ -1325,13 +1096,10 @@ local function IniciarScript()
 		knob.BackgroundColor3 = C.Text
 		knob.BorderSizePixel = 0
 		knob.Parent = bgBar
-		local kc = Instance.new("UICorner")
-		kc.CornerRadius = UDim.new(1, 0)
-		kc.Parent = knob
+		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
 
 		local valor = default
 		local arrastando = false
-
 		local function Atualizar(posX)
 			local bgAbs = bgBar.AbsolutePosition.X
 			local bgSize = bgBar.AbsoluteSize.X
@@ -1342,11 +1110,9 @@ local function IniciarScript()
 			knob.Position = UDim2.new(percent, -11, 0.5, -11)
 			if callback then callback(valor) end
 		end
-
 		local initPercent = (default - min) / (max - min)
 		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
 		knob.Position = UDim2.new(initPercent, -11, 0.5, -11)
-
 		bgBar.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				arrastando = true
@@ -1364,7 +1130,6 @@ local function IniciarScript()
 				if arrastando then
 					arrastando = false
 					_G.SailentBloquearDrag = false
-					if callback then callback(valor) end
 					SalvarConfig()
 				end
 			end
@@ -1383,7 +1148,6 @@ local function IniciarScript()
 	local godStatus = Stat("Status: ● ATIVO", C.Green)
 
 	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
-
 	local modoStatus = Stat("Modo atual: 🚶 A PÉ", C.Yellow)
 
 	Btn("🚶 A PÉ (padrão)", C.Green, function()
@@ -1447,7 +1211,6 @@ local function IniciarScript()
 		SalvarConfig()
 		if s then
 			AtivarNoclipGari()
-
 			gariStatus.Text = "Status: ● ATIVO (noclip ON)"
 			gariStatus.TextColor3 = C.Green
 			Notificar("🗑️ Auto Gari ATIVADO + Noclip", C.Green)
@@ -1511,7 +1274,6 @@ local function IniciarScript()
 			end)
 		else
 			DesativarNoclipGari()
-
 			gariStatus.Text = "Status: PARADO"
 			gariStatus.TextColor3 = C.Sub
 			Notificar("⏸️ Auto Gari DESATIVADO", C.Yellow, 1.5)
@@ -1547,21 +1309,18 @@ local function IniciarScript()
 	end)
 
 	Sec("🎵 SOM", C.Accent)
-
 	Toggle("Notificações sonoras", Config.somAtivo, function(s)
 		Config.somAtivo = s
 		SalvarConfig()
 	end)
 
 	Sec("🛡️ ANTI-ADMIN", C.Red)
-
 	Toggle("Parar Auto Gari se admin entrar", Config.antiAdmin, function(s)
 		Config.antiAdmin = s
 		SalvarConfig()
 	end)
 
 	Sec("🚨 EMERGÊNCIA", C.Red)
-
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		gariOn = false
 		if setGariAtivoGlobal then setGariAtivoGlobal(false) end
@@ -1577,7 +1336,6 @@ local function IniciarScript()
 	end)
 
 	Sec("🐛 DEBUG", C.Yellow)
-
 	Toggle("Modo Debug (log no console)", Config.debug, function(s)
 		Config.debug = s
 		SalvarConfig()
@@ -1609,8 +1367,7 @@ local function IniciarScript()
 				fpsFrame = 0
 				fpsTime = now
 			end
-			local ping = 0
-			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
+			local ping = 0			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
 			statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
 		end
 	end)
@@ -1623,9 +1380,7 @@ local function IniciarScript()
 		task.wait(0.2)
 		Main.Visible = false
 		FloatBtn.Text = "⚡"
-		if not gariOn then
-			Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15)
-		end
+		if not gariOn then Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.15) end
 	end
 
 	local function AbrirUI()
@@ -1634,9 +1389,7 @@ local function IniciarScript()
 		Main.Size = UDim2.new(0, 0, 0, 0)
 		Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
 		FloatBtn.Text = "✕"
-		if not gariOn then
-			Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15)
-		end
+		if not gariOn then Tween(FloatBtn, {BackgroundColor3 = C.Red}, 0.15) end
 	end
 
 	FloatBtn.MouseButton1Click:Connect(function()
@@ -1688,9 +1441,7 @@ local function IniciarScript()
 		end
 	end)
 
-	CloseBtn.MouseButton1Click:Connect(function()
-		FecharUI()
-	end)
+	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
 	local function ChecarAdmins()
 		if not Config.antiAdmin then return end
@@ -1726,7 +1477,7 @@ local function IniciarScript()
 	Notificar("🛡️ God Mode ATIVADO (7 camadas)", C.Green, 2)
 
 	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v6.4 [FLY + A PÉ]")
+	Log("🗑️ Sailent Auto Gari v6.6 [FLY CORRIGIDO]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
 	Log("🛡️ God Mode: 7 camadas ativas")
 	Log("🚁 Modo: " .. (Config.modoVoo and "VOAR" or "A PÉ"))
@@ -1734,9 +1485,6 @@ local function IniciarScript()
 	Log("═══════════════════════════════════")
 end
 
--- ============================================================
--- 🚪 ENTRY POINT
--- ============================================================
 Log("🔐 Verificando key...")
 
 task.spawn(function()
@@ -1751,7 +1499,5 @@ task.spawn(function()
 			Log("⚠️ Key salva inválida, pedindo nova...")
 		end
 	end
-	MostrarUILogin(function()
-		IniciarScript()
-	end)
+	MostrarUILogin(function() IniciarScript() end)
 end)
