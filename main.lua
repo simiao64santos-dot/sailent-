@@ -1,6 +1,5 @@
 -- ============================================================
--- SAILENT AUTO GARI v6.6 — FLY CORRIGIDO
--- Auto Gari + Fly + Noclip auto + God Mode + Toast
+-- SAILENT AUTO GARI v6.7 — FLY CFrame (FUNCIONA SEMPRE)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -15,7 +14,7 @@ local lp = Players.LocalPlayer
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Gari v6.6",
+	NOME_SCRIPT = "Sailent Auto Gari v6.7",
 }
 
 for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader", "SailentToast"}) do
@@ -503,40 +502,16 @@ local function AcharProximoLixo()
 	return disponiveis[1] and disponiveis[1].lixo or nil
 end
 
-local vooAtivo = false
-local vooBodyVel = nil
-local vooBodyGyro = nil
-
-local function AtivarVoo(hrp)
-	if vooAtivo then return end
-	vooAtivo = true
-	vooBodyVel = Instance.new("BodyVelocity")
-	vooBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	vooBodyVel.Velocity = Vector3.new(0, 0, 0)
-	vooBodyVel.P = 1250
-	vooBodyVel.Parent = hrp
-	vooBodyGyro = Instance.new("BodyGyro")
-	vooBodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-	vooBodyGyro.P = 3000
-	vooBodyGyro.D = 500
-	vooBodyGyro.CFrame = hrp.CFrame
-	vooBodyGyro.Parent = hrp
-end
-
-local function DesativarVoo()
-	vooAtivo = false
-	if vooBodyVel then pcall(function() vooBodyVel:Destroy() end); vooBodyVel = nil end
-	if vooBodyGyro then pcall(function() vooBodyGyro:Destroy() end); vooBodyGyro = nil end
-end
-
+-- ═══ FLY CFrame (FUNCIONA SEMPRE) ═══
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP()
 	local hum = GetHum()
 	if not hrp or not hum then return false end
-	timeout = timeout or 20
+
+	timeout = timeout or 25
 	local t0 = tick()
-	AtivarVoo(hrp)
+
 	local colideOriginal = {}
 	for _, p in ipairs(lp.Character:GetDescendants()) do
 		if p:IsA("BasePart") then
@@ -544,49 +519,69 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-	local velVoo = Config.velFly or 60
+
+	local velFrame = (Config.velFly or 60) * 0.05
+
+	-- FASE 1: voa até 6 studs do alvo
 	while tick() - t0 < timeout do
 		local h = GetHRP()
-		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
+		if not h then break end
+
 		local diff = posAlvo - h.Position
-		if diff.Magnitude < 6 then
-			pcall(function() vooBodyVel.Velocity = Vector3.new(0, 0, 0) end)
-			break
-		end
-		pcall(function() vooBodyVel.Velocity = diff.Unit * velVoo end)
-		task.wait(0.05)
+		if diff.Magnitude < 6 then break end
+
+		local direcao = diff.Unit
+		local novaPos = h.Position + (direcao * velFrame)
+
+		pcall(function()
+			h.CFrame = CFrame.new(novaPos)
+		end)
+
+		task.wait(0.03)
 	end
+
+	-- FASE 2: desce até o chão
 	local tChao = tick()
 	local ultimaY = nil
 	local parado = 0
-	while tick() - tChao < 6 do
+	while tick() - tChao < 5 do
 		local h = GetHRP()
-		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
+		if not h then break end
+
 		local yAtual = h.Position.Y
+
+		pcall(function()
+			h.CFrame = CFrame.new(h.Position - Vector3.new(0, 0.8, 0))
+		end)
+
 		if ultimaY then
 			if math.abs(yAtual - ultimaY) < 0.05 then
 				parado = parado + 1
-				if parado >= 4 then
-					pcall(function() vooBodyVel.Velocity = Vector3.new(0, 0, 0) end)
-					break
-				end
+				if parado >= 5 then break end
 			else
 				parado = 0
 			end
 		end
 		ultimaY = yAtual
-		pcall(function() vooBodyVel.Velocity = Vector3.new(0, -25, 0) end)
-		task.wait(0.08)
+
+		task.wait(0.05)
 	end
-	pcall(function() if vooBodyVel then vooBodyVel.Velocity = Vector3.new(0, 0, 0) end end)
-	task.wait(0.2)
-	DesativarVoo()
-	local h = GetHRP()
-	if h then pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end) end
-	task.wait(0.25)
+
+	task.wait(0.15)
+
 	for p, v in pairs(colideOriginal) do
-		if p and p.Parent then pcall(function() p.CanCollide = v end) end
+		if p and p.Parent then
+			pcall(function() p.CanCollide = v end)
+		end
 	end
+
+	local h = GetHRP()
+	if h then
+		pcall(function()
+			h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+		end)
+	end
+
 	return true
 end
 
@@ -671,9 +666,6 @@ local function AtivarGodModeNoChar(char)
 		pcall(function() hum:SetAttribute("FallingDamage", false) end)
 		pcall(function() hum:SetAttribute("FallDamage", false) end)
 		pcall(function() hum:SetAttribute("TakeFallDamage", false) end)
-		pcall(function() hum:SetAttribute("FallDamageEnabled", false) end)
-		pcall(function() hum:SetAttribute("CanFallDamage", false) end)
-		pcall(function() hum:SetAttribute("EnableFallDamage", false) end)
 	end
 	DesativarFalling()
 	local connFalling = RunService.Heartbeat:Connect(function()
@@ -885,7 +877,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v6.6 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Gari v6.7 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -1325,7 +1317,6 @@ local function IniciarScript()
 		gariOn = false
 		if setGariAtivoGlobal then setGariAtivoGlobal(false) end
 		noclipOn = false
-		DesativarVoo()
 		DesativarNoclipGari()
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 		gariStatus.Text = "Status: PARADO"
@@ -1367,7 +1358,8 @@ local function IniciarScript()
 				fpsFrame = 0
 				fpsTime = now
 			end
-			local ping = 0			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
+			local ping = 0
+			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
 			statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
 		end
 	end)
@@ -1405,7 +1397,6 @@ local function IniciarScript()
 			gariOn = false
 			if setGariAtivoGlobal then setGariAtivoGlobal(false) end
 			noclipOn = false
-			DesativarVoo()
 			DesativarNoclipGari()
 			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
 			local hum = GetHum()
@@ -1477,7 +1468,7 @@ local function IniciarScript()
 	Notificar("🛡️ God Mode ATIVADO (7 camadas)", C.Green, 2)
 
 	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v6.6 [FLY CORRIGIDO]")
+	Log("🗑️ Sailent Auto Gari v6.7 [FLY CFrame]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
 	Log("🛡️ God Mode: 7 camadas ativas")
 	Log("🚁 Modo: " .. (Config.modoVoo and "VOAR" or "A PÉ"))
