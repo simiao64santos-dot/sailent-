@@ -1,6 +1,8 @@
 -- ============================================================
--- SAILENT AUTO PRISÃO v2.0 (COM KEY) — NOCLIP NO VARRER
--- Auto Varrer (perímetro + noclip) + Auto Caixa + A Pé/Voar
+-- SAILENT AUTO PRISÃO v2.1 (COM KEY)
+-- Novidades: Anti-AFK, Auto-reconectar, Server hop, Estatísticas,
+-- Webhook Discord, Perfis, Modo seguro, FPS boost, Hotkeys editáveis,
+-- retomada após morrer, revalidação de key, tokens de loop, pcall.
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -10,13 +12,21 @@ local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
 local lp = Players.LocalPlayer
 
 -- ⚙️ CONFIG — MESMA KEY DO GARI
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Prisão v2.0",
+	NOME_SCRIPT = "Sailent Auto Prisão v2.1",
+	-- Link RAW do SEU script (usado pra reexecutar após reconectar / trocar de servidor).
+	-- Exemplo: "https://raw.githubusercontent.com/usuario/repo/main/prisao.lua"
+	URL_SCRIPT = "",
+	VERSAO = "2.1",
+	REVALIDAR_SEG = 1800, -- revalida a key a cada 30 min
 }
 
 for _, name in ipairs({"SailentPrisao", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
@@ -46,6 +56,10 @@ local function Tween(o, p, t)
 end
 
 local function Log(msg) print("[Prisao] " .. tostring(msg)) end
+
+local function GetHttp()
+	return (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+end
 
 -- 🔐 SHA-256
 local function Sha256(msg)
@@ -132,7 +146,7 @@ local function LimparKeyLocal()
 end
 
 local function BaixarKeys()
-	local httpFn = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+	local httpFn = GetHttp()
 	if not httpFn then return nil, "Executor sem HTTP request!" end
 	local ok, resp = pcall(function()
 		return httpFn({ Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(), Method = "GET" })
@@ -145,11 +159,12 @@ local function BaixarKeys()
 	return decoded, nil
 end
 
+-- retorna: ok, entry|mensagem, erroDeRede
 local function ValidarKey(keyInput)
 	if not keyInput or keyInput == "" then return false, "Digite uma key!" end
 	keyInput = keyInput:gsub("%s+", "")
 	local dados, err = BaixarKeys()
-	if not dados then return false, err end
+	if not dados then return false, err, true end
 	local hash = Sha256(keyInput)
 	local entry = dados.keys and dados.keys[hash]
 	if not entry then return false, "❌ Key inválida" end
@@ -225,7 +240,7 @@ local function Notificar(txt, cor, duracao)
 	end)
 end
 
--- 🖥️ UI DE LOGIN (mesma do Gari)
+-- 🖥️ UI DE LOGIN
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
 	SGK.Name = "SailentKeyUI"
@@ -418,6 +433,7 @@ local function DesativarNoclip()
 	end
 end
 
+-- CONFIG
 local CONFIG_FILE = "sailent_prisao_config.txt"
 local Config = {
 	velocidade = 100,
@@ -426,11 +442,25 @@ local Config = {
 	autoCaixa = false,
 	modoVoo = false,
 	somAtivo = true,
+	-- novos
+	antiAfk = true,
+	autoReconnect = false,
+	modoSeguro = false,
+	fpsBoost = false,
+	webhookAtivo = false,
+	webhookUrl = "",
+	webhookMin = 30,
+	keyUI = "F2",
+	keyPanic = "F1",
+	keyVarrer = "F3",
+	keyCaixa = "F4",
 }
 
 local function SalvarConfig()
 	local str = ""
-	for k, v in pairs(Config) do str = str .. k .. "=" .. tostring(v) .. "\n" end
+	for k, v in pairs(Config) do
+		if tostring(v) ~= "" then str = str .. k .. "=" .. tostring(v) .. "\n" end
+	end
 	pcall(function() if writefile then writefile(CONFIG_FILE, str) end end)
 end
 
@@ -453,6 +483,69 @@ end
 
 CarregarConfig()
 
+-- ESTATÍSTICAS
+local Stats = { varridos = 0, coletadas = 0, entregues = 0, erros = 0, inicio = tick() }
+
+local function FmtTempo(seg)
+	seg = math.floor(seg)
+	return string.format("%02d:%02d:%02d", math.floor(seg / 3600), math.floor(seg % 3600 / 60), seg % 60)
+end
+
+local function ResumoStats()
+	local dec = tick() - Stats.inicio
+	local horas = math.max(dec / 3600, 1 / 60)
+	local porHora = math.floor((Stats.varridos + Stats.entregues) / horas)
+	return string.format("⏱ %s | 🧹 %d | 📦 %d | 📈 %d/h", FmtTempo(dec), Stats.varridos, Stats.entregues, porHora)
+end
+
+-- WEBHOOK DISCORD
+local function Webhook(txt, forcar)
+	if not forcar and (not Config.webhookAtivo or Config.webhookUrl == "") then return end
+	if not Config.webhookUrl or Config.webhookUrl == "" then return end
+	local httpFn = GetHttp()
+	if not httpFn then return end
+	task.spawn(function()
+		pcall(function()
+			httpFn({
+				Url = Config.webhookUrl,
+				Method = "POST",
+				Headers = { ["Content-Type"] = "application/json" },
+				Body = HttpService:JSONEncode({
+					username = "Sailent Prisão",
+					content = "**[" .. lp.Name .. "]** " .. tostring(txt),
+				}),
+			})
+		end)
+	end)
+end
+
+-- HUMANIZAÇÃO (modo seguro)
+local function Esp(t)
+	if Config.modoSeguro then t = t * (0.8 + math.random() * 0.7) end
+	task.wait(t)
+end
+
+local function PausaHumana()
+	if Config.modoSeguro and math.random() < 0.08 then
+		task.wait(math.random(15, 40) / 10)
+	end
+end
+
+local function VelEfetiva()
+	if Config.modoSeguro then return math.min(Config.velocidade, 32) end
+	return Config.velocidade
+end
+
+local function VelFlyEfetiva()
+	if Config.modoSeguro then return math.min(Config.velFly or 60, 35) end
+	return Config.velFly or 60
+end
+
+local function AplicarVelocidade()
+	local hum = GetHum()
+	if hum then hum.WalkSpeed = VelEfetiva() end
+end
+
 local function TocarSom(tipo)
 	if not Config.somAtivo then return end
 	pcall(function()
@@ -464,6 +557,107 @@ local function TocarSom(tipo)
 		sound:Play()
 		task.delay(2, function() sound:Destroy() end)
 	end)
+end
+
+-- ANTI-AFK
+local afkConn = nil
+local function SetAntiAfk(on)
+	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
+	if on then
+		afkConn = lp.Idled:Connect(function()
+			pcall(function()
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton2(Vector2.new())
+			end)
+		end)
+	end
+end
+
+-- REEXECUTAR APÓS TELEPORTE
+local function QueueReexec()
+	if KEY_CONFIG.URL_SCRIPT ~= "" and queue_on_teleport then
+		pcall(function()
+			queue_on_teleport('loadstring(game:HttpGet("' .. KEY_CONFIG.URL_SCRIPT .. '"))()')
+		end)
+	end
+end
+
+-- AUTO-RECONECTAR
+local function IniciarAutoReconnect()
+	task.spawn(function()
+		pcall(function()
+			local prompt = CoreGui:WaitForChild("RobloxPromptGui", 15)
+			local overlay = prompt and prompt:WaitForChild("promptOverlay", 15)
+			if not overlay then return end
+			overlay.ChildAdded:Connect(function(c)
+				if c.Name == "ErrorPrompt" and Config.autoReconnect then
+					Log("Desconectado — reconectando...")
+					Webhook("⚠️ Desconectado. Tentando reconectar...")
+					task.wait(2)
+					QueueReexec()
+					for _ = 1, 5 do
+						pcall(function() TeleportService:Teleport(game.PlaceId, lp) end)
+						task.wait(8)
+					end
+				end
+			end)
+		end)
+	end)
+end
+
+-- TROCAR DE SERVIDOR
+local function ServerHop()
+	local httpFn = GetHttp()
+	if not httpFn then Notificar("❌ Executor sem HTTP", C.Red, 2); return end
+	Notificar("🌐 Procurando servidor...", C.Blue, 2)
+	local ok, resp = pcall(function()
+		return httpFn({
+			Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", game.PlaceId),
+			Method = "GET",
+		})
+	end)
+	if not ok or not resp then Notificar("❌ Falha ao listar servidores", C.Red, 2); return end
+	local ok2, dados = pcall(function() return HttpService:JSONDecode(resp.Body or resp.body) end)
+	if not ok2 or not dados or not dados.data then Notificar("❌ Lista inválida", C.Red, 2); return end
+	local candidatos = {}
+	for _, s in ipairs(dados.data) do
+		if s.id ~= game.JobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers - 1 then
+			table.insert(candidatos, s.id)
+		end
+	end
+	if #candidatos == 0 then Notificar("⚠️ Nenhum servidor livre", C.Yellow, 2); return end
+	QueueReexec()
+	Webhook("🌐 Trocando de servidor...")
+	pcall(function()
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, candidatos[math.random(1, #candidatos)], lp)
+	end)
+end
+
+-- FPS BOOST
+local fpsOrig = { parts = {} }
+local function AplicarFPS(on)
+	if on then
+		fpsOrig.shadows = Lighting.GlobalShadows
+		pcall(function() fpsOrig.quality = settings().Rendering.QualityLevel end)
+		Lighting.GlobalShadows = false
+		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+		fpsOrig.parts = {}
+		for _, o in ipairs(workspace:GetDescendants()) do
+			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles") then
+				if o.Enabled then
+					table.insert(fpsOrig.parts, o)
+					o.Enabled = false
+				end
+			end
+		end
+	else
+		if fpsOrig.shadows ~= nil then Lighting.GlobalShadows = fpsOrig.shadows end
+		if fpsOrig.quality then pcall(function() settings().Rendering.QualityLevel = fpsOrig.quality end) end
+		for _, o in ipairs(fpsOrig.parts) do
+			if o and o.Parent then pcall(function() o.Enabled = true end) end
+		end
+		fpsOrig.parts = {}
+	end
 end
 
 -- ACHAR OBJETOS
@@ -596,7 +790,7 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-	local velVoo = Config.velFly or 60
+	local velVoo = VelFlyEfetiva()
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h or not vooBodyVel or not vooBodyVel.Parent then break end
@@ -716,6 +910,13 @@ local function IniciarScript()
 	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
 	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Purple; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
 
+	-- indicador de status no botão flutuante (verde = rodando)
+	local function AtualizarIndicador()
+		local rodando = Config.autoVarrer or Config.autoCaixa
+		BtnStroke.Color = rodando and C.Green or C.Purple
+		BtnStroke.Thickness = rodando and 3 or 2
+	end
+
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -804,7 +1005,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Prisão v2.0 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Prisão v" .. KEY_CONFIG.VERSAO .. " [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -964,6 +1165,7 @@ local function IniciarScript()
 		return set
 	end
 
+	-- slider: retorna função para definir o valor por código
 	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58)
@@ -1019,15 +1221,17 @@ local function IniciarScript()
 
 		local valor = default
 		local arrastando = false
-		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X
-			local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
+		local function Aplicar(percent)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
 			fillBar.Size = UDim2.new(percent, 0, 1, 0)
 			knob.Position = UDim2.new(percent, -11, 0.5, -11)
 			if callback then callback(valor) end
+		end
+		local function Atualizar(posX)
+			local bgAbs = bgBar.AbsolutePosition.X
+			local bgSize = bgBar.AbsoluteSize.X
+			Aplicar(math.clamp((posX - bgAbs) / bgSize, 0, 1))
 		end
 		local initPercent = (default - min) / (max - min)
 		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
@@ -1053,120 +1257,301 @@ local function IniciarScript()
 				end
 			end
 		end)
+		return function(v)
+			v = math.clamp(v, min, max)
+			Aplicar((v - min) / (max - min))
+		end
 	end
+
+	local function Campo(label, valorInicial, placeholder, cb)
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(1, 0, 0, 62)
+		frame.BackgroundColor3 = C.Card
+		frame.BorderSizePixel = 0
+		frame.Parent = Content
+		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
+		local titulo = Instance.new("TextLabel")
+		titulo.Text = label
+		titulo.Font = Enum.Font.GothamBold
+		titulo.TextSize = 12
+		titulo.TextColor3 = C.Text
+		titulo.BackgroundTransparency = 1
+		titulo.Position = UDim2.new(0, 12, 0, 4)
+		titulo.Size = UDim2.new(1, -24, 0, 18)
+		titulo.TextXAlignment = Enum.TextXAlignment.Left
+		titulo.Parent = frame
+		local box = Instance.new("TextBox")
+		box.Text = valorInicial or ""
+		box.PlaceholderText = placeholder or ""
+		box.Font = Enum.Font.Code
+		box.TextSize = 11
+		box.TextColor3 = C.Text
+		box.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+		box.BackgroundColor3 = C.BG
+		box.BorderSizePixel = 0
+		box.ClearTextOnFocus = false
+		box.TextXAlignment = Enum.TextXAlignment.Left
+		box.Position = UDim2.new(0, 12, 0, 26)
+		box.Size = UDim2.new(1, -24, 0, 28)
+		box.Parent = frame
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = box
+		local pad = Instance.new("UIPadding"); pad.PaddingLeft = UDim.new(0, 8); pad.Parent = box
+		box.Focused:Connect(function() _G.SailentBloquearDrag = true end)
+		box.FocusLost:Connect(function()
+			_G.SailentBloquearDrag = false
+			if cb then cb(box.Text) end
+		end)
+		return box
+	end
+
+	local UI = {} -- setters para perfis / hotkeys
+	local PararTudo
+
+	-- ===================== AUTO VARRER =====================
+	local varreRun, caixaRun = 0, 0
 
 	Sec("🧹 AUTO VARRER (perímetro + noclip)", C.Green)
 	local varreStatus = Stat("Status: PARADO | 0/0", C.Sub)
 
-	local setVarre = Toggle("Ativar Varredura", Config.autoVarrer, function(s)
+	local function ErroLoop(label, err)
+		Stats.erros = Stats.erros + 1
+		Log("Erro: " .. tostring(err))
+		label.Text = "⚠️ Erro: " .. tostring(err):sub(1, 38)
+		label.TextColor3 = C.Red
+		if Stats.erros % 5 == 0 then Webhook("❗ " .. Stats.erros .. " erros na sessão. Último: " .. tostring(err):sub(1, 120)) end
+		task.wait(2)
+	end
+
+	local function CicloVarrer(myRun)
+		if not GetHRP() then
+			varreStatus.Text = "⏳ Aguardando personagem..."
+			task.wait(1)
+			return
+		end
+		PausaHumana()
+		local localVarrer = AcharLocalVarrer()
+		if not localVarrer then
+			varreStatus.Text = "⚠️ Sem local de varrer (LocaisVarrer)"
+			varreStatus.TextColor3 = C.Yellow
+			task.wait(2)
+			return
+		end
+		varreStatus.TextColor3 = C.Green
+		varreStatus.Text = "📥 Indo varrer..."
+		IrPara(localVarrer.Position, 20)
+		if myRun ~= varreRun then return end
+		Esp(0.3)
+		varreStatus.Text = "🧹 Varrendo..."
+		local prompt = localVarrer:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if prompt then pcall(function() fireproximityprompt(prompt) end) end
+		AtivarVassoura() -- auto-equipa se necessário
+		Esp(5)
+		if myRun ~= varreRun then return end
+		varridos[localVarrer] = true
+		Stats.varridos = Stats.varridos + 1
+		local total = 0
+		for _ in pairs(varridos) do total = total + 1 end
+		local todos = ContarTotalLocais()
+		varreStatus.Text = "🧹 Varreu " .. total .. "/" .. todos
+		TocarSom("varreu")
+		Notificar("🧹 Varreu! " .. total .. "/" .. todos, C.Green, 1.5)
+		if total >= todos then
+			Notificar("✅ Perímetro completo! Resetando...", C.Blue, 2)
+			varridos = {}
+			task.wait(0.5)
+		end
+	end
+
+	UI.setVarre = Toggle("Ativar Varredura", Config.autoVarrer, function(s)
 		Config.autoVarrer = s
 		SalvarConfig()
+		AtualizarIndicador()
+		varreRun = varreRun + 1
 		if s then
+			local myRun = varreRun
 			AtivarNoclip()
+			AplicarVelocidade()
 			varridos = {}
 			varreStatus.Text = "Status: ● ATIVO (noclip ON) | 0/" .. ContarTotalLocais()
 			varreStatus.TextColor3 = C.Green
 			Notificar("🧹 Varredura ATIVADA + Noclip", C.Green, 1.5)
 			task.spawn(function()
-				while Config.autoVarrer do
-					local localVarrer = AcharLocalVarrer()
-					if localVarrer then
-						varreStatus.Text = "📥 Indo varrer..."
-						IrPara(localVarrer.Position, 20)
-						task.wait(0.3)
-						varreStatus.Text = "🧹 Varrendo..."
-						local prompt = localVarrer:FindFirstChildWhichIsA("ProximityPrompt", true)
-						if prompt then
-							pcall(function() fireproximityprompt(prompt) end)
-						end
-						AtivarVassoura()
-						task.wait(5)
-						varridos[localVarrer] = true
-						local total = 0
-						for _ in pairs(varridos) do total = total + 1 end
-						local todos = ContarTotalLocais()
-						varreStatus.Text = "🧹 Varreu " .. total .. "/" .. todos
-						TocarSom("varreu")
-						Notificar("🧹 Varreu! " .. total .. "/" .. todos, C.Green, 1.5)
-						if total >= todos then
-							Notificar("✅ Perímetro completo! Resetando...", C.Blue, 2)
-							varridos = {}
-							task.wait(0.5)
-						end
-					else
-						varreStatus.Text = "⚠️ Sem local de varrer"
-						task.wait(2)
-					end
-					task.wait(0.5)
+				while Config.autoVarrer and myRun == varreRun do
+					local ok, err = pcall(CicloVarrer, myRun)
+					if not ok then ErroLoop(varreStatus, err) end
+					Esp(0.5)
 				end
 			end)
 		else
-			DesativarNoclip()
+			if not Config.autoCaixa then DesativarNoclip() end
 			varreStatus.Text = "Status: PARADO"
 			varreStatus.TextColor3 = C.Sub
 			Notificar("🧹 Varredura DESATIVADA", C.Yellow, 1.5)
 		end
 	end)
 
+	-- ===================== AUTO CAIXA =====================
 	Sec("📦 AUTO CAIXA", C.Blue)
 	local caixaStatus = Stat("Status: PARADO", C.Sub)
 
-	local setCaixa = Toggle("Ativar Caixa", Config.autoCaixa, function(s)
+	local function CicloCaixa(myRun)
+		if not GetHRP() then
+			caixaStatus.Text = "⏳ Aguardando personagem..."
+			task.wait(1)
+			return
+		end
+		PausaHumana()
+		caixaStatus.TextColor3 = C.Green
+		if TemCaixa() then
+			caixaStatus.Text = "📤 Indo entregar..."
+			local promptEntregar = AcharPromptPorTexto("Colocar Caixa")
+			if promptEntregar then
+				local part = promptEntregar.Parent
+				IrPara(part.Position, 25)
+				if myRun ~= caixaRun then return end
+				Esp(0.3)
+				caixaStatus.Text = "📤 Entregando..."
+				pcall(function() fireproximityprompt(promptEntregar) end)
+				Esp(0.6)
+				Stats.entregues = Stats.entregues + 1
+				TocarSom("entregou")
+				Notificar("📤 Caixa entregue!", C.Blue, 1.5)
+			else
+				caixaStatus.Text = "⚠️ Sem NPC de entregar"
+				task.wait(2)
+			end
+		else
+			caixaStatus.Text = "📥 Procurando caixa..."
+			local promptPegar = AcharPromptPorTexto("Collect Trash")
+			if not promptPegar then promptPegar = AcharPromptPorTexto("Coletar") end
+			if promptPegar then
+				local part = promptPegar.Parent
+				IrPara(part.Position, 25)
+				if myRun ~= caixaRun then return end
+				Esp(0.3)
+				caixaStatus.Text = "📥 Coletando..."
+				pcall(function() fireproximityprompt(promptPegar) end)
+				Esp(0.6)
+				Stats.coletadas = Stats.coletadas + 1
+				Notificar("📥 Caixa coletada!", C.Green, 1.2)
+			else
+				caixaStatus.Text = "⚠️ Sem caixa perto"
+				task.wait(2)
+			end
+		end
+	end
+
+	UI.setCaixa = Toggle("Ativar Caixa", Config.autoCaixa, function(s)
 		Config.autoCaixa = s
 		SalvarConfig()
+		AtualizarIndicador()
+		caixaRun = caixaRun + 1
 		if s then
+			local myRun = caixaRun
 			AtivarNoclip()
+			AplicarVelocidade()
 			caixaStatus.Text = "Status: ● ATIVO (noclip ON)"
 			caixaStatus.TextColor3 = C.Green
 			Notificar("📦 Caixa ATIVADA + Noclip", C.Green, 1.5)
 			task.spawn(function()
-				while Config.autoCaixa do
-					if TemCaixa() then
-						caixaStatus.Text = "📤 Indo entregar..."
-						local promptEntregar = AcharPromptPorTexto("Colocar Caixa")
-						if promptEntregar then
-							local part = promptEntregar.Parent
-							IrPara(part.Position, 25)
-							task.wait(0.3)
-							caixaStatus.Text = "📤 Entregando..."
-							pcall(function() fireproximityprompt(promptEntregar) end)
-							task.wait(0.6)
-							TocarSom("entregou")
-							Notificar("📤 Caixa entregue!", C.Blue, 1.5)
-						else
-							caixaStatus.Text = "⚠️ Sem NPC de entregar"
-							task.wait(2)
-						end
-					else
-						caixaStatus.Text = "📥 Procurando caixa..."
-						local promptPegar = AcharPromptPorTexto("Collect Trash")
-						if not promptPegar then
-							promptPegar = AcharPromptPorTexto("Coletar")
-						end
-						if promptPegar then
-							local part = promptPegar.Parent
-							IrPara(part.Position, 25)
-							task.wait(0.3)
-							caixaStatus.Text = "📥 Coletando..."
-							pcall(function() fireproximityprompt(promptPegar) end)
-							task.wait(0.6)
-							Notificar("📥 Caixa coletada!", C.Green, 1.2)
-						else
-							caixaStatus.Text = "⚠️ Sem caixa perto"
-							task.wait(2)
-						end
-					end
-					task.wait(0.5)
+				while Config.autoCaixa and myRun == caixaRun do
+					local ok, err = pcall(CicloCaixa, myRun)
+					if not ok then ErroLoop(caixaStatus, err) end
+					Esp(0.5)
 				end
 			end)
 		else
-			DesativarNoclip()
+			if not Config.autoVarrer then DesativarNoclip() end
 			caixaStatus.Text = "Status: PARADO"
 			caixaStatus.TextColor3 = C.Sub
 			Notificar("📦 Caixa DESATIVADA", C.Yellow, 1.5)
 		end
 	end)
 
+	-- ===================== ESTATÍSTICAS =====================
+	Sec("📊 ESTATÍSTICAS DA SESSÃO", C.Purple)
+	local statsLabel = Stat(ResumoStats(), C.Text)
+	Btn("🔄 Zerar estatísticas", C.Purple, function()
+		Stats.varridos, Stats.coletadas, Stats.entregues, Stats.erros = 0, 0, 0, 0
+		Stats.inicio = tick()
+		Notificar("📊 Estatísticas zeradas", C.Purple, 1.5)
+	end)
+
+	-- ===================== PERFIS =====================
+	Sec("📁 PERFIS RÁPIDOS", C.Accent)
+
+	local Perfis = {
+		["⚡ Rápido"] = { velocidade = 100, velFly = 100, modoSeguro = false },
+		["🛡️ Seguro"] = { velocidade = 30, velFly = 35, modoSeguro = true },
+		["🌙 AFK"] = { velocidade = 45, velFly = 40, modoSeguro = true, antiAfk = true, autoReconnect = true },
+	}
+
+	local function AplicarPerfil(nome)
+		local p = Perfis[nome]
+		if not p then return end
+		if p.velocidade and UI.setVel then UI.setVel(p.velocidade) end
+		if p.velFly and UI.setVelFly then UI.setVelFly(p.velFly) end
+		if p.modoSeguro ~= nil and UI.setSeguro then UI.setSeguro(p.modoSeguro) end
+		if p.antiAfk ~= nil and UI.setAfk then UI.setAfk(p.antiAfk) end
+		if p.autoReconnect ~= nil and UI.setReconnect then UI.setReconnect(p.autoReconnect) end
+		SalvarConfig()
+		Notificar("📁 Perfil " .. nome .. " aplicado", C.Accent, 1.8)
+	end
+
+	for _, nome in ipairs({"⚡ Rápido", "🛡️ Seguro", "🌙 AFK"}) do
+		Btn(nome, C.Accent, function() AplicarPerfil(nome) end)
+	end
+
+	-- ===================== SEGURANÇA / CONVENIÊNCIA =====================
+	Sec("🛡️ CONVENIÊNCIA", C.Blue)
+	UI.setSeguro = Toggle("Modo seguro (delays variáveis, vel. limitada)", Config.modoSeguro, function(s)
+		Config.modoSeguro = s
+		SalvarConfig()
+		AplicarVelocidade()
+	end)
+	UI.setAfk = Toggle("Anti-AFK", Config.antiAfk, function(s)
+		Config.antiAfk = s
+		SalvarConfig()
+		SetAntiAfk(s)
+	end)
+	UI.setReconnect = Toggle("Auto-reconectar se cair", Config.autoReconnect, function(s)
+		Config.autoReconnect = s
+		SalvarConfig()
+		if s and KEY_CONFIG.URL_SCRIPT == "" then
+			Notificar("⚠️ Defina URL_SCRIPT para reexecutar após reconectar", C.Yellow, 3)
+		end
+	end)
+	Toggle("FPS boost (sem sombras/partículas)", Config.fpsBoost, function(s)
+		Config.fpsBoost = s
+		SalvarConfig()
+		AplicarFPS(s)
+	end)
+	Btn("🌐 Trocar de servidor (server hop)", C.Blue, function() ServerHop() end)
+
+	-- ===================== WEBHOOK =====================
+	Sec("📨 WEBHOOK DISCORD", C.Purple)
+	Campo("URL do webhook", Config.webhookUrl, "https://discord.com/api/webhooks/...", function(txt)
+		Config.webhookUrl = txt:gsub("%s+", "")
+		SalvarConfig()
+	end)
+	Toggle("Enviar avisos pro Discord", Config.webhookAtivo, function(s)
+		Config.webhookAtivo = s
+		SalvarConfig()
+	end)
+	CriarSlider(Content, "⏲ Resumo a cada (min)", 5, 120, Config.webhookMin, function(v)
+		Config.webhookMin = v
+	end)
+	Btn("🧪 Testar webhook", C.Purple, function()
+		if Config.webhookUrl == "" then Notificar("⚠️ Cole a URL primeiro", C.Yellow, 2); return end
+		Webhook("✅ Teste do Sailent Prisão v" .. KEY_CONFIG.VERSAO, true)
+		Notificar("📨 Teste enviado", C.Purple, 1.5)
+	end)
+	Btn("📊 Enviar resumo agora", C.Purple, function()
+		Webhook("📊 " .. ResumoStats(), true)
+		Notificar("📨 Resumo enviado", C.Purple, 1.5)
+	end)
+
+	-- ===================== LOCOMOÇÃO =====================
 	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
 	local modoStatus = Stat("Modo atual: 🚶 A PÉ", C.Yellow)
 
@@ -1192,36 +1577,41 @@ local function IniciarScript()
 	end
 
 	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
-	CriarSlider(Content, "⚡ Velocidade", 16, 100, Config.velocidade, function(valor)
+	UI.setVel = CriarSlider(Content, "⚡ Velocidade", 16, 100, Config.velocidade, function(valor)
 		Config.velocidade = valor
-		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		AplicarVelocidade()
 	end)
 
 	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
-	CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 60, function(valor)
+	UI.setVelFly = CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 60, function(valor)
 		Config.velFly = valor
 	end)
 
+	-- ===================== PRISÃO =====================
 	Sec("⏱️ TEMPO DE PRISÃO", C.Purple)
 	local tempoPenaLabel = Stat("⏱️ Lendo...", C.Purple)
 
 	task.spawn(function()
+		local ultimoSeg = nil
 		while SG.Parent do
 			task.wait(1)
 			pcall(function()
+				statsLabel.Text = ResumoStats()
 				local pg = lp:FindFirstChild("PlayerGui")
-				if pg then
-					local sistemas = pg:FindFirstChild("Sistemas")
-					if sistemas then
-						local tempoGui = sistemas:FindFirstChild("TempoPrisao")
-						if tempoGui then
-							for _, desc in ipairs(tempoGui:GetDescendants()) do
-								if desc:IsA("TextLabel") and desc.Text and desc.Text:find(":") then
-									tempoPenaLabel.Text = "⏱️ " .. desc.Text
-									break
-								end
+				local sistemas = pg and pg:FindFirstChild("Sistemas")
+				local tempoGui = sistemas and sistemas:FindFirstChild("TempoPrisao")
+				if tempoGui then
+					for _, desc in ipairs(tempoGui:GetDescendants()) do
+						if desc:IsA("TextLabel") and desc.Text and desc.Text:find(":") then
+							tempoPenaLabel.Text = "⏱️ " .. desc.Text
+							local seg = 0
+							for n in desc.Text:gmatch("%d+") do seg = seg * 60 + tonumber(n) end
+							if ultimoSeg and ultimoSeg > 0 and seg == 0 then
+								Notificar("🔓 Pena concluída!", C.Green, 4)
+								Webhook("🔓 Pena concluída! " .. ResumoStats())
 							end
+							ultimoSeg = seg
+							break
 						end
 					end
 				end
@@ -1229,27 +1619,57 @@ local function IniciarScript()
 		end
 	end)
 
+	-- ===================== SOM =====================
 	Sec("🎵 SOM", C.Accent)
 	Toggle("Notificações sonoras", Config.somAtivo, function(s)
 		Config.somAtivo = s
 		SalvarConfig()
 	end)
 
+	-- ===================== HOTKEYS =====================
+	Sec("⌨️ HOTKEYS (clique e aperte a nova tecla)", C.Yellow)
+	local aguardandoTecla = nil
+	local botoesTecla = {}
+	local Acoes = {
+		{ cfg = "keyUI", nome = "Abrir/Fechar UI" },
+		{ cfg = "keyPanic", nome = "PANIC" },
+		{ cfg = "keyVarrer", nome = "Liga/Desliga Varrer" },
+		{ cfg = "keyCaixa", nome = "Liga/Desliga Caixa" },
+	}
+	for _, a in ipairs(Acoes) do
+		local b
+		b = Btn(a.nome .. ": " .. tostring(Config[a.cfg]), C.Yellow, function()
+			aguardandoTecla = a.cfg
+			b.Text = a.nome .. ": aperte uma tecla..."
+		end)
+		botoesTecla[a.cfg] = { btn = b, nome = a.nome }
+	end
+
+	-- ===================== EMERGÊNCIA =====================
 	Sec("🚨 EMERGÊNCIA", C.Red)
-	Btn("🛑 PARAR TUDO", C.Red, function()
+
+	PararTudo = function()
 		Config.autoVarrer = false
 		Config.autoCaixa = false
-		if setVarre then setVarre(false) end
-		if setCaixa then setCaixa(false) end
+		varreRun = varreRun + 1
+		caixaRun = caixaRun + 1
+		if UI.setVarre then UI.setVarre(false) end
+		if UI.setCaixa then UI.setCaixa(false) end
 		DesativarVoo()
 		DesativarNoclip()
 		varreStatus.Text = "Status: PARADO"
 		caixaStatus.Text = "Status: PARADO"
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
+		AtualizarIndicador()
+	end
+
+	Btn("🛑 PARAR TUDO", C.Red, function()
+		PararTudo()
 		Notificar("🛑 Tudo parado!", C.Red, 2)
 	end)
 
+	-- ===================== ABRIR / FECHAR =====================
 	local uiAberta = true
 
 	local function FecharUI()
@@ -1274,20 +1694,31 @@ local function IniciarScript()
 	end)
 
 	UserInput.InputBegan:Connect(function(input, gp)
+		-- redefinir tecla
+		if aguardandoTecla and input.UserInputType == Enum.UserInputType.Keyboard then
+			local cfg = aguardandoTecla
+			aguardandoTecla = nil
+			if input.KeyCode ~= Enum.KeyCode.Escape then
+				Config[cfg] = input.KeyCode.Name
+				SalvarConfig()
+			end
+			local info = botoesTecla[cfg]
+			if info then info.btn.Text = info.nome .. ": " .. tostring(Config[cfg]) end
+			return
+		end
 		if gp then return end
-		if input.KeyCode == Enum.KeyCode.F2 then
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+		local nome = input.KeyCode.Name
+		if nome == Config.keyUI then
 			if uiAberta then FecharUI() else AbrirUI() end
-		elseif input.KeyCode == Enum.KeyCode.F1 then
-			Config.autoVarrer = false
-			Config.autoCaixa = false
-			if setVarre then setVarre(false) end
-			if setCaixa then setCaixa(false) end
-			DesativarVoo()
-			DesativarNoclip()
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = 16 end
+		elseif nome == Config.keyPanic then
+			PararTudo()
 			FecharUI()
 			Notificar("🚨 PANIC", C.Red, 2)
+		elseif nome == Config.keyVarrer then
+			UI.setVarre(not Config.autoVarrer)
+		elseif nome == Config.keyCaixa then
+			UI.setCaixa(not Config.autoCaixa)
 		end
 	end)
 
@@ -1305,14 +1736,66 @@ local function IniciarScript()
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
+	-- ===================== SERVIÇOS EM SEGUNDO PLANO =====================
+
+	-- retomar após morrer / resetar
+	lp.CharacterAdded:Connect(function()
+		DesativarVoo() -- evita ficar preso em vooAtivo=true com BodyVelocity destruído
+		task.wait(1.5)
+		if Config.autoVarrer or Config.autoCaixa then
+			AplicarVelocidade()
+			Notificar("♻️ Respawn detectado — retomando", C.Blue, 2)
+			Webhook("♻️ Personagem renasceu, retomando automação.")
+		end
+	end)
+
+	SetAntiAfk(Config.antiAfk)
+	IniciarAutoReconnect()
+	if Config.fpsBoost then AplicarFPS(true) end
+
+	-- resumo periódico no Discord
+	task.spawn(function()
+		local ultimo = tick()
+		while SG.Parent do
+			task.wait(5)
+			if Config.webhookAtivo and Config.webhookUrl ~= "" and tick() - ultimo >= Config.webhookMin * 60 then
+				ultimo = tick()
+				Webhook("📊 " .. ResumoStats())
+			end
+		end
+	end)
+
+	-- revalida a key periodicamente (derruba se revogada/expirada)
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(KEY_CONFIG.REVALIDAR_SEG)
+			if not SG.Parent then break end
+			local ok, res, erroRede = ValidarKey(KeyState.key)
+			if not ok and not erroRede then
+				PararTudo()
+				LimparKeyLocal()
+				Notificar("🚫 Key revogada/expirada: " .. tostring(res), C.Red, 5)
+				Webhook("🚫 Key invalidada durante o uso: " .. tostring(res))
+				task.wait(3)
+				pcall(function() SG:Destroy() end)
+				pcall(function() SGBtn:Destroy() end)
+				break
+			end
+		end
+	end)
+
+	-- se estava ligado quando fechou, religa (o toggle salvo agora realmente inicia)
+	if Config.autoVarrer then UI.setVarre(true) end
+	if Config.autoCaixa then UI.setCaixa(true) end
+	AtualizarIndicador()
+
 	Log("═══════════════════════════════════")
-	Log("🔓 Sailent Auto Prisão v2.0 [KEY OK]")
+	Log("🔓 Sailent Auto Prisão v" .. KEY_CONFIG.VERSAO .. " [KEY OK]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
-	Log("🧹 Varre perímetro + Noclip | 📦 Auto Caixa")
-	Log("⚡ F2 = UI | F1 = Panic")
+	Log("⌨️ UI=" .. Config.keyUI .. " | Panic=" .. Config.keyPanic .. " | Varrer=" .. Config.keyVarrer .. " | Caixa=" .. Config.keyCaixa)
 	Log("═══════════════════════════════════")
 
-	Notificar("🔓 Auto Prisão v2.0 carregado!", C.Green, 2.5)
+	Notificar("🔓 Auto Prisão v" .. KEY_CONFIG.VERSAO .. " carregado!", C.Green, 2.5)
 end
 
 -- ENTRY POINT
