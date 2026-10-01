@@ -1,12 +1,12 @@
 {
   "versao": "2.0",
-  "ultima_atualizacao": 1790739278,
+  "ultima_atualizacao": 1790826234,
   "keys": {
-    "11c34c610715daef40e2506d7fa90a3bda3ef095738a3baf1759167fb7f0005e": {
-      "nome": "clinte",
-      "nivel": "normal",
-      "criada": 1790739276,
-      "expira": 1790825676,
+    "8cbe501059372c806aabd93ba24fd045d203ef4e906bdce22796b2906ad55dfa": {
+      "nome": "dono",
+      "nivel": "admin",
+      "criada": 1790826225,
+      "expira": 864000000001790800000,
       "status": "ativa",
       "max_usos": -1,
       "usos": 0
