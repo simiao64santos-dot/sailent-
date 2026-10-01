@@ -1,5 +1,9 @@
 -- ============================================================
--- SAILENT AUTO PIZZA v2.0 — COMPLETO (LocalMarcado correto)
+-- SAILENT AUTO PIZZA v2.1 (COM KEY)
+-- Mesmas melhorias do Auto Prisão v2.1: Anti-AFK, Auto-reconectar,
+-- Server hop, Estatísticas, Webhook Discord, Perfis, Modo seguro,
+-- FPS boost, Hotkeys editáveis, retomada após morrer, revalidação
+-- de key, tokens de loop, pcall e toggle salvo que realmente inicia.
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -9,12 +13,19 @@ local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
 local lp = Players.LocalPlayer
 
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Pizza v2.0",
+	NOME_SCRIPT = "Sailent Auto Pizza v2.1",
+	-- Link RAW deste script (usado para reexecutar após reconectar / trocar de servidor)
+	URL_SCRIPT = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/pizza.lua",
+	VERSAO = "2.1",
+	REVALIDAR_SEG = 1800, -- revalida a key a cada 30 min
 }
 
 for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
@@ -39,6 +50,10 @@ local function Tween(o, p, t)
 end
 
 local function Log(msg) print("[Pizza] " .. tostring(msg)) end
+
+local function GetHttp()
+	return (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+end
 
 -- SHA-256
 local function Sha256(msg)
@@ -118,7 +133,7 @@ local function LimparKeyLocal()
 end
 
 local function BaixarKeys()
-	local httpFn = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+	local httpFn = GetHttp()
 	if not httpFn then return nil, "Executor sem HTTP request!" end
 	local ok, resp = pcall(function()
 		return httpFn({ Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(), Method = "GET" })
@@ -131,11 +146,12 @@ local function BaixarKeys()
 	return decoded, nil
 end
 
+-- retorna: ok, entry|mensagem, erroDeRede
 local function ValidarKey(keyInput)
 	if not keyInput or keyInput == "" then return false, "Digite uma key!" end
 	keyInput = keyInput:gsub("%s+", "")
 	local dados, err = BaixarKeys()
-	if not dados then return false, err end
+	if not dados then return false, err, true end
 	local hash = Sha256(keyInput)
 	local entry = dados.keys and dados.keys[hash]
 	if not entry then return false, "❌ Key inválida" end
@@ -333,14 +349,31 @@ local function DesativarNoclip()
 	if noclipConn then pcall(function() noclipConn:Disconnect() end); noclipConn = nil end
 end
 
+-- CONFIG
 local CONFIG_FILE = "sailent_pizza_config.txt"
 local Config = {
-	velocidade = 100, velFly = 80, autoEntregar = false, modoVoo = false,
+	velocidade = 100,
+	velFly = 80,
+	autoEntregar = false,
+	modoVoo = false,
+	-- novos
+	antiAfk = true,
+	autoReconnect = false,
+	modoSeguro = false,
+	fpsBoost = false,
+	webhookAtivo = false,
+	webhookUrl = "",
+	webhookMin = 30,
+	keyUI = "F2",
+	keyPanic = "F1",
+	keyEntregar = "F3",
 }
 
 local function SalvarConfig()
 	local str = ""
-	for k, v in pairs(Config) do str = str .. k .. "=" .. tostring(v) .. "\n" end
+	for k, v in pairs(Config) do
+		if tostring(v) ~= "" then str = str .. k .. "=" .. tostring(v) .. "\n" end
+	end
 	pcall(function() if writefile then writefile(CONFIG_FILE, str) end end)
 end
 
@@ -363,6 +396,187 @@ end
 
 CarregarConfig()
 
+-- ESTATÍSTICAS
+local Stats = { entregues = 0, pegos = 0, erros = 0, inicio = tick() }
+
+local function FmtTempo(seg)
+	seg = math.floor(seg)
+	return string.format("%02d:%02d:%02d", math.floor(seg / 3600), math.floor(seg % 3600 / 60), seg % 60)
+end
+
+local function ResumoStats()
+	local dec = tick() - Stats.inicio
+	local horas = math.max(dec / 3600, 1 / 60)
+	local porHora = math.floor(Stats.entregues / horas)
+	local media = Stats.entregues > 0 and math.floor(dec / Stats.entregues) or 0
+	return string.format("⏱ %s | 📦 %d | 📈 %d/h | ⌀ %ds", FmtTempo(dec), Stats.entregues, porHora, media)
+end
+
+-- WEBHOOK DISCORD
+local function Webhook(txt, forcar)
+	if not forcar and (not Config.webhookAtivo or Config.webhookUrl == "") then return end
+	if not Config.webhookUrl or Config.webhookUrl == "" then return end
+	local httpFn = GetHttp()
+	if not httpFn then return end
+	task.spawn(function()
+		pcall(function()
+			httpFn({
+				Url = Config.webhookUrl,
+				Method = "POST",
+				Headers = { ["Content-Type"] = "application/json" },
+				Body = HttpService:JSONEncode({
+					username = "Sailent Pizza",
+					content = "**[" .. lp.Name .. "]** " .. tostring(txt),
+				}),
+			})
+		end)
+	end)
+end
+
+-- HUMANIZAÇÃO (modo seguro)
+local function Esp(t)
+	if Config.modoSeguro then t = t * (0.8 + math.random() * 0.7) end
+	task.wait(t)
+end
+
+local function PausaHumana()
+	if Config.modoSeguro and math.random() < 0.08 then
+		task.wait(math.random(15, 40) / 10)
+	end
+end
+
+local function VelEfetiva()
+	if Config.modoSeguro then return math.min(Config.velocidade, 32) end
+	return Config.velocidade
+end
+
+local function VelFlyEfetiva()
+	if Config.modoSeguro then return math.min(Config.velFly or 80, 35) end
+	return Config.velFly or 80
+end
+
+local function AplicarVelocidade()
+	local hum = GetHum()
+	if hum then hum.WalkSpeed = VelEfetiva() end
+end
+
+-- ANTI-AFK
+local afkConn = nil
+local function SetAntiAfk(on)
+	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
+	if on then
+		afkConn = lp.Idled:Connect(function()
+			pcall(function()
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton2(Vector2.new())
+			end)
+		end)
+	end
+end
+
+-- REEXECUTAR APÓS TELEPORTE
+local function QueueReexec()
+	if KEY_CONFIG.URL_SCRIPT ~= "" and queue_on_teleport then
+		pcall(function()
+			queue_on_teleport('loadstring(game:HttpGet("' .. KEY_CONFIG.URL_SCRIPT .. '"))()')
+		end)
+	end
+end
+
+-- AUTO-RECONECTAR
+local function IniciarAutoReconnect()
+	task.spawn(function()
+		pcall(function()
+			local prompt = CoreGui:WaitForChild("RobloxPromptGui", 15)
+			local overlay = prompt and prompt:WaitForChild("promptOverlay", 15)
+			if not overlay then return end
+			overlay.ChildAdded:Connect(function(c)
+				if c.Name == "ErrorPrompt" and Config.autoReconnect then
+					Log("Desconectado — reconectando...")
+					Webhook("⚠️ Desconectado. Tentando reconectar...")
+					task.wait(2)
+					QueueReexec()
+					for _ = 1, 5 do
+						pcall(function() TeleportService:Teleport(game.PlaceId, lp) end)
+						task.wait(8)
+					end
+				end
+			end)
+		end)
+	end)
+end
+
+-- TROCAR DE SERVIDOR
+local function ServerHop()
+	local httpFn = GetHttp()
+	if not httpFn then Notificar("❌ Executor sem HTTP", C.Red, 2); return end
+	Notificar("🌐 Procurando servidor...", C.Blue, 2)
+	local ok, resp = pcall(function()
+		return httpFn({
+			Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", game.PlaceId),
+			Method = "GET",
+		})
+	end)
+	if not ok or not resp then Notificar("❌ Falha ao listar servidores", C.Red, 2); return end
+	local ok2, dados = pcall(function() return HttpService:JSONDecode(resp.Body or resp.body) end)
+	if not ok2 or not dados or not dados.data then Notificar("❌ Lista inválida", C.Red, 2); return end
+	local candidatos = {}
+	for _, s in ipairs(dados.data) do
+		if s.id ~= game.JobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers - 1 then
+			table.insert(candidatos, s.id)
+		end
+	end
+	if #candidatos == 0 then Notificar("⚠️ Nenhum servidor livre", C.Yellow, 2); return end
+	QueueReexec()
+	Webhook("🌐 Trocando de servidor...")
+	pcall(function()
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, candidatos[math.random(1, #candidatos)], lp)
+	end)
+end
+
+-- FPS BOOST
+local fpsOrig = { parts = {} }
+local function AplicarFPS(on)
+	if on then
+		fpsOrig.shadows = Lighting.GlobalShadows
+		pcall(function() fpsOrig.quality = settings().Rendering.QualityLevel end)
+		Lighting.GlobalShadows = false
+		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+		fpsOrig.parts = {}
+		for _, o in ipairs(workspace:GetDescendants()) do
+			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles") then
+				if o.Enabled then
+					table.insert(fpsOrig.parts, o)
+					o.Enabled = false
+				end
+			end
+		end
+	else
+		if fpsOrig.shadows ~= nil then Lighting.GlobalShadows = fpsOrig.shadows end
+		if fpsOrig.quality then pcall(function() settings().Rendering.QualityLevel = fpsOrig.quality end) end
+		for _, o in ipairs(fpsOrig.parts) do
+			if o and o.Parent then pcall(function() o.Enabled = true end) end
+		end
+		fpsOrig.parts = {}
+	end
+end
+
+-- POSIÇÃO DE UM OBJETO (BasePart / Model / Attachment)
+local function PosDe(obj)
+	if not obj then return nil end
+	if obj:IsA("BasePart") then return obj.Position end
+	if obj:IsA("Attachment") then return obj.WorldPosition end
+	if obj:IsA("Model") then
+		local root = obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart
+		if root then return root.Position end
+	end
+	for _, d in ipairs(obj:GetDescendants()) do
+		if d:IsA("BasePart") then return d.Position
+		elseif d:IsA("Attachment") then return d.WorldPosition end
+	end
+	return nil
+end
+
 -- ACHAR PROMPT
 local function AcharPromptPorTexto(txt)
 	local hrp = GetHRP()
@@ -371,14 +585,7 @@ local function AcharPromptPorTexto(txt)
 	for _, obj in ipairs(workspace:GetDescendants()) do
 		if obj:IsA("ProximityPrompt") then
 			if obj.ActionText and obj.ActionText:lower():find(txt:lower()) then
-				local part = obj.Parent
-				local pos = nil
-				if part and part:IsA("BasePart") then
-					pos = part.Position
-				elseif part and part:IsA("Model") then
-					local root = part:FindFirstChild("HumanoidRootPart") or part.PrimaryPart
-					if root then pos = root.Position end
-				end
+				local pos = PosDe(obj.Parent)
 				if pos then
 					local dist = (pos - hrp.Position).Magnitude
 					if dist < menorDist then
@@ -392,7 +599,7 @@ local function AcharPromptPorTexto(txt)
 	return maisPerto
 end
 
--- ⭐ ACHAR LOCALMARCADO (cliente) — CORRETO
+-- ACHAR LOCALMARCADO (cliente)
 local function AcharLocalMarcado()
 	local construcoes = workspace:FindFirstChild("Construcoes")
 	if not construcoes then return nil end
@@ -404,21 +611,7 @@ local function AcharLocalMarcado()
 	for _, pad in ipairs(spa:GetChildren()) do
 		local marcado = pad:FindFirstChild("LocalMarcado", true)
 		if marcado then
-			local pos = nil
-			if marcado:IsA("BasePart") then
-				pos = marcado.Position
-			elseif marcado:IsA("Model") then
-				local root = marcado:FindFirstChild("HumanoidRootPart") or marcado.PrimaryPart
-				if root then pos = root.Position end
-			elseif marcado:IsA("Attachment") then
-				pos = marcado.WorldPosition
-			end
-			if not pos then
-				for _, d in ipairs(marcado:GetDescendants()) do
-					if d:IsA("BasePart") then pos = d.Position; break
-					elseif d:IsA("Attachment") then pos = d.WorldPosition; break end
-				end
-			end
+			local pos = PosDe(marcado)
 			if pos then
 				return {marcado = marcado, pos = pos, pad = pad}
 			end
@@ -427,7 +620,7 @@ local function AcharLocalMarcado()
 	return nil
 end
 
--- VOAR
+-- VOAR (teleporte suave por CFrame)
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP(); local hum = GetHum()
@@ -441,7 +634,7 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-	local velFrame = (Config.velFly or 80) * 0.05
+	local velFrame = VelFlyEfetiva() * 0.05
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h then break end
@@ -507,10 +700,6 @@ end
 local GodModeConns = {}
 local ultimaPosSegura = nil; local ultimoReset = 0
 local godModeAtivo = true
-local velocidadeAtual = Config.velocidade
-local entregando = false
-local entregasCount = 0
-local setEntregarGlobal = nil
 
 local function AtivarGodModeNoChar(char)
 	if not char then return end
@@ -622,6 +811,14 @@ local function IniciarScript()
 	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
 	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Accent; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
 
+	-- indicador de status no botão flutuante (verde = rodando)
+	local function AtualizarIndicador()
+		local rodando = Config.autoEntregar
+		Tween(FloatBtn, {BackgroundColor3 = rodando and C.Green or C.Black}, 0.25)
+		BtnStroke.Color = rodando and C.Green or C.Accent
+		BtnStroke.Thickness = rodando and 3 or 2
+	end
+
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -693,7 +890,7 @@ local function IniciarScript()
 	TLogo.Size = UDim2.new(0, 40, 1, 0); TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Pizza v2.0 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Pizza v" .. KEY_CONFIG.VERSAO .. " [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold; TTitle.TextSize = 14; TTitle.TextColor3 = C.Text
 	TTitle.BackgroundTransparency = 1; TTitle.Position = UDim2.new(0, 55, 0, 0)
 	TTitle.Size = UDim2.new(0, 250, 1, 0); TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.Parent = TB
@@ -794,6 +991,7 @@ local function IniciarScript()
 		return set
 	end
 
+	-- slider: retorna função para definir o valor por código
 	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58); frame.BackgroundColor3 = C.Card
@@ -823,14 +1021,16 @@ local function IniciarScript()
 		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
 		local valor = default
 		local arrastando = false
-		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X; local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
+		local function Aplicar(percent)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
 			fillBar.Size = UDim2.new(percent, 0, 1, 0)
 			knob.Position = UDim2.new(percent, -11, 0.5, -11)
 			if callback then callback(valor) end
+		end
+		local function Atualizar(posX)
+			local bgAbs = bgBar.AbsolutePosition.X; local bgSize = bgBar.AbsoluteSize.X
+			Aplicar(math.clamp((posX - bgAbs) / bgSize, 0, 1))
 		end
 		local initPercent = (default - min) / (max - min)
 		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
@@ -853,94 +1053,243 @@ local function IniciarScript()
 				end
 			end
 		end)
+		return function(v)
+			v = math.clamp(v, min, max)
+			Aplicar((v - min) / (max - min))
+		end
 	end
 
+	local function Campo(label, valorInicial, placeholder, cb)
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(1, 0, 0, 62)
+		frame.BackgroundColor3 = C.Card
+		frame.BorderSizePixel = 0
+		frame.Parent = Content
+		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
+		local titulo = Instance.new("TextLabel")
+		titulo.Text = label
+		titulo.Font = Enum.Font.GothamBold
+		titulo.TextSize = 12
+		titulo.TextColor3 = C.Text
+		titulo.BackgroundTransparency = 1
+		titulo.Position = UDim2.new(0, 12, 0, 4)
+		titulo.Size = UDim2.new(1, -24, 0, 18)
+		titulo.TextXAlignment = Enum.TextXAlignment.Left
+		titulo.Parent = frame
+		local box = Instance.new("TextBox")
+		box.Text = valorInicial or ""
+		box.PlaceholderText = placeholder or ""
+		box.Font = Enum.Font.Code
+		box.TextSize = 11
+		box.TextColor3 = C.Text
+		box.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+		box.BackgroundColor3 = C.BG
+		box.BorderSizePixel = 0
+		box.ClearTextOnFocus = false
+		box.TextXAlignment = Enum.TextXAlignment.Left
+		box.Position = UDim2.new(0, 12, 0, 26)
+		box.Size = UDim2.new(1, -24, 0, 28)
+		box.Parent = frame
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = box
+		local pad = Instance.new("UIPadding"); pad.PaddingLeft = UDim.new(0, 8); pad.Parent = box
+		box.Focused:Connect(function() _G.SailentBloquearDrag = true end)
+		box.FocusLost:Connect(function()
+			_G.SailentBloquearDrag = false
+			if cb then cb(box.Text) end
+		end)
+		return box
+	end
+
+	local UI = {} -- setters para perfis / hotkeys
+	local PararTudo
+	local entregaRun = 0
+
+	-- ===================== CONTA / STATS / GOD =====================
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
-	Sec("📊 ESTATÍSTICAS", C.Blue)
-	local statEntregas = Stat("📦 Entregas: 0", C.Text)
+	Sec("📊 ESTATÍSTICAS DA SESSÃO", C.Blue)
+	local statsLabel = Stat(ResumoStats(), C.Text)
+	Btn("🔄 Zerar estatísticas", C.Purple, function()
+		Stats.entregues, Stats.pegos, Stats.erros = 0, 0, 0
+		Stats.inicio = tick()
+		Notificar("📊 Estatísticas zeradas", C.Purple, 1.5)
+	end)
 
 	Sec("🛡️ GOD MODE", C.Green)
 	Stat("Status: ● ATIVO", C.Green)
 
+	-- ===================== AUTO ENTREGADOR =====================
 	Sec("🍕 AUTO ENTREGADOR", C.Accent)
 	local entregaStatus = Stat("Status: PARADO", C.Sub)
 
-	setEntregarGlobal = Toggle("Auto Entregar Pizza", Config.autoEntregar, function(s)
+	local function ErroLoop(err)
+		Stats.erros = Stats.erros + 1
+		Log("Erro: " .. tostring(err))
+		entregaStatus.Text = "⚠️ Erro: " .. tostring(err):sub(1, 38)
+		entregaStatus.TextColor3 = C.Red
+		if Stats.erros % 5 == 0 then Webhook("❗ " .. Stats.erros .. " erros na sessão. Último: " .. tostring(err):sub(1, 120)) end
+		task.wait(2)
+	end
+
+	local function CicloEntrega(myRun)
+		if not GetHRP() then
+			entregaStatus.Text = "⏳ Aguardando personagem..."
+			task.wait(1)
+			return
+		end
+		PausaHumana()
+		entregaStatus.TextColor3 = C.Green
+		if TemPizza() then
+			entregaStatus.Text = "📤 Procurando cliente..."
+			local info = AcharLocalMarcado()
+			if info and info.pos then
+				entregaStatus.Text = "📤 Indo pro cliente (" .. info.pad.Name .. ")..."
+				IrPara(info.pos, 25)
+				if myRun ~= entregaRun then return end
+				Esp(0.3)
+				entregaStatus.Text = "📤 Entregando..."
+				local prompt = AcharPromptPorTexto("Entregar Pedido")
+				if prompt then
+					pcall(function() fireproximityprompt(prompt) end)
+					Esp(0.8)
+				end
+				if not TemPizza() then
+					Stats.entregues = Stats.entregues + 1
+					Notificar("📤 Pedido entregue! #" .. Stats.entregues, C.Blue, 1.5)
+				end
+			else
+				entregaStatus.Text = "⚠️ Sem cliente ativo"
+				task.wait(1.5)
+			end
+		else
+			entregaStatus.Text = "📥 Procurando pedido..."
+			local promptPegar = AcharPromptPorTexto("Pegar Pedido")
+			if promptPegar then
+				local pos = PosDe(promptPegar.Parent)
+				if not pos then
+					entregaStatus.Text = "⚠️ Posição do pedido inválida"
+					task.wait(1.5)
+					return
+				end
+				entregaStatus.Text = "📥 Indo pegar pedido..."
+				IrPara(pos, 25)
+				if myRun ~= entregaRun then return end
+				Esp(0.3)
+				entregaStatus.Text = "📥 Pegando..."
+				pcall(function() fireproximityprompt(promptPegar) end)
+				Esp(1.2)
+				Stats.pegos = Stats.pegos + 1
+				Notificar("📥 Pedido pego!", C.Green, 1.2)
+			else
+				entregaStatus.Text = "⚠️ Sem pedido na pizzaria"
+				task.wait(1.5)
+			end
+		end
+	end
+
+	UI.setEntregar = Toggle("Auto Entregar Pizza", Config.autoEntregar, function(s)
 		Config.autoEntregar = s
 		SalvarConfig()
+		AtualizarIndicador()
+		entregaRun = entregaRun + 1
 		if s then
+			local myRun = entregaRun
 			AtivarNoclip()
-			entregando = true
+			AplicarVelocidade()
 			entregaStatus.Text = "Status: ● ATIVO (noclip ON)"
 			entregaStatus.TextColor3 = C.Green
 			Notificar("🍕 Auto Entregador ATIVADO", C.Green, 1.5)
-			Tween(FloatBtn, {BackgroundColor3 = C.Green}, 0.25)
-			BtnStroke.Color = C.Green
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = velocidadeAtual end
-
 			task.spawn(function()
-				while entregando do
-					if TemPizza() then
-						entregaStatus.Text = "📤 Procurando cliente..."
-						local info = AcharLocalMarcado()
-						if info and info.pos then
-							entregaStatus.Text = "📤 Indo pro cliente (" .. info.pad.Name .. ")..."
-							IrPara(info.pos, 25)
-							task.wait(0.3)
-							entregaStatus.Text = "📤 Entregando..."
-							local prompt = AcharPromptPorTexto("Entregar Pedido")
-							if prompt then
-								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.8)
-							end
-							if not TemPizza() then
-								entregasCount = entregasCount + 1
-								statEntregas.Text = "📦 Entregas: " .. entregasCount
-								Notificar("📤 Pedido entregue! #" .. entregasCount, C.Blue, 1.5)
-							end
-						else
-							entregaStatus.Text = "⚠️ Sem cliente ativo"
-							task.wait(1.5)
-						end
-					else
-						entregaStatus.Text = "📥 Procurando pedido..."
-						local promptPegar = AcharPromptPorTexto("Pegar Pedido")
-						if promptPegar then
-							local part = promptPegar.Parent
-							local pos = part.Position
-							if part:IsA("Model") then
-								local root = part:FindFirstChild("HumanoidRootPart") or part.PrimaryPart
-								if root then pos = root.Position end
-							end
-							entregaStatus.Text = "📥 Indo pegar pedido..."
-							IrPara(pos, 25)
-							task.wait(0.3)
-							entregaStatus.Text = "📥 Pegando..."
-							pcall(function() fireproximityprompt(promptPegar) end)
-							task.wait(1.2)
-							Notificar("📥 Pedido pego!", C.Green, 1.2)
-						else
-							entregaStatus.Text = "⚠️ Sem pedido na pizzaria"
-							task.wait(1.5)
-						end
-					end
-					task.wait(0.5)
+				while Config.autoEntregar and myRun == entregaRun do
+					local ok, err = pcall(CicloEntrega, myRun)
+					if not ok then ErroLoop(err) end
+					Esp(0.5)
 				end
 			end)
 		else
-			entregando = false
 			DesativarNoclip()
 			entregaStatus.Text = "Status: PARADO"
 			entregaStatus.TextColor3 = C.Sub
 			Notificar("🍕 Auto Entregador DESATIVADO", C.Yellow, 1.5)
-			Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.25)
-			BtnStroke.Color = C.Accent
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 		end
 	end)
 
+	-- ===================== PERFIS =====================
+	Sec("📁 PERFIS RÁPIDOS", C.Accent)
+
+	local Perfis = {
+		["⚡ Rápido"] = { velocidade = 100, velFly = 100, modoSeguro = false },
+		["🛡️ Seguro"] = { velocidade = 30, velFly = 35, modoSeguro = true },
+		["🌙 AFK"] = { velocidade = 45, velFly = 40, modoSeguro = true, antiAfk = true, autoReconnect = true },
+	}
+
+	local function AplicarPerfil(nome)
+		local p = Perfis[nome]
+		if not p then return end
+		if p.velocidade and UI.setVel then UI.setVel(p.velocidade) end
+		if p.velFly and UI.setVelFly then UI.setVelFly(p.velFly) end
+		if p.modoSeguro ~= nil and UI.setSeguro then UI.setSeguro(p.modoSeguro) end
+		if p.antiAfk ~= nil and UI.setAfk then UI.setAfk(p.antiAfk) end
+		if p.autoReconnect ~= nil and UI.setReconnect then UI.setReconnect(p.autoReconnect) end
+		SalvarConfig()
+		Notificar("📁 Perfil " .. nome .. " aplicado", C.Accent, 1.8)
+	end
+
+	for _, nome in ipairs({"⚡ Rápido", "🛡️ Seguro", "🌙 AFK"}) do
+		Btn(nome, C.Accent, function() AplicarPerfil(nome) end)
+	end
+
+	-- ===================== CONVENIÊNCIA =====================
+	Sec("🛡️ CONVENIÊNCIA", C.Blue)
+	UI.setSeguro = Toggle("Modo seguro (delays variáveis, vel. limitada)", Config.modoSeguro, function(s)
+		Config.modoSeguro = s
+		SalvarConfig()
+		if Config.autoEntregar then AplicarVelocidade() end
+	end)
+	UI.setAfk = Toggle("Anti-AFK", Config.antiAfk, function(s)
+		Config.antiAfk = s
+		SalvarConfig()
+		SetAntiAfk(s)
+	end)
+	UI.setReconnect = Toggle("Auto-reconectar se cair", Config.autoReconnect, function(s)
+		Config.autoReconnect = s
+		SalvarConfig()
+		if s and KEY_CONFIG.URL_SCRIPT == "" then
+			Notificar("⚠️ Defina URL_SCRIPT para reexecutar após reconectar", C.Yellow, 3)
+		end
+	end)
+	Toggle("FPS boost (sem sombras/partículas)", Config.fpsBoost, function(s)
+		Config.fpsBoost = s
+		SalvarConfig()
+		AplicarFPS(s)
+	end)
+	Btn("🌐 Trocar de servidor (server hop)", C.Blue, function() ServerHop() end)
+
+	-- ===================== WEBHOOK =====================
+	Sec("📨 WEBHOOK DISCORD", C.Purple)
+	Campo("URL do webhook", Config.webhookUrl, "https://discord.com/api/webhooks/...", function(txt)
+		Config.webhookUrl = txt:gsub("%s+", "")
+		SalvarConfig()
+	end)
+	Toggle("Enviar avisos pro Discord", Config.webhookAtivo, function(s)
+		Config.webhookAtivo = s
+		SalvarConfig()
+	end)
+	CriarSlider(Content, "⏲ Resumo a cada (min)", 5, 120, Config.webhookMin, function(v)
+		Config.webhookMin = v
+	end)
+	Btn("🧪 Testar webhook", C.Purple, function()
+		if Config.webhookUrl == "" then Notificar("⚠️ Cole a URL primeiro", C.Yellow, 2); return end
+		Webhook("✅ Teste do Sailent Pizza v" .. KEY_CONFIG.VERSAO, true)
+		Notificar("📨 Teste enviado", C.Purple, 1.5)
+	end)
+	Btn("📊 Enviar resumo agora", C.Purple, function()
+		Webhook("📊 " .. ResumoStats(), true)
+		Notificar("📨 Resumo enviado", C.Purple, 1.5)
+	end)
+
+	-- ===================== LOCOMOÇÃO =====================
 	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
 	local modoStatus = Stat(Config.modoVoo and "Modo: 🚁 VOANDO" or "Modo: 🚶 A PÉ", C.Yellow)
 
@@ -959,31 +1308,55 @@ local function IniciarScript()
 	end)
 
 	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
-	CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
+	UI.setVel = CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
 		Config.velocidade = valor
-		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		AplicarVelocidade()
 	end)
 
 	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
-	CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 80, function(valor)
+	UI.setVelFly = CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 80, function(valor)
 		Config.velFly = valor
 	end)
 
+	-- ===================== HOTKEYS =====================
+	Sec("⌨️ HOTKEYS (clique e aperte a nova tecla)", C.Yellow)
+	local aguardandoTecla = nil
+	local botoesTecla = {}
+	local Acoes = {
+		{ cfg = "keyUI", nome = "Abrir/Fechar UI" },
+		{ cfg = "keyPanic", nome = "PANIC" },
+		{ cfg = "keyEntregar", nome = "Liga/Desliga Entregar" },
+	}
+	for _, a in ipairs(Acoes) do
+		local b
+		b = Btn(a.nome .. ": " .. tostring(Config[a.cfg]), C.Yellow, function()
+			aguardandoTecla = a.cfg
+			b.Text = a.nome .. ": aperte uma tecla..."
+		end)
+		botoesTecla[a.cfg] = { btn = b, nome = a.nome }
+	end
+
+	-- ===================== EMERGÊNCIA =====================
 	Sec("🚨 EMERGÊNCIA", C.Red)
-	Btn("🛑 PARAR TUDO", C.Red, function()
+
+	PararTudo = function()
 		Config.autoEntregar = false
-		entregando = false
-		if setEntregarGlobal then setEntregarGlobal(false) end
+		entregaRun = entregaRun + 1
+		if UI.setEntregar then UI.setEntregar(false) end
 		DesativarNoclip()
 		entregaStatus.Text = "Status: PARADO"
 		entregaStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
+		AtualizarIndicador()
+	end
+
+	Btn("🛑 PARAR TUDO", C.Red, function()
+		PararTudo()
 		Notificar("🛑 Tudo parado!", C.Red, 2)
 	end)
 
+	-- ===================== ABRIR / FECHAR =====================
 	local uiAberta = true
 
 	local function FecharUI()
@@ -1006,18 +1379,29 @@ local function IniciarScript()
 	end)
 
 	UserInput.InputBegan:Connect(function(input, gp)
+		-- redefinir tecla
+		if aguardandoTecla and input.UserInputType == Enum.UserInputType.Keyboard then
+			local cfg = aguardandoTecla
+			aguardandoTecla = nil
+			if input.KeyCode ~= Enum.KeyCode.Escape then
+				Config[cfg] = input.KeyCode.Name
+				SalvarConfig()
+			end
+			local info = botoesTecla[cfg]
+			if info then info.btn.Text = info.nome .. ": " .. tostring(Config[cfg]) end
+			return
+		end
 		if gp then return end
-		if input.KeyCode == Enum.KeyCode.F2 then
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+		local nome = input.KeyCode.Name
+		if nome == Config.keyUI then
 			if uiAberta then FecharUI() else AbrirUI() end
-		elseif input.KeyCode == Enum.KeyCode.F1 then
-			Config.autoEntregar = false
-			entregando = false
-			if setEntregarGlobal then setEntregarGlobal(false) end
-			DesativarNoclip()
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = 16 end
+		elseif nome == Config.keyPanic then
+			PararTudo()
 			FecharUI()
 			Notificar("🚨 PANIC", C.Red, 2)
+		elseif nome == Config.keyEntregar then
+			UI.setEntregar(not Config.autoEntregar)
 		end
 	end)
 
@@ -1035,15 +1419,74 @@ local function IniciarScript()
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
+	-- ===================== SERVIÇOS EM SEGUNDO PLANO =====================
+
+	-- atualiza estatísticas na tela
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(1)
+			pcall(function() statsLabel.Text = ResumoStats() end)
+		end
+	end)
+
+	-- retomar após morrer / resetar
+	lp.CharacterAdded:Connect(function()
+		task.wait(1.5)
+		if Config.autoEntregar then
+			AplicarVelocidade()
+			Notificar("♻️ Respawn detectado — retomando", C.Blue, 2)
+			Webhook("♻️ Personagem renasceu, retomando entregas.")
+		end
+	end)
+
+	SetAntiAfk(Config.antiAfk)
+	IniciarAutoReconnect()
+	if Config.fpsBoost then AplicarFPS(true) end
+
+	-- resumo periódico no Discord
+	task.spawn(function()
+		local ultimo = tick()
+		while SG.Parent do
+			task.wait(5)
+			if Config.webhookAtivo and Config.webhookUrl ~= "" and tick() - ultimo >= Config.webhookMin * 60 then
+				ultimo = tick()
+				Webhook("📊 " .. ResumoStats())
+			end
+		end
+	end)
+
+	-- revalida a key periodicamente (derruba se revogada/expirada)
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(KEY_CONFIG.REVALIDAR_SEG)
+			if not SG.Parent then break end
+			local ok, res, erroRede = ValidarKey(KeyState.key)
+			if not ok and not erroRede then
+				PararTudo()
+				LimparKeyLocal()
+				Notificar("🚫 Key revogada/expirada: " .. tostring(res), C.Red, 5)
+				Webhook("🚫 Key invalidada durante o uso: " .. tostring(res))
+				task.wait(3)
+				pcall(function() SG:Destroy() end)
+				pcall(function() SGBtn:Destroy() end)
+				break
+			end
+		end
+	end)
+
 	AtivarGodMode()
 
+	-- se estava ligado quando fechou, religa (o toggle salvo agora realmente inicia)
+	if Config.autoEntregar then UI.setEntregar(true) end
+	AtualizarIndicador()
+
 	Log("═══════════════════════════════════")
-	Log("🍕 Sailent Auto Pizza v2.0 [FINAL]")
+	Log("🍕 Sailent Auto Pizza v" .. KEY_CONFIG.VERSAO .. " [KEY OK]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
-	Log("⚡ F2 = UI | F1 = Panic")
+	Log("⌨️ UI=" .. Config.keyUI .. " | Panic=" .. Config.keyPanic .. " | Entregar=" .. Config.keyEntregar)
 	Log("═══════════════════════════════════")
 
-	Notificar("🍕 Auto Pizza v2.0 carregado!", C.Accent, 2.5)
+	Notificar("🍕 Auto Pizza v" .. KEY_CONFIG.VERSAO .. " carregado!", C.Accent, 2.5)
 end
 
 Log("🔐 Verificando key...")
