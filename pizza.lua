@@ -1,6 +1,5 @@
 -- ============================================================
--- SAILENT AUTO PIZZA v1.0 — ENTREGADOR AUTOMÁTICO
--- Auto Entregar + A Pé/Voar + God Mode + Noclip auto
+-- SAILENT AUTO PIZZA v2.0 — COMPLETO (LocalMarcado correto)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -12,11 +11,10 @@ local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
 local lp = Players.LocalPlayer
 
--- ⚙️ CONFIG — MESMA KEY DOS OUTROS
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Pizza v1.0",
+	NOME_SCRIPT = "Sailent Auto Pizza v2.0",
 }
 
 for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
@@ -25,16 +23,11 @@ for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "Saile
 end
 
 local C = {
-	BG = Color3.fromRGB(12,12,18),
-	Card = Color3.fromRGB(25,25,35),
-	Accent = Color3.fromRGB(255,200,80),
-	Text = Color3.fromRGB(240,240,245),
-	Sub = Color3.fromRGB(150,150,165),
-	Green = Color3.fromRGB(80,220,120),
-	Red = Color3.fromRGB(230,70,80),
-	Yellow = Color3.fromRGB(255,200,80),
-	Blue = Color3.fromRGB(80,160,240),
-	Purple = Color3.fromRGB(180,120,255),
+	BG = Color3.fromRGB(12,12,18), Card = Color3.fromRGB(25,25,35),
+	Accent = Color3.fromRGB(255,200,80), Text = Color3.fromRGB(240,240,245),
+	Sub = Color3.fromRGB(150,150,165), Green = Color3.fromRGB(80,220,120),
+	Red = Color3.fromRGB(230,70,80), Yellow = Color3.fromRGB(255,200,80),
+	Blue = Color3.fromRGB(80,160,240), Purple = Color3.fromRGB(180,120,255),
 	Black = Color3.fromRGB(10, 10, 15),
 }
 
@@ -47,7 +40,7 @@ end
 
 local function Log(msg) print("[Pizza] " .. tostring(msg)) end
 
--- 🔐 SHA-256
+-- SHA-256
 local function Sha256(msg)
 	local K = {
 		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -69,11 +62,8 @@ local function Sha256(msg)
 	local lo = bitLen % 4294967296
 	local function u32be(n)
 		return string.char(
-			bit32.band(bit32.rshift(n, 24), 0xFF),
-			bit32.band(bit32.rshift(n, 16), 0xFF),
-			bit32.band(bit32.rshift(n, 8), 0xFF),
-			bit32.band(n, 0xFF)
-		)
+			bit32.band(bit32.rshift(n, 24), 0xFF), bit32.band(bit32.rshift(n, 16), 0xFF),
+			bit32.band(bit32.rshift(n, 8), 0xFF), bit32.band(n, 0xFF))
 	end
 	msg = msg .. u32be(hi) .. u32be(lo)
 	for chunk = 1, #msg, 64 do
@@ -97,14 +87,10 @@ local function Sha256(msg)
 			local t2 = (S0 + mj) % 4294967296
 			h,g,f,e,d,c,b,a = g,f,e,(d + t1) % 4294967296,c,b,a,(t1 + t2) % 4294967296
 		end
-		H[1] = (H[1] + a) % 4294967296
-		H[2] = (H[2] + b) % 4294967296
-		H[3] = (H[3] + c) % 4294967296
-		H[4] = (H[4] + d) % 4294967296
-		H[5] = (H[5] + e) % 4294967296
-		H[6] = (H[6] + f) % 4294967296
-		H[7] = (H[7] + g) % 4294967296
-		H[8] = (H[8] + h) % 4294967296
+		H[1] = (H[1] + a) % 4294967296; H[2] = (H[2] + b) % 4294967296
+		H[3] = (H[3] + c) % 4294967296; H[4] = (H[4] + d) % 4294967296
+		H[5] = (H[5] + e) % 4294967296; H[6] = (H[6] + f) % 4294967296
+		H[7] = (H[7] + g) % 4294967296; H[8] = (H[8] + h) % 4294967296
 	end
 	local out = {}
 	for i = 1, 8 do out[#out+1] = string.format("%08x", H[i]) end
@@ -171,49 +157,37 @@ local function ValidarKey(keyInput)
 	return true, entry
 end
 
--- 🍞 TOAST
+-- TOAST
 local SGBToast = Instance.new("ScreenGui")
-SGBToast.Name = "SailentToast"
-SGBToast.ResetOnSpawn = false
+SGBToast.Name = "SailentToast"; SGBToast.ResetOnSpawn = false
 SGBToast.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-SGBToast.IgnoreGuiInset = true
-SGBToast.DisplayOrder = 999
-SGBToast.Parent = CoreGui
+SGBToast.IgnoreGuiInset = true; SGBToast.DisplayOrder = 999; SGBToast.Parent = CoreGui
 
 local toastContainer = Instance.new("Frame")
 toastContainer.Size = UDim2.new(0, 300, 1, 0)
 toastContainer.Position = UDim2.new(1, -320, 0, 0)
-toastContainer.BackgroundTransparency = 1
-toastContainer.Parent = SGBToast
+toastContainer.BackgroundTransparency = 1; toastContainer.Parent = SGBToast
 
 local toastLay = Instance.new("UIListLayout")
 toastLay.VerticalAlignment = Enum.VerticalAlignment.Bottom
 toastLay.HorizontalAlignment = Enum.HorizontalAlignment.Right
-toastLay.Padding = UDim.new(0, 6)
-toastLay.SortOrder = Enum.SortOrder.LayoutOrder
+toastLay.Padding = UDim.new(0, 6); toastLay.SortOrder = Enum.SortOrder.LayoutOrder
 toastLay.Parent = toastContainer
 
 local toastCounter = 0
 local ultimoToast = {}
 local function Notificar(txt, cor, duracao)
-	cor = cor or C.Accent
-	duracao = duracao or 2.5
+	cor = cor or C.Accent; duracao = duracao or 2.5
 	local agora = tick()
 	if ultimoToast[tostring(txt)] and (agora - ultimoToast[tostring(txt)]) < 1 then return end
 	ultimoToast[tostring(txt)] = agora
 	toastCounter = toastCounter + 1
 	local t = Instance.new("TextLabel")
-	t.Text = tostring(txt)
-	t.Font = Enum.Font.GothamBold
-	t.TextSize = 12
-	t.TextColor3 = C.Black
-	t.BackgroundColor3 = cor
-	t.BackgroundTransparency = 1
-	t.TextTransparency = 1
-	t.Size = UDim2.new(1, 0, 0, 34)
-	t.TextWrapped = true
-	t.LayoutOrder = toastCounter
-	t.Parent = toastContainer
+	t.Text = tostring(txt); t.Font = Enum.Font.GothamBold; t.TextSize = 12
+	t.TextColor3 = C.Black; t.BackgroundColor3 = cor
+	t.BackgroundTransparency = 1; t.TextTransparency = 1
+	t.Size = UDim2.new(1, 0, 0, 34); t.TextWrapped = true
+	t.LayoutOrder = toastCounter; t.Parent = toastContainer
 	local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0, 8); tc.Parent = t
 	local tp = Instance.new("UIPadding")
 	tp.PaddingLeft = UDim.new(0, 10); tp.PaddingRight = UDim.new(0, 10)
@@ -225,134 +199,82 @@ local function Notificar(txt, cor, duracao)
 	end)
 end
 
--- 🖥️ UI DE LOGIN
+-- LOGIN
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
-	SGK.Name = "SailentKeyUI"
-	SGK.ResetOnSpawn = false
+	SGK.Name = "SailentKeyUI"; SGK.ResetOnSpawn = false
 	SGK.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	SGK.IgnoreGuiInset = true
-	SGK.DisplayOrder = 999
-	SGK.Parent = CoreGui
+	SGK.IgnoreGuiInset = true; SGK.DisplayOrder = 999; SGK.Parent = CoreGui
 
 	local BG = Instance.new("Frame")
-	BG.Size = UDim2.new(1, 0, 1, 0)
-	BG.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	BG.BackgroundTransparency = 0.4
-	BG.BorderSizePixel = 0
-	BG.Parent = SGK
+	BG.Size = UDim2.new(1, 0, 1, 0); BG.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	BG.BackgroundTransparency = 0.4; BG.BorderSizePixel = 0; BG.Parent = SGK
 
 	local Box = Instance.new("Frame")
-	Box.Size = UDim2.new(0, 380, 0, 340)
-	Box.Position = UDim2.new(0.5, -190, 0.5, -170)
-	Box.BackgroundColor3 = C.BG
-	Box.BorderSizePixel = 0
-	Box.Parent = SGK
+	Box.Size = UDim2.new(0, 380, 0, 340); Box.Position = UDim2.new(0.5, -190, 0.5, -170)
+	Box.BackgroundColor3 = C.BG; Box.BorderSizePixel = 0; Box.Parent = SGK
 	local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 14); BC.Parent = Box
 	local BS = Instance.new("UIStroke"); BS.Color = C.Accent; BS.Thickness = 2; BS.Parent = Box
 
 	local Title = Instance.new("TextLabel")
 	Title.Text = "🍕 SAILENT PIZZA — AUTH"
-	Title.Font = Enum.Font.GothamBold
-	Title.TextSize = 18
-	Title.TextColor3 = C.Accent
-	Title.BackgroundTransparency = 1
-	Title.Position = UDim2.new(0, 0, 0, 18)
-	Title.Size = UDim2.new(1, 0, 0, 26)
-	Title.Parent = Box
+	Title.Font = Enum.Font.GothamBold; Title.TextSize = 18; Title.TextColor3 = C.Accent
+	Title.BackgroundTransparency = 1; Title.Position = UDim2.new(0, 0, 0, 18)
+	Title.Size = UDim2.new(1, 0, 0, 26); Title.Parent = Box
 
 	local Sub = Instance.new("TextLabel")
-	Sub.Text = "Cole sua key para liberar o script"
-	Sub.Font = Enum.Font.Gotham
-	Sub.TextSize = 12
-	Sub.TextColor3 = C.Sub
-	Sub.BackgroundTransparency = 1
-	Sub.Position = UDim2.new(0, 0, 0, 48)
-	Sub.Size = UDim2.new(1, 0, 0, 18)
-	Sub.Parent = Box
+	Sub.Text = "Cole sua key para liberar o script"; Sub.Font = Enum.Font.Gotham
+	Sub.TextSize = 12; Sub.TextColor3 = C.Sub; Sub.BackgroundTransparency = 1
+	Sub.Position = UDim2.new(0, 0, 0, 48); Sub.Size = UDim2.new(1, 0, 0, 18); Sub.Parent = Box
 
 	local hwidLbl = Instance.new("TextLabel")
 	hwidLbl.Text = "HWID: " .. GetHWID():sub(1, 26) .. "..."
-	hwidLbl.Font = Enum.Font.Code
-	hwidLbl.TextSize = 10
-	hwidLbl.TextColor3 = Color3.fromRGB(100,100,120)
-	hwidLbl.BackgroundTransparency = 1
-	hwidLbl.Position = UDim2.new(0, 0, 0, 68)
-	hwidLbl.Size = UDim2.new(1, 0, 0, 14)
-	hwidLbl.Parent = Box
+	hwidLbl.Font = Enum.Font.Code; hwidLbl.TextSize = 10
+	hwidLbl.TextColor3 = Color3.fromRGB(100,100,120); hwidLbl.BackgroundTransparency = 1
+	hwidLbl.Position = UDim2.new(0, 0, 0, 68); hwidLbl.Size = UDim2.new(1, 0, 0, 14); hwidLbl.Parent = Box
 
 	local Input = Instance.new("TextBox")
-	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"
-	Input.Font = Enum.Font.Code
-	Input.TextSize = 13
-	Input.TextColor3 = C.Text
-	Input.PlaceholderColor3 = Color3.fromRGB(90,90,110)
-	Input.BackgroundColor3 = C.Card
-	Input.BorderSizePixel = 0
-	Input.ClearTextOnFocus = false
-	Input.Text = ""
-	Input.Position = UDim2.new(0, 20, 0, 100)
-	Input.Size = UDim2.new(1, -40, 0, 42)
-	Input.Parent = Box
+	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"; Input.Font = Enum.Font.Code
+	Input.TextSize = 13; Input.TextColor3 = C.Text; Input.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+	Input.BackgroundColor3 = C.Card; Input.BorderSizePixel = 0; Input.ClearTextOnFocus = false
+	Input.Text = ""; Input.Position = UDim2.new(0, 20, 0, 100); Input.Size = UDim2.new(1, -40, 0, 42); Input.Parent = Box
 	local IC = Instance.new("UICorner"); IC.CornerRadius = UDim.new(0, 8); IC.Parent = Input
 	local IS = Instance.new("UIStroke"); IS.Color = Color3.fromRGB(50,50,70); IS.Thickness = 1; IS.Parent = Input
 
 	local Status = Instance.new("TextLabel")
-	Status.Text = ""
-	Status.Font = Enum.Font.GothamBold
-	Status.TextSize = 11
-	Status.TextColor3 = C.Red
-	Status.BackgroundTransparency = 1
-	Status.Position = UDim2.new(0, 20, 0, 150)
-	Status.Size = UDim2.new(1, -40, 0, 40)
-	Status.TextWrapped = true
-	Status.TextYAlignment = Enum.TextYAlignment.Top
-	Status.Parent = Box
+	Status.Text = ""; Status.Font = Enum.Font.GothamBold; Status.TextSize = 11
+	Status.TextColor3 = C.Red; Status.BackgroundTransparency = 1
+	Status.Position = UDim2.new(0, 20, 0, 150); Status.Size = UDim2.new(1, -40, 0, 40)
+	Status.TextWrapped = true; Status.TextYAlignment = Enum.TextYAlignment.Top; Status.Parent = Box
 
 	local BtnValidar = Instance.new("TextButton")
-	BtnValidar.Text = "✅ VALIDAR KEY"
-	BtnValidar.Font = Enum.Font.GothamBold
-	BtnValidar.TextSize = 14
-	BtnValidar.TextColor3 = C.Black
-	BtnValidar.BackgroundColor3 = C.Green
-	BtnValidar.BorderSizePixel = 0
-	BtnValidar.Position = UDim2.new(0, 20, 0, 200)
-	BtnValidar.Size = UDim2.new(1, -40, 0, 46)
-	BtnValidar.Parent = Box
+	BtnValidar.Text = "✅ VALIDAR KEY"; BtnValidar.Font = Enum.Font.GothamBold
+	BtnValidar.TextSize = 14; BtnValidar.TextColor3 = C.Black; BtnValidar.BackgroundColor3 = C.Green
+	BtnValidar.BorderSizePixel = 0; BtnValidar.Position = UDim2.new(0, 20, 0, 200)
+	BtnValidar.Size = UDim2.new(1, -40, 0, 46); BtnValidar.Parent = Box
 	local BtnC = Instance.new("UICorner"); BtnC.CornerRadius = UDim.new(0, 8); BtnC.Parent = BtnValidar
 
 	local BtnLimpar = Instance.new("TextButton")
-	BtnLimpar.Text = "🗑️ Limpar key salva"
-	BtnLimpar.Font = Enum.Font.Gotham
-	BtnLimpar.TextSize = 10
-	BtnLimpar.TextColor3 = Color3.fromRGB(120,120,140)
-	BtnLimpar.BackgroundTransparency = 1
-	BtnLimpar.Position = UDim2.new(0, 20, 0, 300)
-	BtnLimpar.Size = UDim2.new(1, -40, 0, 20)
-	BtnLimpar.Parent = Box
+	BtnLimpar.Text = "🗑️ Limpar key salva"; BtnLimpar.Font = Enum.Font.Gotham
+	BtnLimpar.TextSize = 10; BtnLimpar.TextColor3 = Color3.fromRGB(120,120,140)
+	BtnLimpar.BackgroundTransparency = 1; BtnLimpar.Position = UDim2.new(0, 20, 0, 300)
+	BtnLimpar.Size = UDim2.new(1, -40, 0, 20); BtnLimpar.Parent = Box
 
 	local function SucessoLogin()
 		Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
-		Status.TextColor3 = C.Green
-		BtnValidar.Text = "✅ SUCESSO!"
-		task.wait(0.3)
-		pcall(function() SGK:Destroy() end)
-		task.wait(0.1)
-		callbackSucesso()
+		Status.TextColor3 = C.Green; BtnValidar.Text = "✅ SUCESSO!"
+		task.wait(0.3); pcall(function() SGK:Destroy() end)
+		task.wait(0.1); callbackSucesso()
 	end
 
 	task.spawn(function()
 		task.wait(0.2)
 		local k = CarregarKeyLocal()
 		if k and k ~= "" then
-			Input.Text = k
-			Status.Text = "🔄 Verificando key salva..."
-			Status.TextColor3 = C.Yellow
+			Input.Text = k; Status.Text = "🔄 Verificando key salva..."; Status.TextColor3 = C.Yellow
 			local ok, res = ValidarKey(k)
 			if ok then SucessoLogin() else
-				Status.Text = "❌ " .. tostring(res)
-				Status.TextColor3 = C.Red
-				LimparKeyLocal()
+				Status.Text = "❌ " .. tostring(res); Status.TextColor3 = C.Red; LimparKeyLocal()
 			end
 		end
 	end)
@@ -365,10 +287,8 @@ local function MostrarUILogin(callbackSucesso)
 		task.spawn(function()
 			local ok, res = ValidarKey(k)
 			if ok then SucessoLogin() else
-				Status.Text = "❌ " .. tostring(res)
-				Status.TextColor3 = C.Red
-				BtnValidar.Text = "✅ VALIDAR KEY"
-				BtnValidar.BackgroundColor3 = C.Green
+				Status.Text = "❌ " .. tostring(res); Status.TextColor3 = C.Red
+				BtnValidar.Text = "✅ VALIDAR KEY"; BtnValidar.BackgroundColor3 = C.Green
 			end
 		end)
 	end)
@@ -403,29 +323,19 @@ local function AtivarNoclip()
 		local c = lp.Character
 		if not c then return end
 		for _, p in ipairs(c:GetDescendants()) do
-			if p:IsA("BasePart") and p.CanCollide then
-				p.CanCollide = false
-			end
+			if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end
 		end
 	end)
 end
 
 local function DesativarNoclip()
 	noclipAtivo = false
-	if noclipConn then
-		pcall(function() noclipConn:Disconnect() end)
-		noclipConn = nil
-	end
+	if noclipConn then pcall(function() noclipConn:Disconnect() end); noclipConn = nil end
 end
 
--- CONFIG
 local CONFIG_FILE = "sailent_pizza_config.txt"
 local Config = {
-	velocidade = 100,
-	velFly = 80,
-	autoEntregar = false,
-	modoVoo = false,
-	somAtivo = true,
+	velocidade = 100, velFly = 80, autoEntregar = false, modoVoo = false,
 }
 
 local function SalvarConfig()
@@ -453,20 +363,7 @@ end
 
 CarregarConfig()
 
-local function TocarSom(tipo)
-	if not Config.somAtivo then return end
-	pcall(function()
-		local sound = Instance.new("Sound")
-		sound.Parent = SoundService
-		if tipo == "pegou" then sound.SoundId = "rbxassetid://4612375230"
-		elseif tipo == "entregou" then sound.SoundId = "rbxassetid://4612384334" end
-		sound.Volume = 0.15
-		sound:Play()
-		task.delay(2, function() sound:Destroy() end)
-	end)
-end
-
--- ACHAR PROMPTS
+-- ACHAR PROMPT
 local function AcharPromptPorTexto(txt)
 	local hrp = GetHRP()
 	if not hrp then return nil end
@@ -475,20 +372,18 @@ local function AcharPromptPorTexto(txt)
 		if obj:IsA("ProximityPrompt") then
 			if obj.ActionText and obj.ActionText:lower():find(txt:lower()) then
 				local part = obj.Parent
+				local pos = nil
 				if part and part:IsA("BasePart") then
-					local dist = (part.Position - hrp.Position).Magnitude
+					pos = part.Position
+				elseif part and part:IsA("Model") then
+					local root = part:FindFirstChild("HumanoidRootPart") or part.PrimaryPart
+					if root then pos = root.Position end
+				end
+				if pos then
+					local dist = (pos - hrp.Position).Magnitude
 					if dist < menorDist then
 						menorDist = dist
 						maisPerto = obj
-					end
-				elseif part and part:IsA("Model") then
-					local root = part:FindFirstChild("HumanoidRootPart") or part.PrimaryPart
-					if root then
-						local dist = (root.Position - hrp.Position).Magnitude
-						if dist < menorDist then
-							menorDist = dist
-							maisPerto = obj
-						end
 					end
 				end
 			end
@@ -497,16 +392,48 @@ local function AcharPromptPorTexto(txt)
 	return maisPerto
 end
 
--- VOAR (CFrame)
+-- ⭐ ACHAR LOCALMARCADO (cliente) — CORRETO
+local function AcharLocalMarcado()
+	local construcoes = workspace:FindFirstChild("Construcoes")
+	if not construcoes then return nil end
+	local pizzaria = construcoes:FindFirstChild("Pizzaria")
+	if not pizzaria then return nil end
+	local spa = pizzaria:FindFirstChild("OrderCharSpawns")
+	if not spa then return nil end
+
+	for _, pad in ipairs(spa:GetChildren()) do
+		local marcado = pad:FindFirstChild("LocalMarcado", true)
+		if marcado then
+			local pos = nil
+			if marcado:IsA("BasePart") then
+				pos = marcado.Position
+			elseif marcado:IsA("Model") then
+				local root = marcado:FindFirstChild("HumanoidRootPart") or marcado.PrimaryPart
+				if root then pos = root.Position end
+			elseif marcado:IsA("Attachment") then
+				pos = marcado.WorldPosition
+			end
+			if not pos then
+				for _, d in ipairs(marcado:GetDescendants()) do
+					if d:IsA("BasePart") then pos = d.Position; break
+					elseif d:IsA("Attachment") then pos = d.WorldPosition; break end
+				end
+			end
+			if pos then
+				return {marcado = marcado, pos = pos, pad = pad}
+			end
+		end
+	end
+	return nil
+end
+
+-- VOAR
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
-	local hrp = GetHRP()
-	local hum = GetHum()
+	local hrp = GetHRP(); local hum = GetHum()
 	if not hrp or not hum then return false end
-
 	timeout = timeout or 25
 	local t0 = tick()
-
 	local colideOriginal = {}
 	for _, p in ipairs(lp.Character:GetDescendants()) do
 		if p:IsA("BasePart") then
@@ -514,9 +441,7 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-
 	local velFrame = (Config.velFly or 80) * 0.05
-
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h then break end
@@ -527,57 +452,40 @@ local function VoarAte(posAlvo, timeout)
 		pcall(function() h.CFrame = CFrame.new(novaPos) end)
 		task.wait(0.03)
 	end
-
-	local tChao = tick()
-	local ultimaY = nil
-	local parado = 0
+	local tChao = tick(); local ultimaY = nil; local parado = 0
 	while tick() - tChao < 5 do
-		local h = GetHRP()
-		if not h then break end
+		local h = GetHRP(); if not h then break end
 		local yAtual = h.Position.Y
 		pcall(function() h.CFrame = CFrame.new(h.Position - Vector3.new(0, 0.8, 0)) end)
 		if ultimaY then
 			if math.abs(yAtual - ultimaY) < 0.05 then
 				parado = parado + 1
 				if parado >= 5 then break end
-			else
-				parado = 0
-			end
+			else parado = 0 end
 		end
 		ultimaY = yAtual
 		task.wait(0.05)
 	end
-
 	task.wait(0.15)
-
 	for p, v in pairs(colideOriginal) do
-		if p and p.Parent then
-			pcall(function() p.CanCollide = v end)
-		end
+		if p and p.Parent then pcall(function() p.CanCollide = v end) end
 	end
-
 	local h = GetHRP()
 	if h then pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end) end
-
 	return true
 end
 
 local function AndarAte(posAlvo, timeout, distParada)
 	if not posAlvo then return false end
-	local hrp = GetHRP()
-	local hum = GetHum()
+	local hrp = GetHRP(); local hum = GetHum()
 	if not hrp or not hum then return false end
-	timeout = timeout or 30
-	distParada = distParada or 4
-	local t0 = tick()
-	hum:MoveTo(posAlvo)
+	timeout = timeout or 30; distParada = distParada or 4
+	local t0 = tick(); hum:MoveTo(posAlvo)
 	while tick() - t0 < timeout do
-		local h = GetHRP()
-		if not h then return false end
+		local h = GetHRP(); if not h then return false end
 		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
 		if diff.Magnitude < distParada then hum:MoveTo(h.Position); return true end
-		hum:MoveTo(posAlvo)
-		task.wait(0.1)
+		hum:MoveTo(posAlvo); task.wait(0.1)
 	end
 	return false
 end
@@ -587,10 +495,17 @@ local function IrPara(posAlvo, timeout)
 	else return AndarAte(posAlvo, timeout) end
 end
 
+local function TemPizza()
+	local doce = workspace:FindFirstChild(lp.Name)
+	if doce then
+		return doce:FindFirstChild("PizzaTemplate") ~= nil
+	end
+	return false
+end
+
 -- GOD MODE
 local GodModeConns = {}
-local ultimaPosSegura = nil
-local ultimoReset = 0
+local ultimaPosSegura = nil; local ultimoReset = 0
 local godModeAtivo = true
 local velocidadeAtual = Config.velocidade
 local entregando = false
@@ -601,23 +516,17 @@ local function AtivarGodModeNoChar(char)
 	if not char then return end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
-
 	local connLoop = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
-		local h = char:FindFirstChildOfClass("Humanoid")
-		if not h then return end
-		if h.Health > 0 and h.Health < h.MaxHealth then
-			h.Health = h.MaxHealth
-		end
+		local h = char:FindFirstChildOfClass("Humanoid"); if not h then return end
+		if h.Health > 0 and h.Health < h.MaxHealth then h.Health = h.MaxHealth end
 	end)
 	table.insert(GodModeConns, connLoop)
-
 	local connHealth = hum.HealthChanged:Connect(function(novaVida)
 		if not godModeAtivo then return end
 		if novaVida < hum.MaxHealth and novaVida > 0 then hum.Health = hum.MaxHealth end
 	end)
 	table.insert(GodModeConns, connHealth)
-
 	local function DesativarFalling()
 		pcall(function() hum:SetAttribute("FallingDamage", false) end)
 		pcall(function() hum:SetAttribute("FallDamage", false) end)
@@ -629,17 +538,14 @@ local function AtivarGodModeNoChar(char)
 		DesativarFalling()
 	end)
 	table.insert(GodModeConns, connFalling)
-
 	local connQueda = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		local h = char:FindFirstChildOfClass("Humanoid")
 		if not hrp or not h or h.Health <= 0 then return end
-		local vel = hrp.AssemblyLinearVelocity
-		local pos = hrp.Position
+		local vel = hrp.AssemblyLinearVelocity; local pos = hrp.Position
 		if h.FloorMaterial ~= Enum.Material.Air and vel.Y > -10 then
-			ultimaPosSegura = pos
-			return
+			ultimaPosSegura = pos; return
 		end
 		if vel.Y < -70 then
 			pcall(function() hrp.AssemblyLinearVelocity = Vector3.new(vel.X, -15, vel.Z) end)
@@ -657,22 +563,14 @@ local function AtivarGodModeNoChar(char)
 		end
 	end)
 	table.insert(GodModeConns, connQueda)
-
-	local connDied = hum.Died:Connect(function()
-		if not godModeAtivo then return end
-	end)
-	table.insert(GodModeConns, connDied)
-
 	local connZero = RunService.Heartbeat:Connect(function()
 		if not godModeAtivo then return end
-		local h = char:FindFirstChildOfClass("Humanoid")
-		if not h then return end
+		local h = char:FindFirstChildOfClass("Humanoid"); if not h then return end
 		if h.Health <= 0 and h:GetState() ~= Enum.HumanoidStateType.Dead then
 			pcall(function() h.Health = h.MaxHealth end)
 		end
 	end)
 	table.insert(GodModeConns, connZero)
-
 	pcall(function() hum.MaxHealth = 10000; hum.Health = 10000 end)
 	local connMaxH = hum:GetPropertyChangedSignal("MaxHealth"):Connect(function()
 		pcall(function()
@@ -693,16 +591,14 @@ local function AtivarGodMode()
 		ultimaPosSegura = nil
 		AtivarGodModeNoChar(novoChar)
 		task.spawn(function()
-			if lp.Character then
-				AtivarGodModeNoChar(lp.Character)
-			end
+			if lp.Character then AtivarGodModeNoChar(lp.Character) end
 			task.wait(0.5)
 			Notificar("💀 Morreu — reconectando...", C.Red, 1.5)
 		end)
 	end)
-end-- ══════════════════════════════════════════════════════════════
+end
+
 -- UI
--- ══════════════════════════════════════════════════════════════
 local function IniciarScript()
 
 	for _, name in ipairs({"SailentKeyUI", "SailentPizza", "SailentFloatBtn"}) do
@@ -712,25 +608,16 @@ local function IniciarScript()
 	task.wait(0.05)
 
 	local SGBtn = Instance.new("ScreenGui")
-	SGBtn.Name = "SailentFloatBtn"
-	SGBtn.ResetOnSpawn = false
+	SGBtn.Name = "SailentFloatBtn"; SGBtn.ResetOnSpawn = false
 	SGBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	SGBtn.IgnoreGuiInset = true
-	SGBtn.DisplayOrder = 5
-	SGBtn.Parent = CoreGui
+	SGBtn.IgnoreGuiInset = true; SGBtn.DisplayOrder = 5; SGBtn.Parent = CoreGui
 
 	local FloatBtn = Instance.new("TextButton")
-	FloatBtn.Text = "🍕"
-	FloatBtn.Font = Enum.Font.GothamBold
-	FloatBtn.TextSize = 26
-	FloatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	FloatBtn.BackgroundColor3 = C.Black
-	FloatBtn.BorderSizePixel = 0
-	FloatBtn.Size = UDim2.new(0, 60, 0, 60)
-	FloatBtn.Position = UDim2.new(0, 20, 0.5, -30)
-	FloatBtn.AutoButtonColor = false
-	FloatBtn.Active = true
-	FloatBtn.Parent = SGBtn
+	FloatBtn.Text = "🍕"; FloatBtn.Font = Enum.Font.GothamBold; FloatBtn.TextSize = 26
+	FloatBtn.TextColor3 = Color3.fromRGB(255, 255, 255); FloatBtn.BackgroundColor3 = C.Black
+	FloatBtn.BorderSizePixel = 0; FloatBtn.Size = UDim2.new(0, 60, 0, 60)
+	FloatBtn.Position = UDim2.new(0, 20, 0.5, -30); FloatBtn.AutoButtonColor = false
+	FloatBtn.Active = true; FloatBtn.Parent = SGBtn
 
 	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
 	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Accent; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
@@ -756,19 +643,13 @@ local function IniciarScript()
 	end)
 
 	local SG = Instance.new("ScreenGui")
-	SG.Name = "SailentPizza"
-	SG.ResetOnSpawn = false
+	SG.Name = "SailentPizza"; SG.ResetOnSpawn = false
 	SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	SG.IgnoreGuiInset = true
-	SG.DisplayOrder = 10
-	SG.Parent = CoreGui
+	SG.IgnoreGuiInset = true; SG.DisplayOrder = 10; SG.Parent = CoreGui
 
 	local Main = Instance.new("Frame")
-	Main.Size = UDim2.new(0, 400, 0, 560)
-	Main.Position = UDim2.new(0.5, -200, 0.5, -280)
-	Main.BackgroundColor3 = C.BG
-	Main.BorderSizePixel = 0
-	Main.Parent = SG
+	Main.Size = UDim2.new(0, 400, 0, 560); Main.Position = UDim2.new(0.5, -200, 0.5, -280)
+	Main.BackgroundColor3 = C.BG; Main.BorderSizePixel = 0; Main.Parent = SG
 
 	local MC = Instance.new("UICorner"); MC.CornerRadius = UDim.new(0, 14); MC.Parent = Main
 	local MS = Instance.new("UIStroke"); MS.Color = C.Accent; MS.Thickness = 1.5; MS.Transparency = 0.3; MS.Parent = Main
@@ -791,9 +672,7 @@ local function IniciarScript()
 			end
 		end)
 		Main.InputChanged:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
-				di = i
-			end
+			if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then di = i end
 		end)
 		UserInput.InputChanged:Connect(function(i)
 			if i == di and d then up(i) end
@@ -801,130 +680,79 @@ local function IniciarScript()
 	end
 
 	local TB = Instance.new("Frame")
-	TB.Size = UDim2.new(1, 0, 0, 56)
-	TB.BackgroundColor3 = C.Card
-	TB.BorderSizePixel = 0
-	TB.Parent = Main
+	TB.Size = UDim2.new(1, 0, 0, 56); TB.BackgroundColor3 = C.Card
+	TB.BorderSizePixel = 0; TB.Parent = Main
 	local TBC = Instance.new("UICorner"); TBC.CornerRadius = UDim.new(0, 14); TBC.Parent = TB
 	local TBov = Instance.new("Frame")
-	TBov.Size = UDim2.new(1, 0, 0, 14)
-	TBov.Position = UDim2.new(0, 0, 1, -14)
-	TBov.BackgroundColor3 = C.Card
-	TBov.BorderSizePixel = 0
-	TBov.Parent = TB
+	TBov.Size = UDim2.new(1, 0, 0, 14); TBov.Position = UDim2.new(0, 0, 1, -14)
+	TBov.BackgroundColor3 = C.Card; TBov.BorderSizePixel = 0; TBov.Parent = TB
 
 	local TLogo = Instance.new("TextLabel")
-	TLogo.Text = "🍕"
-	TLogo.Font = Enum.Font.GothamBold
-	TLogo.TextSize = 22
-	TLogo.BackgroundTransparency = 1
-	TLogo.Position = UDim2.new(0, 14, 0, 0)
-	TLogo.Size = UDim2.new(0, 40, 1, 0)
-	TLogo.Parent = TB
+	TLogo.Text = "🍕"; TLogo.Font = Enum.Font.GothamBold; TLogo.TextSize = 22
+	TLogo.BackgroundTransparency = 1; TLogo.Position = UDim2.new(0, 14, 0, 0)
+	TLogo.Size = UDim2.new(0, 40, 1, 0); TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Pizza v1.0 [" .. KeyState.nivel:upper() .. "]"
-	TTitle.Font = Enum.Font.GothamBold
-	TTitle.TextSize = 14
-	TTitle.TextColor3 = C.Text
-	TTitle.BackgroundTransparency = 1
-	TTitle.Position = UDim2.new(0, 55, 0, 0)
-	TTitle.Size = UDim2.new(0, 250, 1, 0)
-	TTitle.TextXAlignment = Enum.TextXAlignment.Left
-	TTitle.Parent = TB
+	TTitle.Text = "Auto Pizza v2.0 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Font = Enum.Font.GothamBold; TTitle.TextSize = 14; TTitle.TextColor3 = C.Text
+	TTitle.BackgroundTransparency = 1; TTitle.Position = UDim2.new(0, 55, 0, 0)
+	TTitle.Size = UDim2.new(0, 250, 1, 0); TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.Parent = TB
 
 	local MinBtn = Instance.new("TextButton")
-	MinBtn.Text = "−"
-	MinBtn.Font = Enum.Font.GothamBold
-	MinBtn.TextSize = 20
-	MinBtn.TextColor3 = C.Yellow
-	MinBtn.BackgroundColor3 = C.Card
-	MinBtn.BorderSizePixel = 0
-	MinBtn.Size = UDim2.new(0, 36, 1, 0)
-	MinBtn.Position = UDim2.new(1, -92, 0, 0)
-	MinBtn.Parent = TB
+	MinBtn.Text = "−"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextSize = 20
+	MinBtn.TextColor3 = C.Yellow; MinBtn.BackgroundColor3 = C.Card; MinBtn.BorderSizePixel = 0
+	MinBtn.Size = UDim2.new(0, 36, 1, 0); MinBtn.Position = UDim2.new(1, -92, 0, 0); MinBtn.Parent = TB
 	local MinC = Instance.new("UICorner"); MinC.CornerRadius = UDim.new(0, 14); MinC.Parent = MinBtn
 
 	local CloseBtn = Instance.new("TextButton")
-	CloseBtn.Text = "✕"
-	CloseBtn.Font = Enum.Font.GothamBold
-	CloseBtn.TextSize = 18
-	CloseBtn.TextColor3 = C.Sub
-	CloseBtn.BackgroundColor3 = C.Card
-	CloseBtn.BorderSizePixel = 0
-	CloseBtn.Size = UDim2.new(0, 56, 1, 0)
-	CloseBtn.Position = UDim2.new(1, -56, 0, 0)
-	CloseBtn.Parent = TB
+	CloseBtn.Text = "✕"; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18
+	CloseBtn.TextColor3 = C.Sub; CloseBtn.BackgroundColor3 = C.Card; CloseBtn.BorderSizePixel = 0
+	CloseBtn.Size = UDim2.new(0, 56, 1, 0); CloseBtn.Position = UDim2.new(1, -56, 0, 0); CloseBtn.Parent = TB
 	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 14); CC.Parent = CloseBtn
 
 	local Content = Instance.new("ScrollingFrame")
-	Content.Size = UDim2.new(1, -20, 1, -76)
-	Content.Position = UDim2.new(0, 10, 0, 66)
-	Content.BackgroundTransparency = 1
-	Content.BorderSizePixel = 0
-	Content.ScrollBarThickness = 4
-	Content.ScrollBarImageColor3 = C.Accent
+	Content.Size = UDim2.new(1, -20, 1, -76); Content.Position = UDim2.new(0, 10, 0, 66)
+	Content.BackgroundTransparency = 1; Content.BorderSizePixel = 0
+	Content.ScrollBarThickness = 4; Content.ScrollBarImageColor3 = C.Accent
 	Content.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	Content.Parent = Main
+	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y; Content.Parent = Main
 
 	local Lay = Instance.new("UIListLayout"); Lay.Padding = UDim.new(0, 8); Lay.Parent = Content
 
 	local function Sec(txt, color)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, 26)
-		f.BackgroundColor3 = C.Card
-		f.BorderSizePixel = 0
-		f.Parent = Content
+		f.Size = UDim2.new(1, 0, 0, 26); f.BackgroundColor3 = C.Card
+		f.BorderSizePixel = 0; f.Parent = Content
 		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
 		local l = Instance.new("TextLabel")
-		l.Text = txt
-		l.Font = Enum.Font.GothamBold
-		l.TextSize = 11
-		l.TextColor3 = color or C.Accent
-		l.BackgroundTransparency = 1
-		l.Position = UDim2.new(0, 12, 0, 0)
-		l.Size = UDim2.new(1, -24, 1, 0)
-		l.TextXAlignment = Enum.TextXAlignment.Left
-		l.Parent = f
+		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 11
+		l.TextColor3 = color or C.Accent; l.BackgroundTransparency = 1
+		l.Position = UDim2.new(0, 12, 0, 0); l.Size = UDim2.new(1, -24, 1, 0)
+		l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 	end
 
 	local function Stat(txt, color)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, 32)
-		f.BackgroundColor3 = C.Card
-		f.BorderSizePixel = 0
-		f.Parent = Content
+		f.Size = UDim2.new(1, 0, 0, 32); f.BackgroundColor3 = C.Card
+		f.BorderSizePixel = 0; f.Parent = Content
 		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
 		local l = Instance.new("TextLabel")
-		l.Text = txt
-		l.Font = Enum.Font.GothamBold
-		l.TextSize = 11
-		l.TextColor3 = color or C.Text
-		l.BackgroundTransparency = 1
-		l.Position = UDim2.new(0, 12, 0, 0)
-		l.Size = UDim2.new(1, -24, 1, 0)
-		l.TextXAlignment = Enum.TextXAlignment.Left
-		l.Parent = f
+		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 11
+		l.TextColor3 = color or C.Text; l.BackgroundTransparency = 1
+		l.Position = UDim2.new(0, 12, 0, 0); l.Size = UDim2.new(1, -24, 1, 0)
+		l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 		return l
 	end
 
 	local function Btn(txt, color, cb)
 		local b = Instance.new("TextButton")
-		b.Text = txt
-		b.Font = Enum.Font.GothamBold
-		b.TextSize = 12
-		b.TextColor3 = C.Text
-		b.BackgroundColor3 = C.Card
-		b.BorderSizePixel = 0
-		b.Size = UDim2.new(1, 0, 0, 38)
-		b.AutoButtonColor = false
-		b.Parent = Content
+		b.Text = txt; b.Font = Enum.Font.GothamBold; b.TextSize = 12
+		b.TextColor3 = C.Text; b.BackgroundColor3 = C.Card; b.BorderSizePixel = 0
+		b.Size = UDim2.new(1, 0, 0, 38); b.AutoButtonColor = false; b.Parent = Content
 		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = b
 		b.MouseButton1Click:Connect(function()
 			Tween(b, {BackgroundColor3 = color or C.Accent}, 0.08)
-			task.wait(0.12)
-			Tween(b, {BackgroundColor3 = C.Card}, 0.15)
+			task.wait(0.12); Tween(b, {BackgroundColor3 = C.Card}, 0.15)
 			if cb then task.spawn(cb) end
 		end)
 		return b
@@ -932,34 +760,20 @@ local function IniciarScript()
 
 	local function Toggle(txt, default, cb)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, 42)
-		f.BackgroundColor3 = C.Card
-		f.BorderSizePixel = 0
-		f.Parent = Content
+		f.Size = UDim2.new(1, 0, 0, 42); f.BackgroundColor3 = C.Card
+		f.BorderSizePixel = 0; f.Parent = Content
 		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = f
 		local l = Instance.new("TextLabel")
-		l.Text = txt
-		l.Font = Enum.Font.GothamBold
-		l.TextSize = 12
-		l.TextColor3 = C.Text
-		l.BackgroundTransparency = 1
-		l.Position = UDim2.new(0, 12, 0, 0)
-		l.Size = UDim2.new(1, -70, 1, 0)
-		l.TextXAlignment = Enum.TextXAlignment.Left
-		l.Parent = f
+		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 12; l.TextColor3 = C.Text
+		l.BackgroundTransparency = 1; l.Position = UDim2.new(0, 12, 0, 0)
+		l.Size = UDim2.new(1, -70, 1, 0); l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 		local bg = Instance.new("Frame")
-		bg.Size = UDim2.new(0, 44, 0, 22)
-		bg.Position = UDim2.new(1, -56, 0.5, -11)
-		bg.BackgroundColor3 = Color3.fromRGB(50,50,60)
-		bg.BorderSizePixel = 0
-		bg.Parent = f
+		bg.Size = UDim2.new(0, 44, 0, 22); bg.Position = UDim2.new(1, -56, 0.5, -11)
+		bg.BackgroundColor3 = Color3.fromRGB(50,50,60); bg.BorderSizePixel = 0; bg.Parent = f
 		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(1, 0); bc.Parent = bg
 		local k = Instance.new("Frame")
-		k.Size = UDim2.new(0, 18, 0, 18)
-		k.Position = UDim2.new(0, 2, 0.5, -9)
-		k.BackgroundColor3 = C.Text
-		k.BorderSizePixel = 0
-		k.Parent = bg
+		k.Size = UDim2.new(0, 18, 0, 18); k.Position = UDim2.new(0, 2, 0.5, -9)
+		k.BackgroundColor3 = C.Text; k.BorderSizePixel = 0; k.Parent = bg
 		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = k
 		local st = default or false
 		local function set(v)
@@ -975,72 +789,42 @@ local function IniciarScript()
 		end
 		if st then bg.BackgroundColor3 = C.Green; k.Position = UDim2.new(1, -20, 0.5, -9) end
 		local cl = Instance.new("TextButton")
-		cl.Text = ""
-		cl.BackgroundTransparency = 1
-		cl.Size = UDim2.new(1, 0, 1, 0)
-		cl.Parent = f
+		cl.Text = ""; cl.BackgroundTransparency = 1; cl.Size = UDim2.new(1, 0, 1, 0); cl.Parent = f
 		cl.MouseButton1Click:Connect(function() set(not st) end)
 		return set
 	end
 
 	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 0, 58)
-		frame.BackgroundColor3 = C.Card
-		frame.BorderSizePixel = 0
-		frame.Parent = parent
+		frame.Size = UDim2.new(1, 0, 0, 58); frame.BackgroundColor3 = C.Card
+		frame.BorderSizePixel = 0; frame.Parent = parent
 		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
-
 		local titulo = Instance.new("TextLabel")
-		titulo.Text = label
-		titulo.Font = Enum.Font.GothamBold
-		titulo.TextSize = 12
-		titulo.TextColor3 = C.Text
-		titulo.BackgroundTransparency = 1
-		titulo.Position = UDim2.new(0, 12, 0, 6)
-		titulo.Size = UDim2.new(0.7, 0, 0, 18)
-		titulo.TextXAlignment = Enum.TextXAlignment.Left
-		titulo.Parent = frame
-
+		titulo.Text = label; titulo.Font = Enum.Font.GothamBold; titulo.TextSize = 12
+		titulo.TextColor3 = C.Text; titulo.BackgroundTransparency = 1
+		titulo.Position = UDim2.new(0, 12, 0, 6); titulo.Size = UDim2.new(0.7, 0, 0, 18)
+		titulo.TextXAlignment = Enum.TextXAlignment.Left; titulo.Parent = frame
 		local valorLabel = Instance.new("TextLabel")
-		valorLabel.Text = tostring(default)
-		valorLabel.Font = Enum.Font.GothamBold
-		valorLabel.TextSize = 14
-		valorLabel.TextColor3 = C.Green
-		valorLabel.BackgroundTransparency = 1
-		valorLabel.Position = UDim2.new(0.7, 0, 0, 6)
-		valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
-		valorLabel.TextXAlignment = Enum.TextXAlignment.Right
-		valorLabel.Parent = frame
-
+		valorLabel.Text = tostring(default); valorLabel.Font = Enum.Font.GothamBold
+		valorLabel.TextSize = 14; valorLabel.TextColor3 = C.Green; valorLabel.BackgroundTransparency = 1
+		valorLabel.Position = UDim2.new(0.7, 0, 0, 6); valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
+		valorLabel.TextXAlignment = Enum.TextXAlignment.Right; valorLabel.Parent = frame
 		local bgBar = Instance.new("Frame")
-		bgBar.Size = UDim2.new(1, -24, 0, 12)
-		bgBar.Position = UDim2.new(0, 12, 0, 32)
-		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-		bgBar.BorderSizePixel = 0
-		bgBar.Parent = frame
+		bgBar.Size = UDim2.new(1, -24, 0, 12); bgBar.Position = UDim2.new(0, 12, 0, 32)
+		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60); bgBar.BorderSizePixel = 0; bgBar.Parent = frame
 		local bbc = Instance.new("UICorner"); bbc.CornerRadius = UDim.new(1, 0); bbc.Parent = bgBar
-
 		local fillBar = Instance.new("Frame")
-		fillBar.Size = UDim2.new(0, 0, 1, 0)
-		fillBar.BackgroundColor3 = C.Green
-		fillBar.BorderSizePixel = 0
-		fillBar.Parent = bgBar
+		fillBar.Size = UDim2.new(0, 0, 1, 0); fillBar.BackgroundColor3 = C.Green
+		fillBar.BorderSizePixel = 0; fillBar.Parent = bgBar
 		local fbc = Instance.new("UICorner"); fbc.CornerRadius = UDim.new(1, 0); fbc.Parent = fillBar
-
 		local knob = Instance.new("Frame")
-		knob.Size = UDim2.new(0, 22, 0, 22)
-		knob.Position = UDim2.new(0, -11, 0.5, -11)
-		knob.BackgroundColor3 = C.Text
-		knob.BorderSizePixel = 0
-		knob.Parent = bgBar
+		knob.Size = UDim2.new(0, 22, 0, 22); knob.Position = UDim2.new(0, -11, 0.5, -11)
+		knob.BackgroundColor3 = C.Text; knob.BorderSizePixel = 0; knob.Parent = bgBar
 		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
-
 		local valor = default
 		local arrastando = false
 		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X
-			local bgSize = bgBar.AbsoluteSize.X
+			local bgAbs = bgBar.AbsolutePosition.X; local bgSize = bgBar.AbsoluteSize.X
 			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
@@ -1053,9 +837,7 @@ local function IniciarScript()
 		knob.Position = UDim2.new(initPercent, -11, 0.5, -11)
 		bgBar.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-				arrastando = true
-				_G.SailentBloquearDrag = true
-				Atualizar(i.Position.X)
+				arrastando = true; _G.SailentBloquearDrag = true; Atualizar(i.Position.X)
 			end
 		end)
 		UserInput.InputChanged:Connect(function(i)
@@ -1066,23 +848,19 @@ local function IniciarScript()
 		UserInput.InputEnded:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				if arrastando then
-					arrastando = false
-					_G.SailentBloquearDrag = false
+					arrastando = false; _G.SailentBloquearDrag = false
 					SalvarConfig()
 				end
 			end
 		end)
 	end
 
-	-- ═══ SEÇÕES ═══
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 	Sec("📊 ESTATÍSTICAS", C.Blue)
-
 	local statEntregas = Stat("📦 Entregas: 0", C.Text)
-	local statPerf = Stat("🎮 FPS: -- | Ping: --", C.Sub)
 
-	Sec("🛡️ GOD MODE (7 camadas)", C.Green)
-	local godStatus = Stat("Status: ● ATIVO", C.Green)
+	Sec("🛡️ GOD MODE", C.Green)
+	Stat("Status: ● ATIVO", C.Green)
 
 	Sec("🍕 AUTO ENTREGADOR", C.Accent)
 	local entregaStatus = Stat("Status: PARADO", C.Sub)
@@ -1095,7 +873,7 @@ local function IniciarScript()
 			entregando = true
 			entregaStatus.Text = "Status: ● ATIVO (noclip ON)"
 			entregaStatus.TextColor3 = C.Green
-			Notificar("🍕 Auto Entregador ATIVADO + Noclip", C.Green, 1.5)
+			Notificar("🍕 Auto Entregador ATIVADO", C.Green, 1.5)
 			Tween(FloatBtn, {BackgroundColor3 = C.Green}, 0.25)
 			BtnStroke.Color = C.Green
 			local hum = GetHum()
@@ -1103,44 +881,29 @@ local function IniciarScript()
 
 			task.spawn(function()
 				while entregando do
-					-- Se tem pizza (Tool "PizzaTemplate" ou similar na mão)
-					local temPizza = false
-					if lp.Character then
-						for _, o in ipairs(lp.Character:GetChildren()) do
-							if o:IsA("Tool") and (o.Name:lower():find("pizza") or o.Name:lower():find("entrega") or o.Name:lower():find("pedido")) then
-								temPizza = true
-								break
-							end
-						end
-					end
-
-					if temPizza then
-						-- Procura cliente pra entregar
+					if TemPizza() then
 						entregaStatus.Text = "📤 Procurando cliente..."
-						local promptEntregar = AcharPromptPorTexto("Entregar Pedido")
-						if promptEntregar then
-							local part = promptEntregar.Parent
-							local pos = part.Position
-							if part:IsA("Model") then
-								local root = part:FindFirstChild("HumanoidRootPart") or part.PrimaryPart
-								if root then pos = root.Position end
-							end
-							entregaStatus.Text = "📤 Indo entregar..."
-							IrPara(pos, 25)
+						local info = AcharLocalMarcado()
+						if info and info.pos then
+							entregaStatus.Text = "📤 Indo pro cliente (" .. info.pad.Name .. ")..."
+							IrPara(info.pos, 25)
 							task.wait(0.3)
 							entregaStatus.Text = "📤 Entregando..."
-							pcall(function() fireproximityprompt(promptEntregar) end)
-							task.wait(0.7)
-							entregasCount = entregasCount + 1
-							statEntregas.Text = "📦 Entregas: " .. entregasCount
-							TocarSom("entregou")
-							Notificar("📤 Pedido entregue!", C.Blue, 1.5)
+							local prompt = AcharPromptPorTexto("Entregar Pedido")
+							if prompt then
+								pcall(function() fireproximityprompt(prompt) end)
+								task.wait(0.8)
+							end
+							if not TemPizza() then
+								entregasCount = entregasCount + 1
+								statEntregas.Text = "📦 Entregas: " .. entregasCount
+								Notificar("📤 Pedido entregue! #" .. entregasCount, C.Blue, 1.5)
+							end
 						else
-							entregaStatus.Text = "⚠️ Sem cliente visível"
+							entregaStatus.Text = "⚠️ Sem cliente ativo"
 							task.wait(1.5)
 						end
 					else
-						-- Não tem pizza: vai pegar no balcão
 						entregaStatus.Text = "📥 Procurando pedido..."
 						local promptPegar = AcharPromptPorTexto("Pegar Pedido")
 						if promptPegar then
@@ -1155,8 +918,7 @@ local function IniciarScript()
 							task.wait(0.3)
 							entregaStatus.Text = "📥 Pegando..."
 							pcall(function() fireproximityprompt(promptPegar) end)
-							task.wait(0.7)
-							TocarSom("pegou")
+							task.wait(1.2)
 							Notificar("📥 Pedido pego!", C.Green, 1.2)
 						else
 							entregaStatus.Text = "⚠️ Sem pedido na pizzaria"
@@ -1187,7 +949,6 @@ local function IniciarScript()
 		modoStatus.Text = "Modo: 🚶 A PÉ"
 		modoStatus.TextColor3 = C.Green
 		SalvarConfig()
-		Notificar("🚶 A PÉ ativado", C.Green, 1.5)
 	end)
 
 	Btn("🚁 VOAR (fly direto)", C.Blue, function()
@@ -1195,7 +956,6 @@ local function IniciarScript()
 		modoStatus.Text = "Modo: 🚁 VOANDO"
 		modoStatus.TextColor3 = C.Blue
 		SalvarConfig()
-		Notificar("🚁 VOAR ativado", C.Blue, 1.5)
 	end)
 
 	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
@@ -1211,12 +971,6 @@ local function IniciarScript()
 		Config.velFly = valor
 	end)
 
-	Sec("🎵 SOM", C.Accent)
-	Toggle("Notificações sonoras", Config.somAtivo, function(s)
-		Config.somAtivo = s
-		SalvarConfig()
-	end)
-
 	Sec("🚨 EMERGÊNCIA", C.Red)
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		Config.autoEntregar = false
@@ -1230,40 +984,17 @@ local function IniciarScript()
 		Notificar("🛑 Tudo parado!", C.Red, 2)
 	end)
 
-	-- LOOP DE ESTATÍSTICAS
-	task.spawn(function()
-		local fpsFrame = 0
-		local fpsTime = tick()
-		local fps = 60
-		while SG.Parent do
-			task.wait(1)
-			fpsFrame = fpsFrame + 1
-			local now = tick()
-			if now - fpsTime >= 1 then
-				fps = math.floor(fpsFrame / (now - fpsTime))
-				fpsFrame = 0
-				fpsTime = now
-			end
-			local ping = 0
-			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
-			statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
-		end
-	end)
-
-	-- ABRIR / FECHAR
 	local uiAberta = true
 
 	local function FecharUI()
 		uiAberta = false
 		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-		task.wait(0.2)
-		Main.Visible = false
+		task.wait(0.2); Main.Visible = false
 		FloatBtn.Text = "🍕"
 	end
 
 	local function AbrirUI()
-		uiAberta = true
-		Main.Visible = true
+		uiAberta = true; Main.Visible = true
 		Main.Size = UDim2.new(0, 0, 0, 0)
 		Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
 		FloatBtn.Text = "✕"
@@ -1286,21 +1017,7 @@ local function IniciarScript()
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 			FecharUI()
-			Notificar("🚨 PANIC — Tudo parado", C.Red, 2)
-		elseif input.KeyCode == Enum.KeyCode.P then
-			if setEntregarGlobal then setEntregarGlobal(not Config.autoEntregar) end
-		elseif input.KeyCode == Enum.KeyCode.F then
-			Config.modoVoo = not Config.modoVoo
-			if Config.modoVoo then
-				modoStatus.Text = "Modo: 🚁 VOANDO"
-				modoStatus.TextColor3 = C.Blue
-				Notificar("🚁 VOAR (F)", C.Blue, 1.5)
-			else
-				modoStatus.Text = "Modo: 🚶 A PÉ"
-				modoStatus.TextColor3 = C.Green
-				Notificar("🚶 A PÉ (F)", C.Green, 1.5)
-			end
-			SalvarConfig()
+			Notificar("🚨 PANIC", C.Red, 2)
 		end
 	end)
 
@@ -1321,13 +1038,12 @@ local function IniciarScript()
 	AtivarGodMode()
 
 	Log("═══════════════════════════════════")
-	Log("🍕 Sailent Auto Pizza v1.0")
+	Log("🍕 Sailent Auto Pizza v2.0 [FINAL]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
-	Log("🍕 Auto Entregar | 🚁 Loco")
-	Log("⚡ F2 = UI | F1 = Panic | P = Toggle Pizza | F = Voo")
+	Log("⚡ F2 = UI | F1 = Panic")
 	Log("═══════════════════════════════════")
 
-	Notificar("🍕 Auto Pizza carregado!", C.Accent, 2.5)
+	Notificar("🍕 Auto Pizza v2.0 carregado!", C.Accent, 2.5)
 end
 
 Log("🔐 Verificando key...")
