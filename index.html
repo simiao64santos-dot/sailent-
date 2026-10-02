@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAILENT HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	:root {
+		--bg: #0a0a0f;
+		--card: #12121a;
+		--card-hover: #1a1a26;
+		--border: #1f1f2e;
+		--accent: #7c9eff;
+		--accent-glow: rgba(124, 158, 255, 0.15);
+		--text: #f0f0f5;
+		--sub: #8a8a9e;
+		--green: #4ade80;
+		--yellow: #fbbf24;
+		--purple: #a78bfa;
+		--red: #f87171;
+	}
+
+	body {
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		background: var(--bg);
+		color: var(--text);
+		min-height: 100vh;
+		padding: 40px 20px;
+		background-image:
+			radial-gradient(circle at 20% 20%, rgba(124, 158, 255, 0.08) 0%, transparent 50%),
+			radial-gradient(circle at 80% 80%, rgba(167, 139, 250, 0.08) 0%, transparent 50%);
+		background-attachment: fixed;
+	}
+
+	.container {
+		max-width: 1100px;
+		margin: 0 auto;
+	}
+
+	/* Header */
+	header {
+		text-align: center;
+		margin-bottom: 50px;
+	}
+
+	.logo {
+		font-size: 42px;
+		font-weight: 800;
+		letter-spacing: -1.5px;
+		background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		margin-bottom: 10px;
+	}
+
+	.subtitle {
+		font-size: 15px;
+		color: var(--sub);
+		font-weight: 500;
+	}
+
+	.badge-top {
+		display: inline-block;
+		margin-top: 15px;
+		padding: 6px 14px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		font-size: 12px;
+		color: var(--sub);
+		font-family: 'JetBrains Mono', monospace;
+	}
+
+	/* Grid */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		gap: 20px;
+	}
+
+	/* Card */
+	.card {
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		padding: 24px;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: var(--card-color, var(--accent));
+		opacity: 0.8;
+	}
+
+	.card:hover {
+		background: var(--card-hover);
+		border-color: var(--card-color, var(--accent));
+		transform: translateY(-3px);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--card-color, var(--accent));
+	}
+
+	.card-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 14px;
+	}
+
+	.card-icon {
+		font-size: 28px;
+		width: 52px;
+		height: 52px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.03);
+		border-radius: 12px;
+		border: 1px solid var(--border);
+	}
+
+	.card-title {
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: -0.3px;
+	}
+
+	.card-sub {
+		font-size: 11px;
+		color: var(--sub);
+		font-family: 'JetBrains Mono', monospace;
+		margin-top: 2px;
+	}
+
+	.card-desc {
+		font-size: 13px;
+		color: var(--sub);
+		line-height: 1.6;
+		margin-bottom: 20px;
+	}
+
+	/* Tags */
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 18px;
+	}
+
+	.tag {
+		font-size: 10px;
+		font-weight: 600;
+		padding: 3px 9px;
+		border-radius: 6px;
+		background: rgba(124, 158, 255, 0.1);
+		color: var(--accent);
+		font-family: 'JetBrains Mono', monospace;
+		border: 1px solid rgba(124, 158, 255, 0.2);
+	}
+
+	.tag.green {
+		background: rgba(74, 222, 128, 0.1);
+		color: var(--green);
+		border-color: rgba(74, 222, 128, 0.2);
+	}
+
+	.tag.yellow {
+		background: rgba(251, 191, 36, 0.1);
+		color: var(--yellow);
+		border-color: rgba(251, 191, 36, 0.2);
+	}
+
+	/* Botões */
+	.actions {
+		display: flex;
+		gap: 8px;
+	}
+
+	.btn {
+		flex: 1;
+		padding: 11px 16px;
+		border: none;
+		border-radius: 10px;
+		font-family: 'Inter', sans-serif;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		letter-spacing: 0.2px;
+	}
+
+	.btn-primary {
+		background: var(--card-color, var(--accent));
+		color: #0a0a0f;
+	}
+
+	.btn-primary:hover {
+		filter: brightness(1.15);
+		transform: scale(1.02);
+	}
+
+	.btn-primary:active {
+		transform: scale(0.98);
+	}
+
+	.btn-secondary {
+		background: rgba(255, 255, 255, 0.05);
+		color: var(--text);
+		border: 1px solid var(--border);
+	}
+
+	.btn-secondary:hover {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.btn-copied {
+		background: var(--green) !important;
+		color: #0a0a0f !important;
+	}
+
+	/* Code block */
+	.code-preview {
+		background: #08080c;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 12px 14px;
+		margin-bottom: 16px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 11px;
+		color: var(--sub);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.code-preview .cmd {
+		color: var(--purple);
+	}
+
+	.code-preview .arg {
+		color: var(--green);
+	}
+
+	/* Footer */
+	footer {
+		text-align: center;
+		margin-top: 60px;
+		padding-top: 30px;
+		border-top: 1px solid var(--border);
+		color: var(--sub);
+		font-size: 12px;
+	}
+
+	footer .highlight {
+		color: var(--accent);
+		font-weight: 600;
+	}
+
+	/* Toast */
+	.toast {
+		position: fixed;
+		bottom: 30px;
+		right: 30px;
+		background: var(--green);
+		color: #0a0a0f;
+		padding: 12px 20px;
+		border-radius: 10px;
+		font-weight: 600;
+		font-size: 13px;
+		box-shadow: 0 10px 40px rgba(74, 222, 128, 0.3);
+		transform: translateY(100px);
+		opacity: 0;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 1000;
+	}
+
+	.toast.show {
+		transform: translateY(0);
+		opacity: 1;
+	}
+
+	@media (max-width: 600px) {
+		body { padding: 24px 14px; }
+		.logo { font-size: 32px; }
+		.grid { grid-template-columns: 1fr; }
+		.card { padding: 20px; }
+	}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+	<header>
+		<h1 class="logo">⚡ SAILENT HUB</h1>
+		<p class="subtitle">Painel privado de scripts</p>
+		<div class="badge-top">🔒 Acesso restrito</div>
+	</header>
+
+	<div class="grid" id="grid"></div>
+
+	<footer>
+		Painel <span class="highlight">Sailent</span> • Todos os scripts com key própria • Uso pessoal
+	</footer>
+
+</div>
+
+<div class="toast" id="toast">✅ Copiado!</div>
+
+<script>
+	// ============================================================
+	// CONFIGURAÇÃO — EDITE AQUI OS SCRIPTS
+	// ============================================================
+	const USER = "simiao64santos-dot";
+	const REPO = "sailent-";
+	const BRANCH = "main";
+
+	const SCRIPTS = [
+		{
+			id: "gari",
+			icon: "🍔",
+			name: "Sailent Auto Gari",
+			file: "main.lua",
+			desc: "Coleta e entrega lixo automaticamente. Modo A Pé ou Voar, noclip embutido e God Mode.",
+			color: "#4ade80",
+			tags: ["A Pé/Voar", "Noclip", "God Mode", "Anti-admin"]
+		},
+		{
+			id: "prisao",
+			icon: "🔓",
+			icon: "🔓",
+			name: "Sailent Auto Prisão",
+			file: "prisao.lua",
+			desc: "Varre o perímetro completo e entrega caixas. Reduz a pena sem esforço.",
+			color: "#a78bfa",
+			tags: ["Varredura", "Caixas", "Noclip"]
+		},
+		{
+			id: "pizza",
+			icon: "🍕",
+			name: "Sailent Auto Pizza",
+			file: "pizza.lua",
+			desc: "Pega pedido, voa em altura segura e entrega no cliente. Clique automático de 4s.",
+			color: "#fbbf24",
+			tags: ["Fly seguro", "Auto-clique", "Anti-água"]
+		},
+		{
+			id: "eletricista",
+			icon: "⚡",
+			name: "Sailent Auto Eletricista",
+			file: "eletricista.lua",
+			desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos.",
+			color: "#f87171",
+			tags: ["TP topo", "Part suporte", "Marca postes"]
+		}
+	];
+
+	// ============================================================
+	// RENDER
+	// ============================================================
+	const grid = document.getElementById('grid');
+
+	function buildURL(file) {
+		return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`;
+	}
+
+	function buildLoadstring(file) {
+		return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
+	}
+
+	SCRIPTS.forEach(s => {
+		const card = document.createElement('div');
+		card.className = 'card';
+		card.style.setProperty('--card-color', s.color);
+
+		const url = buildURL(s.file);
+		const load = buildLoadstring(s.file);
+
+		card.innerHTML = `
+			<div class="card-header">
+				<div class="card-icon">${s.icon}</div>
+				<div>
+					<div class="card-title">${s.name}</div>
+					<div class="card-sub">${s.file}</div>
+				</div>
+			</div>
+			<div class="card-desc">${s.desc}</div>
+			<div class="tags">
+				${s.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+			</div>
+			<div class="code-preview">
+				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>("${url.substring(0, 55)}..."))()
+			</div>
+			<div class="actions">
+				<button class="btn btn-primary" data-copy="${encodeURIComponent(load)}">
+					📋 Copiar Loadstring
+				</button>
+				<button class="btn btn-secondary" data-open="${url}">
+					🔗 Raw
+				</button>
+			</div>
+		`;
+
+		grid.appendChild(card);
+	});
+
+	// ============================================================
+	// AÇÕES
+	// ============================================================
+	const toast = document.getElementById('toast');
+	let toastTimer;
+
+	function showToast(txt) {
+		toast.textContent = txt;
+		toast.classList.add('show');
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+	}
+
+	document.addEventListener('click', async (e) => {
+		const copyBtn = e.target.closest('[data-copy]');
+		if (copyBtn) {
+			const text = decodeURIComponent(copyBtn.dataset.copy);
+			try {
+				await navigator.clipboard.writeText(text);
+				copyBtn.classList.add('btn-copied');
+				copyBtn.innerHTML = '✅ Copiado!';
+				showToast('✅ Loadstring copiado!');
+				setTimeout(() => {
+					copyBtn.classList.remove('btn-copied');
+					copyBtn.innerHTML = '📋 Copiar Loadstring';
+				}, 1800);
+			} catch (err) {
+				// Fallback
+				const ta = document.createElement('textarea');
+				ta.value = text;
+				document.body.appendChild(ta);
+				ta.select();
+				document.execCommand('copy');
+				document.body.removeChild(ta);
+				showToast('✅ Copiado!');
+			}
+		}
+
+		const openBtn = e.target.closest('[data-open]');
+		if (openBtn) {
+			window.open(openBtn.dataset.open, '_blank');
+		}
+	});
+</script>
+
+</body>
+</html>
