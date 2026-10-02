@@ -1,5 +1,9 @@
 -- ============================================================
--- SAILENT AUTO GARI v6.7 — FLY CFrame (FUNCIONA SEMPRE)
+-- SAILENT AUTO GARI v6.8 — FLY CFrame + MELHORIAS v2.1
+-- Novidades: Anti-AFK, Auto-reconectar, Server hop, Webhook Discord,
+-- Perfis, Modo seguro, FPS boost, Hotkeys editáveis, revalidação de
+-- key, tokens de loop, pcall, toggle salvo que realmente inicia,
+-- resumo de sessão. (Anti-admin, God mode e estatísticas mantidos.)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -9,12 +13,19 @@ local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
 local lp = Players.LocalPlayer
 
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Gari v6.7",
+	NOME_SCRIPT = "Sailent Auto Gari v6.8",
+	-- Link RAW deste script (usado para reexecutar após reconectar / trocar de servidor)
+	URL_SCRIPT = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/main.lua",
+	VERSAO = "6.8",
+	REVALIDAR_SEG = 1800, -- revalida a key a cada 30 min
 }
 
 for _, name in ipairs({"SailentGari", "SailentFloatBtn", "SailentKeyUI", "SailentLoader", "SailentToast"}) do
@@ -44,6 +55,10 @@ local function Tween(o, p, t)
 end
 
 local function Log(msg) print("[Gari] " .. tostring(msg)) end
+
+local function GetHttp()
+	return (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+end
 
 local function Sha256(msg)
 	local K = {
@@ -129,7 +144,7 @@ local function LimparKeyLocal()
 end
 
 local function BaixarKeys()
-	local httpFn = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+	local httpFn = GetHttp()
 	if not httpFn then return nil, "Executor sem HTTP request!" end
 	local ok, resp = pcall(function()
 		return httpFn({ Url = KEY_CONFIG.URL_KEYS .. "?t=" .. tick(), Method = "GET" })
@@ -142,11 +157,12 @@ local function BaixarKeys()
 	return decoded, nil
 end
 
+-- retorna: ok, entry|mensagem, erroDeRede
 local function ValidarKey(keyInput)
 	if not keyInput or keyInput == "" then return false, "Digite uma key!" end
 	keyInput = keyInput:gsub("%s+", "")
 	local dados, err = BaixarKeys()
-	if not dados then return false, err end
+	if not dados then return false, err, true end
 	local hash = Sha256(keyInput)
 	local entry = dados.keys and dados.keys[hash]
 	if not entry then return false, "❌ Key inválida" end
@@ -389,6 +405,23 @@ local function GetPrompt(item)
 	return item:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
+-- posição de BasePart / Model / Attachment
+local function PosDe(obj)
+	if not obj then return nil end
+	if obj:IsA("BasePart") then return obj.Position end
+	if obj:IsA("Attachment") then return obj.WorldPosition end
+	if obj:IsA("Model") then
+		local root = obj:FindFirstChild("HumanoidRootPart") or obj.PrimaryPart
+		if root then return root.Position end
+	end
+	for _, d in ipairs(obj:GetDescendants()) do
+		if d:IsA("BasePart") then return d.Position
+		elseif d:IsA("Attachment") then return d.WorldPosition end
+	end
+	return nil
+end
+
+-- CONFIG
 local CONFIG_FILE = "sailent_gari_config.txt"
 local Config = {
 	velocidade = 100,
@@ -400,11 +433,25 @@ local Config = {
 	godMode = true,
 	debug = false,
 	modoVoo = false,
+	-- novos
+	antiAfk = true,
+	autoReconnect = false,
+	modoSeguro = false,
+	fpsBoost = false,
+	webhookAtivo = false,
+	webhookUrl = "",
+	webhookMin = 30,
+	keyUI = "F2",
+	keyPanic = "F1",
+	keyGari = "G",
+	keyVoo = "F",
 }
 
 local function SalvarConfig()
 	local str = ""
-	for k, v in pairs(Config) do str = str .. k .. "=" .. tostring(v) .. "\n" end
+	for k, v in pairs(Config) do
+		if tostring(v) ~= "" then str = str .. k .. "=" .. tostring(v) .. "\n" end
+	end
 	pcall(function() if writefile then writefile(CONFIG_FILE, str) end end)
 end
 
@@ -428,6 +475,8 @@ end
 
 CarregarConfig()
 
+local function Dbg(msg) if Config.debug then Log("[debug] " .. tostring(msg)) end end
+
 local function TocarSom(tipo)
 	if not Config.somAtivo then return end
 	pcall(function()
@@ -445,7 +494,169 @@ end
 local Stats = {
 	tempoInicio = tick(), coletados = 0, entregues = 0,
 	lixosMinuto = 0, ultimaContagem = 0, ultimoTempo = tick(), mortesEvitadas = 0,
+	erros = 0,
 }
+
+local function FmtTempo(seg)
+	seg = math.floor(seg)
+	return string.format("%02d:%02d:%02d", math.floor(seg / 3600), math.floor(seg % 3600 / 60), seg % 60)
+end
+
+local function ResumoStats()
+	local dec = tick() - Stats.tempoInicio
+	local horas = math.max(dec / 3600, 1 / 60)
+	local porHora = math.floor(Stats.entregues / horas)
+	return string.format("⏱ %s | 🗑 %d | 📤 %d | 📈 %d/h", FmtTempo(dec), Stats.coletados, Stats.entregues, porHora)
+end
+
+-- WEBHOOK DISCORD
+local function Webhook(txt, forcar)
+	if not forcar and (not Config.webhookAtivo or Config.webhookUrl == "") then return end
+	if not Config.webhookUrl or Config.webhookUrl == "" then return end
+	local httpFn = GetHttp()
+	if not httpFn then return end
+	task.spawn(function()
+		pcall(function()
+			httpFn({
+				Url = Config.webhookUrl,
+				Method = "POST",
+				Headers = { ["Content-Type"] = "application/json" },
+				Body = HttpService:JSONEncode({
+					username = "Sailent Gari",
+					content = "**[" .. lp.Name .. "]** " .. tostring(txt),
+				}),
+			})
+		end)
+	end)
+end
+
+-- HUMANIZAÇÃO (modo seguro)
+local function Esp(t)
+	if Config.modoSeguro then t = t * (0.8 + math.random() * 0.7) end
+	task.wait(t)
+end
+
+local function PausaHumana()
+	if Config.modoSeguro and math.random() < 0.08 then
+		task.wait(math.random(15, 40) / 10)
+	end
+end
+
+local function VelEfetiva()
+	if Config.modoSeguro then return math.min(Config.velocidade, 32) end
+	return Config.velocidade
+end
+
+local function VelFlyEfetiva()
+	if Config.modoSeguro then return math.min(Config.velFly or 60, 35) end
+	return Config.velFly or 60
+end
+
+local function AplicarVelocidade()
+	local hum = GetHum()
+	if hum then hum.WalkSpeed = VelEfetiva() end
+end
+
+-- ANTI-AFK
+local afkConn = nil
+local function SetAntiAfk(on)
+	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
+	if on then
+		afkConn = lp.Idled:Connect(function()
+			pcall(function()
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton2(Vector2.new())
+			end)
+		end)
+	end
+end
+
+-- REEXECUTAR APÓS TELEPORTE
+local function QueueReexec()
+	if KEY_CONFIG.URL_SCRIPT ~= "" and queue_on_teleport then
+		pcall(function()
+			queue_on_teleport('loadstring(game:HttpGet("' .. KEY_CONFIG.URL_SCRIPT .. '"))()')
+		end)
+	end
+end
+
+-- AUTO-RECONECTAR
+local function IniciarAutoReconnect()
+	task.spawn(function()
+		pcall(function()
+			local prompt = CoreGui:WaitForChild("RobloxPromptGui", 15)
+			local overlay = prompt and prompt:WaitForChild("promptOverlay", 15)
+			if not overlay then return end
+			overlay.ChildAdded:Connect(function(c)
+				if c.Name == "ErrorPrompt" and Config.autoReconnect then
+					Log("Desconectado — reconectando...")
+					Webhook("⚠️ Desconectado. Tentando reconectar...")
+					task.wait(2)
+					QueueReexec()
+					for _ = 1, 5 do
+						pcall(function() TeleportService:Teleport(game.PlaceId, lp) end)
+						task.wait(8)
+					end
+				end
+			end)
+		end)
+	end)
+end
+
+-- TROCAR DE SERVIDOR
+local function ServerHop()
+	local httpFn = GetHttp()
+	if not httpFn then Notificar("❌ Executor sem HTTP", C.Red, 2); return end
+	Notificar("🌐 Procurando servidor...", C.Blue, 2)
+	local ok, resp = pcall(function()
+		return httpFn({
+			Url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100", game.PlaceId),
+			Method = "GET",
+		})
+	end)
+	if not ok or not resp then Notificar("❌ Falha ao listar servidores", C.Red, 2); return end
+	local ok2, dados = pcall(function() return HttpService:JSONDecode(resp.Body or resp.body) end)
+	if not ok2 or not dados or not dados.data then Notificar("❌ Lista inválida", C.Red, 2); return end
+	local candidatos = {}
+	for _, s in ipairs(dados.data) do
+		if s.id ~= game.JobId and s.playing and s.maxPlayers and s.playing < s.maxPlayers - 1 then
+			table.insert(candidatos, s.id)
+		end
+	end
+	if #candidatos == 0 then Notificar("⚠️ Nenhum servidor livre", C.Yellow, 2); return end
+	QueueReexec()
+	Webhook("🌐 Trocando de servidor...")
+	pcall(function()
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, candidatos[math.random(1, #candidatos)], lp)
+	end)
+end
+
+-- FPS BOOST
+local fpsOrig = { parts = {} }
+local function AplicarFPS(on)
+	if on then
+		fpsOrig.shadows = Lighting.GlobalShadows
+		pcall(function() fpsOrig.quality = settings().Rendering.QualityLevel end)
+		Lighting.GlobalShadows = false
+		pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+		fpsOrig.parts = {}
+		for _, o in ipairs(workspace:GetDescendants()) do
+			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles") then
+				if o.Enabled then
+					table.insert(fpsOrig.parts, o)
+					o.Enabled = false
+				end
+			end
+		end
+	else
+		if fpsOrig.shadows ~= nil then Lighting.GlobalShadows = fpsOrig.shadows end
+		if fpsOrig.quality then pcall(function() settings().Rendering.QualityLevel = fpsOrig.quality end) end
+		for _, o in ipairs(fpsOrig.parts) do
+			if o and o.Parent then pcall(function() o.Enabled = true end) end
+		end
+		fpsOrig.parts = {}
+	end
+end
 
 local lixosUsados = {}
 
@@ -502,7 +713,7 @@ local function AcharProximoLixo()
 	return disponiveis[1] and disponiveis[1].lixo or nil
 end
 
--- ═══ FLY CFrame (FUNCIONA SEMPRE) ═══
+-- ═══ FLY CFrame ═══
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP()
@@ -520,7 +731,7 @@ local function VoarAte(posAlvo, timeout)
 		end
 	end
 
-	local velFrame = (Config.velFly or 60) * 0.05
+	local velFrame = VelFlyEfetiva() * 0.05
 
 	-- FASE 1: voa até 6 studs do alvo
 	while tick() - t0 < timeout do
@@ -614,8 +825,8 @@ local GodModeConns = {}
 local ultimaPosSegura = nil
 local ultimoReset = 0
 local godModeAtivo = true
-local velocidadeAtual = Config.velocidade
 local gariOn = false
+local gariRun = 0
 local gariCount = {coletados = 0, entregues = 0}
 local setGariAtivoGlobal = nil
 local noclipGariAtivo = false
@@ -738,9 +949,9 @@ local function ReconectarAposMorte()
 		pcall(function() setGariAtivoGlobal(false) end)
 		task.wait(0.2)
 		pcall(function() setGariAtivoGlobal(true) end)
+		Webhook("♻️ Personagem renasceu, retomando coleta.")
 	end
-	local hum = GetHum()
-	if hum then pcall(function() hum.WalkSpeed = velocidadeAtual end) end
+	AplicarVelocidade()
 	Notificar("💀 Morreu — reconectando...", C.Red, 1.5)
 end
 
@@ -788,6 +999,13 @@ local function IniciarScript()
 
 	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
 	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Purple; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
+
+	-- indicador de status no botão flutuante (verde = rodando)
+	local function AtualizarIndicador()
+		Tween(FloatBtn, {BackgroundColor3 = gariOn and C.Green or C.Black}, 0.25)
+		BtnStroke.Color = gariOn and C.Green or C.Purple
+		BtnStroke.Thickness = gariOn and 3 or 2
+	end
 
 	local btnDragging, btnDragStart, btnStartPos, btnMoveuSe
 	FloatBtn.InputBegan:Connect(function(input)
@@ -877,7 +1095,7 @@ local function IniciarScript()
 	TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Gari v6.7 [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Gari v" .. KEY_CONFIG.VERSAO .. " [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold
 	TTitle.TextSize = 14
 	TTitle.TextColor3 = C.Text
@@ -1037,6 +1255,7 @@ local function IniciarScript()
 		return set
 	end
 
+	-- slider: retorna função para definir o valor por código
 	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58)
@@ -1092,15 +1311,17 @@ local function IniciarScript()
 
 		local valor = default
 		local arrastando = false
-		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X
-			local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
+		local function Aplicar(percent)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
 			fillBar.Size = UDim2.new(percent, 0, 1, 0)
 			knob.Position = UDim2.new(percent, -11, 0.5, -11)
 			if callback then callback(valor) end
+		end
+		local function Atualizar(posX)
+			local bgAbs = bgBar.AbsolutePosition.X
+			local bgSize = bgBar.AbsoluteSize.X
+			Aplicar(math.clamp((posX - bgAbs) / bgSize, 0, 1))
 		end
 		local initPercent = (default - min) / (max - min)
 		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
@@ -1126,8 +1347,59 @@ local function IniciarScript()
 				end
 			end
 		end)
+		return function(v)
+			v = math.clamp(v, min, max)
+			Aplicar((v - min) / (max - min))
+		end
 	end
 
+	local function Campo(label, valorInicial, placeholder, cb)
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(1, 0, 0, 62)
+		frame.BackgroundColor3 = C.Card
+		frame.BorderSizePixel = 0
+		frame.Parent = Content
+		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
+		local titulo = Instance.new("TextLabel")
+		titulo.Text = label
+		titulo.Font = Enum.Font.GothamBold
+		titulo.TextSize = 12
+		titulo.TextColor3 = C.Text
+		titulo.BackgroundTransparency = 1
+		titulo.Position = UDim2.new(0, 12, 0, 4)
+		titulo.Size = UDim2.new(1, -24, 0, 18)
+		titulo.TextXAlignment = Enum.TextXAlignment.Left
+		titulo.Parent = frame
+		local box = Instance.new("TextBox")
+		box.Text = valorInicial or ""
+		box.PlaceholderText = placeholder or ""
+		box.Font = Enum.Font.Code
+		box.TextSize = 11
+		box.TextColor3 = C.Text
+		box.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+		box.BackgroundColor3 = C.BG
+		box.BorderSizePixel = 0
+		box.ClearTextOnFocus = false
+		box.TextXAlignment = Enum.TextXAlignment.Left
+		box.Position = UDim2.new(0, 12, 0, 26)
+		box.Size = UDim2.new(1, -24, 0, 28)
+		box.Parent = frame
+		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = box
+		local pad = Instance.new("UIPadding"); pad.PaddingLeft = UDim.new(0, 8); pad.Parent = box
+		box.Focused:Connect(function() _G.SailentBloquearDrag = true end)
+		box.FocusLost:Connect(function()
+			_G.SailentBloquearDrag = false
+			if cb then cb(box.Text) end
+		end)
+		return box
+	end
+
+	local UI = {} -- setters para perfis / hotkeys
+	local PararTudo
+	local noclipOn = false
+	local noclipConn
+
+	-- ===================== CONTA / ESTATÍSTICAS =====================
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 	Sec("📊 ESTATÍSTICAS", C.Blue)
 
@@ -1135,10 +1407,222 @@ local function IniciarScript()
 	local statLixosMin = Stat("📈 Lixos/min: 0", C.Sub)
 	local statPerf = Stat("🎮 FPS: -- | Ping: --", C.Sub)
 	local statMortes = Stat("🛡️ Mortes evitadas: 0", C.Green)
+	local statResumo = Stat(ResumoStats(), C.Text)
+	Btn("🔄 Zerar estatísticas", C.Purple, function()
+		Stats.coletados, Stats.entregues, Stats.erros, Stats.mortesEvitadas = 0, 0, 0, 0
+		Stats.ultimaContagem, Stats.ultimoTempo, Stats.tempoInicio = 0, tick(), tick()
+		gariCount.coletados, gariCount.entregues = 0, 0
+		Notificar("📊 Estatísticas zeradas", C.Purple, 1.5)
+	end)
 
 	Sec("🛡️ GOD MODE (7 camadas)", C.Green)
 	local godStatus = Stat("Status: ● ATIVO", C.Green)
 
+	-- ===================== AUTO GARI =====================
+	Sec("🗑️ AUTO GARI (noclip embutido)", C.Green)
+
+	local gariStatus = Stat("Status: PARADO", C.Sub)
+	local gariStats = Stat("Coletados: 0 | Entregues: 0", C.Sub)
+	local gariLixos = Stat("Lixos usados: 0/39", C.Sub)
+	local gariProgresso = Stat("Progresso: ░░░░░░░░░░ 0%", C.Sub)
+
+	local function AtualizarProgresso()
+		local total = 0
+		for _ in pairs(lixosUsados) do total = total + 1 end
+		local pct = math.floor((total / 39) * 100)
+		pct = math.clamp(pct, 0, 100)
+		local cheio = math.floor(pct / 10)
+		local vazio = 10 - cheio
+		local barra = string.rep("█", cheio) .. string.rep("░", vazio)
+		gariProgresso.Text = "Progresso: " .. barra .. " " .. pct .. "%"
+		gariLixos.Text = "Lixos usados: " .. total .. "/39"
+	end
+
+	local function ErroLoop(err)
+		Stats.erros = Stats.erros + 1
+		Log("Erro: " .. tostring(err))
+		gariStatus.Text = "⚠️ Erro: " .. tostring(err):sub(1, 38)
+		gariStatus.TextColor3 = C.Red
+		if Stats.erros % 5 == 0 then Webhook("❗ " .. Stats.erros .. " erros na sessão. Último: " .. tostring(err):sub(1, 120)) end
+		task.wait(2)
+	end
+
+	local function CicloGari(myRun)
+		if not GetHRP() then
+			gariStatus.Text = "⏳ Aguardando personagem..."
+			task.wait(1)
+			return
+		end
+		PausaHumana()
+		gariStatus.TextColor3 = C.Green
+		if TemLixoNaMao() then
+			gariStatus.Text = "📤 Indo pra TRASEIRA..."
+			local cam = GetCaminhao()
+			if not cam then
+				gariStatus.Text = "⚠️ Spawne o caminhão!"
+				gariStatus.TextColor3 = C.Yellow
+				task.wait(2)
+				return
+			end
+			local traseira = GetTraseira(cam)
+			local pos = PosDe(traseira)
+			if traseira and pos then
+				IrPara(pos, 25)
+				if myRun ~= gariRun then return end
+				Esp(0.3)
+				gariStatus.Text = "📤 Entregando..."
+				local prompt = GetPrompt(traseira)
+				if prompt then
+					pcall(function() fireproximityprompt(prompt) end)
+					Esp(0.5)
+					if not TemLixoNaMao() then
+						gariCount.entregues = gariCount.entregues + 1
+						Stats.entregues = Stats.entregues + 1
+						TocarSom("entregou")
+						Notificar("📤 Lixo entregue!", C.Blue, 1.5)
+					end
+				end
+			else
+				gariStatus.Text = "⚠️ Traseira não encontrada"
+				task.wait(1.5)
+			end
+		else
+			gariStatus.Text = "📥 Procurando lixo..."
+			local lixo = AcharProximoLixo()
+			if lixo then
+				gariStatus.Text = "📥 Indo pro lixo..."
+				IrPara(lixo.Position, 25)
+				if myRun ~= gariRun then return end
+				Esp(0.3)
+				gariStatus.Text = "📥 Coletando..."
+				local prompt = GetPrompt(lixo)
+				if prompt then
+					pcall(function() fireproximityprompt(prompt) end)
+					Esp(0.5)
+					if TemLixoNaMao() then
+						gariCount.coletados = gariCount.coletados + 1
+						Stats.coletados = Stats.coletados + 1
+						lixosUsados[lixo] = true
+						TocarSom("coletou")
+						Notificar("📥 Lixo coletado!", C.Green, 1.2)
+					end
+				end
+			else
+				gariStatus.Text = "⚠️ Sem lixo disponível"
+				task.wait(1.5)
+			end
+		end
+		gariStats.Text = "Coletados: " .. gariCount.coletados .. " | Entregues: " .. gariCount.entregues
+		AtualizarProgresso()
+		Dbg("ciclo ok | coletados=" .. Stats.coletados .. " entregues=" .. Stats.entregues)
+	end
+
+	setGariAtivoGlobal = Toggle("Auto Gari (noclip auto)", Config.autoGari, function(s)
+		gariOn = s
+		Config.autoGari = s
+		SalvarConfig()
+		gariRun = gariRun + 1
+		AtualizarIndicador()
+		if s then
+			local myRun = gariRun
+			AtivarNoclipGari()
+			AplicarVelocidade()
+			gariStatus.Text = "Status: ● ATIVO (noclip ON)"
+			gariStatus.TextColor3 = C.Green
+			Notificar("🗑️ Auto Gari ATIVADO + Noclip", C.Green)
+			task.spawn(function()
+				while gariOn and myRun == gariRun do
+					local ok, err = pcall(CicloGari, myRun)
+					if not ok then ErroLoop(err) end
+					Esp(0.3)
+				end
+			end)
+		else
+			DesativarNoclipGari()
+			gariStatus.Text = "Status: PARADO"
+			gariStatus.TextColor3 = C.Sub
+			Notificar("⏸️ Auto Gari DESATIVADO", C.Yellow, 1.5)
+			local hum = GetHum()
+			if hum then hum.WalkSpeed = 16 end
+		end
+	end)
+	UI.setGari = setGariAtivoGlobal
+
+	-- ===================== PERFIS =====================
+	Sec("📁 PERFIS RÁPIDOS", C.Accent)
+
+	local Perfis = {
+		["⚡ Rápido"] = { velocidade = 100, velFly = 100, modoSeguro = false },
+		["🛡️ Seguro"] = { velocidade = 30, velFly = 35, modoSeguro = true },
+		["🌙 AFK"] = { velocidade = 45, velFly = 40, modoSeguro = true, antiAfk = true, autoReconnect = true },
+	}
+
+	local function AplicarPerfil(nome)
+		local p = Perfis[nome]
+		if not p then return end
+		if p.velocidade and UI.setVel then UI.setVel(p.velocidade) end
+		if p.velFly and UI.setVelFly then UI.setVelFly(p.velFly) end
+		if p.modoSeguro ~= nil and UI.setSeguro then UI.setSeguro(p.modoSeguro) end
+		if p.antiAfk ~= nil and UI.setAfk then UI.setAfk(p.antiAfk) end
+		if p.autoReconnect ~= nil and UI.setReconnect then UI.setReconnect(p.autoReconnect) end
+		SalvarConfig()
+		Notificar("📁 Perfil " .. nome .. " aplicado", C.Accent, 1.8)
+	end
+
+	for _, nome in ipairs({"⚡ Rápido", "🛡️ Seguro", "🌙 AFK"}) do
+		Btn(nome, C.Accent, function() AplicarPerfil(nome) end)
+	end
+
+	-- ===================== CONVENIÊNCIA =====================
+	Sec("🛡️ CONVENIÊNCIA", C.Blue)
+	UI.setSeguro = Toggle("Modo seguro (delays variáveis, vel. limitada)", Config.modoSeguro, function(s)
+		Config.modoSeguro = s
+		SalvarConfig()
+		if gariOn then AplicarVelocidade() end
+	end)
+	UI.setAfk = Toggle("Anti-AFK", Config.antiAfk, function(s)
+		Config.antiAfk = s
+		SalvarConfig()
+		SetAntiAfk(s)
+	end)
+	UI.setReconnect = Toggle("Auto-reconectar se cair", Config.autoReconnect, function(s)
+		Config.autoReconnect = s
+		SalvarConfig()
+		if s and KEY_CONFIG.URL_SCRIPT == "" then
+			Notificar("⚠️ Defina URL_SCRIPT para reexecutar após reconectar", C.Yellow, 3)
+		end
+	end)
+	Toggle("FPS boost (sem sombras/partículas)", Config.fpsBoost, function(s)
+		Config.fpsBoost = s
+		SalvarConfig()
+		AplicarFPS(s)
+	end)
+	Btn("🌐 Trocar de servidor (server hop)", C.Blue, function() ServerHop() end)
+
+	-- ===================== WEBHOOK =====================
+	Sec("📨 WEBHOOK DISCORD", C.Purple)
+	Campo("URL do webhook", Config.webhookUrl, "https://discord.com/api/webhooks/...", function(txt)
+		Config.webhookUrl = txt:gsub("%s+", "")
+		SalvarConfig()
+	end)
+	Toggle("Enviar avisos pro Discord", Config.webhookAtivo, function(s)
+		Config.webhookAtivo = s
+		SalvarConfig()
+	end)
+	CriarSlider(Content, "⏲ Resumo a cada (min)", 5, 120, Config.webhookMin, function(v)
+		Config.webhookMin = v
+	end)
+	Btn("🧪 Testar webhook", C.Purple, function()
+		if Config.webhookUrl == "" then Notificar("⚠️ Cole a URL primeiro", C.Yellow, 2); return end
+		Webhook("✅ Teste do Sailent Gari v" .. KEY_CONFIG.VERSAO, true)
+		Notificar("📨 Teste enviado", C.Purple, 1.5)
+	end)
+	Btn("📊 Enviar resumo agora", C.Purple, function()
+		Webhook("📊 " .. ResumoStats(), true)
+		Notificar("📨 Resumo enviado", C.Purple, 1.5)
+	end)
+
+	-- ===================== LOCOMOÇÃO =====================
 	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
 	local modoStatus = Stat("Modo atual: 🚶 A PÉ", C.Yellow)
 
@@ -1164,122 +1648,18 @@ local function IniciarScript()
 	end
 
 	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
-
-	CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
+	UI.setVel = CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
 		Config.velocidade = valor
-		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		AplicarVelocidade()
 	end)
 
 	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
-
-	CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 60, function(valor)
+	UI.setVelFly = CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 60, function(valor)
 		Config.velFly = valor
 	end)
 
-	Sec("🗑️ AUTO GARI (noclip embutido)", C.Green)
-
-	local gariStatus = Stat("Status: PARADO", C.Sub)
-	local gariStats = Stat("Coletados: 0 | Entregues: 0", C.Sub)
-	local gariLixos = Stat("Lixos usados: 0/39", C.Sub)
-	local gariProgresso = Stat("Progresso: ░░░░░░░░░░ 0%", C.Sub)
-
-	local function AtualizarProgresso()
-		local total = 0
-		for _ in pairs(lixosUsados) do total = total + 1 end
-		local pct = math.floor((total / 39) * 100)
-		pct = math.clamp(pct, 0, 100)
-		local cheio = math.floor(pct / 10)
-		local vazio = 10 - cheio
-		local barra = string.rep("█", cheio) .. string.rep("░", vazio)
-		gariProgresso.Text = "Progresso: " .. barra .. " " .. pct .. "%"
-		gariLixos.Text = "Lixos usados: " .. total .. "/39"
-	end
-
-	setGariAtivoGlobal = Toggle("Auto Gari (noclip auto)", Config.autoGari, function(s)
-		gariOn = s
-		Config.autoGari = s
-		SalvarConfig()
-		if s then
-			AtivarNoclipGari()
-			gariStatus.Text = "Status: ● ATIVO (noclip ON)"
-			gariStatus.TextColor3 = C.Green
-			Notificar("🗑️ Auto Gari ATIVADO + Noclip", C.Green)
-			Tween(FloatBtn, {BackgroundColor3 = C.Green}, 0.25)
-			BtnStroke.Color = C.Green
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = velocidadeAtual end
-			task.spawn(function()
-				while gariOn do
-					local temLixo = TemLixoNaMao()
-					if temLixo then
-						gariStatus.Text = "📤 Indo pra TRASEIRA..."
-						local cam = GetCaminhao()
-						if not cam then
-							gariStatus.Text = "⚠️ Spawne o caminhão!"
-							task.wait(2); continue
-						end
-						local traseira = GetTraseira(cam)
-						if traseira then
-							IrPara(traseira.Position, 25)
-							task.wait(0.3)
-							gariStatus.Text = "📤 Entregando..."
-							local prompt = GetPrompt(traseira)
-							if prompt then
-								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.5)
-								if not TemLixoNaMao() then
-									gariCount.entregues += 1
-									Stats.entregues += 1
-									TocarSom("entregou")
-									Notificar("📤 Lixo entregue!", C.Blue, 1.5)
-								end
-							end
-						end
-					else
-						gariStatus.Text = "📥 Procurando lixo..."
-						local lixo = AcharProximoLixo()
-						if lixo then
-							gariStatus.Text = "📥 Indo pro lixo..."
-							IrPara(lixo.Position, 25)
-							task.wait(0.3)
-							gariStatus.Text = "📥 Coletando..."
-							local prompt = GetPrompt(lixo)
-							if prompt then
-								pcall(function() fireproximityprompt(prompt) end)
-								task.wait(0.5)
-								if TemLixoNaMao() then
-									gariCount.coletados += 1
-									Stats.coletados += 1
-									lixosUsados[lixo] = true
-									TocarSom("coletou")
-									Notificar("📥 Lixo coletado!", C.Green, 1.2)
-								end
-							end
-						end
-					end
-					gariStats.Text = "Coletados: "..gariCount.coletados.." | Entregues: "..gariCount.entregues
-					AtualizarProgresso()
-					task.wait(0.3)
-				end
-			end)
-		else
-			DesativarNoclipGari()
-			gariStatus.Text = "Status: PARADO"
-			gariStatus.TextColor3 = C.Sub
-			Notificar("⏸️ Auto Gari DESATIVADO", C.Yellow, 1.5)
-			Tween(FloatBtn, {BackgroundColor3 = C.Black}, 0.25)
-			BtnStroke.Color = C.Purple
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = 16 end
-		end
-	end)
-
+	-- ===================== NOCLIP MANUAL =====================
 	Sec("👻 NOCLIP MANUAL", C.Purple)
-
-	local noclipOn = false
-	local noclipConn
 
 	Toggle("Noclip manual (extra)", Config.noclip, function(s)
 		noclipOn = s
@@ -1312,10 +1692,33 @@ local function IniciarScript()
 		SalvarConfig()
 	end)
 
+	-- ===================== HOTKEYS =====================
+	Sec("⌨️ HOTKEYS (clique e aperte a nova tecla)", C.Yellow)
+	local aguardandoTecla = nil
+	local botoesTecla = {}
+	local Acoes = {
+		{ cfg = "keyUI", nome = "Abrir/Fechar UI" },
+		{ cfg = "keyPanic", nome = "PANIC" },
+		{ cfg = "keyGari", nome = "Liga/Desliga Gari" },
+		{ cfg = "keyVoo", nome = "Alternar Voo/A pé" },
+	}
+	for _, a in ipairs(Acoes) do
+		local b
+		b = Btn(a.nome .. ": " .. tostring(Config[a.cfg]), C.Yellow, function()
+			aguardandoTecla = a.cfg
+			b.Text = a.nome .. ": aperte uma tecla..."
+		end)
+		botoesTecla[a.cfg] = { btn = b, nome = a.nome }
+	end
+
+	-- ===================== EMERGÊNCIA =====================
 	Sec("🚨 EMERGÊNCIA", C.Red)
-	Btn("🛑 PARAR TUDO", C.Red, function()
+
+	PararTudo = function()
 		gariOn = false
-		if setGariAtivoGlobal then setGariAtivoGlobal(false) end
+		gariRun = gariRun + 1
+		Config.autoGari = false
+		if UI.setGari then UI.setGari(false) end
 		noclipOn = false
 		DesativarNoclipGari()
 		if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
@@ -1323,6 +1726,11 @@ local function IniciarScript()
 		gariStatus.TextColor3 = C.Sub
 		local hum = GetHum()
 		if hum then hum.WalkSpeed = 16 end
+		AtualizarIndicador()
+	end
+
+	Btn("🛑 PARAR TUDO", C.Red, function()
+		PararTudo()
 		Notificar("🛑 Tudo parado!", C.Red, 2)
 	end)
 
@@ -1332,38 +1740,43 @@ local function IniciarScript()
 		SalvarConfig()
 	end)
 
+	-- ===================== LOOP DE STATS =====================
 	task.spawn(function()
 		local fpsFrame = 0
 		local fpsTime = tick()
 		local fps = 60
 		while SG.Parent do
 			task.wait(1)
-			local tempoTotal = tick() - Stats.tempoInicio
-			local horas = math.floor(tempoTotal / 3600)
-			local mins = math.floor((tempoTotal % 3600) / 60)
-			statTempo.Text = "⏱️ Tempo: "..horas.."h "..mins.."min"
-			local diffT = tick() - Stats.ultimoTempo
-			local diffL = Stats.coletados - Stats.ultimaContagem
-			if diffT >= 10 then
-				Stats.lixosMinuto = math.floor((diffL / diffT) * 60)
-				Stats.ultimaContagem = Stats.coletados
-				Stats.ultimoTempo = tick()
-			end
-			statLixosMin.Text = "📈 Lixos/min: "..Stats.lixosMinuto
-			statMortes.Text = "🛡️ Mortes evitadas: "..Stats.mortesEvitadas
-			fpsFrame = fpsFrame + 1
-			local now = tick()
-			if now - fpsTime >= 1 then
-				fps = math.floor(fpsFrame / (now - fpsTime))
-				fpsFrame = 0
-				fpsTime = now
-			end
-			local ping = 0
-			pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
-			statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
+			pcall(function()
+				local tempoTotal = tick() - Stats.tempoInicio
+				local horas = math.floor(tempoTotal / 3600)
+				local mins = math.floor((tempoTotal % 3600) / 60)
+				statTempo.Text = "⏱️ Tempo: "..horas.."h "..mins.."min"
+				local diffT = tick() - Stats.ultimoTempo
+				local diffL = Stats.coletados - Stats.ultimaContagem
+				if diffT >= 10 then
+					Stats.lixosMinuto = math.floor((diffL / diffT) * 60)
+					Stats.ultimaContagem = Stats.coletados
+					Stats.ultimoTempo = tick()
+				end
+				statLixosMin.Text = "📈 Lixos/min: "..Stats.lixosMinuto
+				statMortes.Text = "🛡️ Mortes evitadas: "..Stats.mortesEvitadas
+				statResumo.Text = ResumoStats()
+				fpsFrame = fpsFrame + 1
+				local now = tick()
+				if now - fpsTime >= 1 then
+					fps = math.floor(fpsFrame / (now - fpsTime))
+					fpsFrame = 0
+					fpsTime = now
+				end
+				local ping = 0
+				pcall(function() ping = math.floor(lp:GetNetworkPing() * 1000) end)
+				statPerf.Text = "🎮 FPS: "..fps.." | Ping: "..ping.."ms"
+			end)
 		end
 	end)
 
+	-- ===================== ABRIR / FECHAR =====================
 	local uiAberta = true
 
 	local function FecharUI()
@@ -1390,31 +1803,39 @@ local function IniciarScript()
 	end)
 
 	UserInput.InputBegan:Connect(function(input, gp)
+		-- redefinir tecla
+		if aguardandoTecla and input.UserInputType == Enum.UserInputType.Keyboard then
+			local cfg = aguardandoTecla
+			aguardandoTecla = nil
+			if input.KeyCode ~= Enum.KeyCode.Escape then
+				Config[cfg] = input.KeyCode.Name
+				SalvarConfig()
+			end
+			local info = botoesTecla[cfg]
+			if info then info.btn.Text = info.nome .. ": " .. tostring(Config[cfg]) end
+			return
+		end
 		if gp then return end
-		if input.KeyCode == Enum.KeyCode.F2 then
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+		local nome = input.KeyCode.Name
+		if nome == Config.keyUI then
 			if uiAberta then FecharUI() else AbrirUI() end
-		elseif input.KeyCode == Enum.KeyCode.F1 then
-			gariOn = false
-			if setGariAtivoGlobal then setGariAtivoGlobal(false) end
-			noclipOn = false
-			DesativarNoclipGari()
-			if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-			local hum = GetHum()
-			if hum then hum.WalkSpeed = 16 end
+		elseif nome == Config.keyPanic then
+			PararTudo()
 			FecharUI()
 			Notificar("🚨 PANIC — Tudo parado", C.Red, 2)
-		elseif input.KeyCode == Enum.KeyCode.G then
-			if setGariAtivoGlobal then setGariAtivoGlobal(not gariOn) end
-		elseif input.KeyCode == Enum.KeyCode.F then
+		elseif nome == Config.keyGari then
+			UI.setGari(not gariOn)
+		elseif nome == Config.keyVoo then
 			Config.modoVoo = not Config.modoVoo
 			if Config.modoVoo then
 				modoStatus.Text = "Modo atual: 🚁 VOANDO"
 				modoStatus.TextColor3 = C.Blue
-				Notificar("🚁 VOAR ativado (tecla F)", C.Blue, 1.5)
+				Notificar("🚁 VOAR ativado (tecla " .. Config.keyVoo .. ")", C.Blue, 1.5)
 			else
 				modoStatus.Text = "Modo atual: 🚶 A PÉ"
 				modoStatus.TextColor3 = C.Green
-				Notificar("🚶 A PÉ ativado (tecla F)", C.Green, 1.5)
+				Notificar("🚶 A PÉ ativado (tecla " .. Config.keyVoo .. ")", C.Green, 1.5)
 			end
 			SalvarConfig()
 		end
@@ -1434,6 +1855,7 @@ local function IniciarScript()
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
+	-- ===================== ANTI-ADMIN =====================
 	local function ChecarAdmins()
 		if not Config.antiAdmin then return end
 		local admins = {"admin", "mod", "owner", "staff", "adm", "moderator"}
@@ -1443,10 +1865,10 @@ local function IniciarScript()
 				for _, kw in ipairs(admins) do
 					if nome:find(kw) then
 						if gariOn then
-							gariOn = false
-							if setGariAtivoGlobal then setGariAtivoGlobal(false) end
+							PararTudo()
 							Log("🚨 ADMIN DETECTADO: " .. p.Name)
 							Notificar("🚨 Admin: "..p.Name, C.Red, 3)
+							Webhook("🚨 Admin detectado no servidor: " .. p.Name .. ". Automação parada.")
 						end
 						break
 					end
@@ -1458,7 +1880,43 @@ local function IniciarScript()
 	task.spawn(function()
 		while SG.Parent do
 			task.wait(5)
-			ChecarAdmins()
+			pcall(ChecarAdmins)
+		end
+	end)
+
+	-- ===================== SERVIÇOS EM SEGUNDO PLANO =====================
+	SetAntiAfk(Config.antiAfk)
+	IniciarAutoReconnect()
+	if Config.fpsBoost then AplicarFPS(true) end
+
+	-- resumo periódico no Discord
+	task.spawn(function()
+		local ultimo = tick()
+		while SG.Parent do
+			task.wait(5)
+			if Config.webhookAtivo and Config.webhookUrl ~= "" and tick() - ultimo >= Config.webhookMin * 60 then
+				ultimo = tick()
+				Webhook("📊 " .. ResumoStats())
+			end
+		end
+	end)
+
+	-- revalida a key periodicamente (derruba se revogada/expirada)
+	task.spawn(function()
+		while SG.Parent do
+			task.wait(KEY_CONFIG.REVALIDAR_SEG)
+			if not SG.Parent then break end
+			local ok, res, erroRede = ValidarKey(KeyState.key)
+			if not ok and not erroRede then
+				PararTudo()
+				LimparKeyLocal()
+				Notificar("🚫 Key revogada/expirada: " .. tostring(res), C.Red, 5)
+				Webhook("🚫 Key invalidada durante o uso: " .. tostring(res))
+				task.wait(3)
+				pcall(function() SG:Destroy() end)
+				pcall(function() SGBtn:Destroy() end)
+				break
+			end
 		end
 	end)
 
@@ -1467,12 +1925,16 @@ local function IniciarScript()
 	godStatus.TextColor3 = C.Green
 	Notificar("🛡️ God Mode ATIVADO (7 camadas)", C.Green, 2)
 
+	-- se estava ligado quando fechou, religa (o toggle salvo agora realmente inicia)
+	if Config.autoGari then UI.setGari(true) end
+	AtualizarIndicador()
+
 	Log("═══════════════════════════════════")
-	Log("🗑️ Sailent Auto Gari v6.7 [FLY CFrame]")
+	Log("🗑️ Sailent Auto Gari v" .. KEY_CONFIG.VERSAO .. " [FLY CFrame]")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
 	Log("🛡️ God Mode: 7 camadas ativas")
 	Log("🚁 Modo: " .. (Config.modoVoo and "VOAR" or "A PÉ"))
-	Log("⚡ F2 = UI | F1 = Panic | G = Gari | F = Alternar Voo")
+	Log("⌨️ UI=" .. Config.keyUI .. " | Panic=" .. Config.keyPanic .. " | Gari=" .. Config.keyGari .. " | Voo=" .. Config.keyVoo)
 	Log("═══════════════════════════════════")
 end
 
