@@ -1,6 +1,6 @@
 -- ============================================================
--- SAILENT AUTO PIZZA v2.3 (COM KEY)
--- Webhook removido + clique de 4s + voo em altura segura
+-- SAILENT AUTO PIZZA v3.2 — VOO ANTI-LIMBO + Region3 CORRIGIDO
+-- Sobe 25 studs antes da água + nunca desce + anti-cair
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -8,26 +8,31 @@ local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local UserInput = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local SoundService = game:GetService("SoundService")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 local lp = Players.LocalPlayer
 
+local _ultimoVoo = 0
+local _suspenderTudo = false
+local _avisosAnticheat = 0
+
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Pizza v2.3",
+	NOME_SCRIPT = "Sailent Auto Pizza v3.2",
 	URL_SCRIPT = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/pizza.lua",
-	VERSAO = "2.3",
+	VERSAO = "3.2",
 	REVALIDAR_SEG = 1800,
 }
 
-for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
-	local old = CoreGui:FindFirstChild(name)
-	if old then pcall(function() old:Destroy() end) end
-end
+pcall(function()
+	for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
+		local old = CoreGui:FindFirstChild(name)
+		if old then old:Destroy() end
+	end
+end)
 
 local C = {
 	BG = Color3.fromRGB(12,12,18), Card = Color3.fromRGB(25,25,35),
@@ -65,8 +70,7 @@ local function Sha256(msg)
 	}
 	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
 	local function ror(x, n) return bit32.bor(bit32.rshift(x, n), bit32.lshift(x, 32 - n)) end
-	local len = #msg
-	local bitLen = len * 8
+	local bitLen = #msg * 8
 	msg = msg .. "\128"
 	while (#msg % 64) ~= 56 do msg = msg .. "\0" end
 	local hi = math.floor(bitLen / 4294967296)
@@ -210,6 +214,29 @@ local function Notificar(txt, cor, duracao)
 	end)
 end
 
+task.spawn(function()
+	pcall(function()
+		local chat = lp.PlayerGui:WaitForChild("Chat", 10)
+		if not chat then return end
+		local frame = chat:FindFirstChild("Frame") or chat
+		frame.ChildAdded:Connect(function(msg)
+			local texto = ""
+			pcall(function() texto = (msg.Text or ""):lower() end)
+			if texto:find("fly") or texto:find("voar") or texto:find("ban") or texto:find("kick")
+			   or texto:find("suspicious") or texto:find("hack") or texto:find("cheat")
+			   or texto:find("detect") or texto:find("exploit") then
+				_avisosAnticheat = _avisosAnticheat + 1
+				Log("⚠️ AVISO ANTICHEAT: " .. texto)
+				Notificar("⚠️ Anticheat! Pausando 60s", C.Red, 5)
+				_suspenderTudo = true
+				task.wait(60)
+				_suspenderTudo = false
+				Notificar("✅ Voo reativado", C.Green, 3)
+			end
+		end)
+	end)
+end)
+
 -- LOGIN
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
@@ -310,7 +337,6 @@ local function MostrarUILogin(callbackSucesso)
 	end)
 end
 
--- MOVIMENTO
 local function GetHRP()
 	local c = lp.Character
 	return c and c:FindFirstChild("HumanoidRootPart")
@@ -344,13 +370,11 @@ local function DesativarNoclip()
 	if noclipConn then pcall(function() noclipConn:Disconnect() end); noclipConn = nil end
 end
 
--- CONFIG
 local CONFIG_FILE = "sailent_pizza_config.txt"
 local Config = {
 	velocidade = 100,
-	velFly = 80,
+	velFly = 40,
 	autoEntregar = false,
-	modoVoo = false,
 	antiAfk = true,
 	autoReconnect = false,
 	modoSeguro = false,
@@ -358,6 +382,7 @@ local Config = {
 	keyUI = "F2",
 	keyPanic = "F1",
 	keyEntregar = "F3",
+	travarCamera = true,
 }
 
 local function SalvarConfig()
@@ -387,7 +412,6 @@ end
 
 CarregarConfig()
 
--- ESTATÍSTICAS
 local Stats = { entregues = 0, pegos = 0, erros = 0, inicio = tick() }
 
 local function FmtTempo(seg)
@@ -403,7 +427,6 @@ local function ResumoStats()
 	return string.format("⏱ %s | 📦 %d | 📈 %d/h | ⌀ %ds", FmtTempo(dec), Stats.entregues, porHora, media)
 end
 
--- HUMANIZAÇÃO
 local function Esp(t)
 	if Config.modoSeguro then t = t * (0.8 + math.random() * 0.7) end
 	task.wait(t)
@@ -421,8 +444,8 @@ local function VelEfetiva()
 end
 
 local function VelFlyEfetiva()
-	if Config.modoSeguro then return math.min(Config.velFly or 80, 35) end
-	return Config.velFly or 80
+	if Config.modoSeguro then return math.min(Config.velFly or 40, 35) end
+	return Config.velFly or 40
 end
 
 local function AplicarVelocidade()
@@ -430,7 +453,6 @@ local function AplicarVelocidade()
 	if hum then hum.WalkSpeed = VelEfetiva() end
 end
 
--- ANTI-AFK
 local afkConn = nil
 local function SetAntiAfk(on)
 	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
@@ -444,7 +466,6 @@ local function SetAntiAfk(on)
 	end
 end
 
--- REEXECUTAR
 local function QueueReexec()
 	if KEY_CONFIG.URL_SCRIPT ~= "" and queue_on_teleport then
 		pcall(function()
@@ -453,7 +474,6 @@ local function QueueReexec()
 	end
 end
 
--- AUTO-RECONECTAR
 local function IniciarAutoReconnect()
 	task.spawn(function()
 		pcall(function()
@@ -475,7 +495,6 @@ local function IniciarAutoReconnect()
 	end)
 end
 
--- SERVER HOP
 local function ServerHop()
 	local httpFn = GetHttp()
 	if not httpFn then Notificar("❌ Executor sem HTTP", C.Red, 2); return end
@@ -486,7 +505,7 @@ local function ServerHop()
 			Method = "GET",
 		})
 	end)
-	if not ok or not resp then Notificar("❌ Falha ao listar servidores", C.Red, 2); return end
+	if not ok or not resp then Notificar("❌ Falha ao listar", C.Red, 2); return end
 	local ok2, dados = pcall(function() return HttpService:JSONDecode(resp.Body or resp.body) end)
 	if not ok2 or not dados or not dados.data then Notificar("❌ Lista inválida", C.Red, 2); return end
 	local candidatos = {}
@@ -502,7 +521,6 @@ local function ServerHop()
 	end)
 end
 
--- FPS BOOST
 local fpsOrig = { parts = {} }
 local function AplicarFPS(on)
 	if on then
@@ -529,7 +547,6 @@ local function AplicarFPS(on)
 	end
 end
 
--- POSIÇÃO
 local function PosDe(obj)
 	if not obj then return nil end
 	if obj:IsA("BasePart") then return obj.Position end
@@ -545,7 +562,6 @@ local function PosDe(obj)
 	return nil
 end
 
--- ACHAR PROMPT
 local function AcharPromptPorTexto(txt)
 	local hrp = GetHRP()
 	if not hrp then return nil end
@@ -567,7 +583,6 @@ local function AcharPromptPorTexto(txt)
 	return maisPerto
 end
 
--- ACHAR LOCALMARCADO (cliente)
 local function AcharLocalMarcado()
 	local construcoes = workspace:FindFirstChild("Construcoes")
 	if not construcoes then return nil end
@@ -575,7 +590,6 @@ local function AcharLocalMarcado()
 	if not pizzaria then return nil end
 	local spa = pizzaria:FindFirstChild("OrderCharSpawns")
 	if not spa then return nil end
-
 	for _, pad in ipairs(spa:GetChildren()) do
 		local marcado = pad:FindFirstChild("LocalMarcado", true)
 		if marcado then
@@ -588,102 +602,365 @@ local function AcharLocalMarcado()
 	return nil
 end
 
--- ⭐ VOAR EM ALTURA SEGURA (não mergulha na água)
-local function VoarAte(posAlvo, timeout)
+-- CACHE ÁGUA/AREIA
+local _aguaCache = {}
+local _areiaCache = {}
+local _ultimoScanCache = 0
+
+local function AtualizarCacheAguaAreia()
+	local agora = tick()
+	if agora - _ultimoScanCache < 3 then return end
+	_ultimoScanCache = agora
+	_aguaCache = {}
+	_areiaCache = {}
+	local complementos = workspace:FindFirstChild("Complementos")
+	if complementos then
+		local aguas = complementos:FindFirstChild("Aguas")
+		if aguas then
+			for _, obj in ipairs(aguas:GetChildren()) do
+				if obj:IsA("BasePart") then table.insert(_aguaCache, obj) end
+			end
+		end
+	end
+	if #_aguaCache == 0 then
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") then
+				local n = obj.Name:lower()
+				if n == "water" or n == "agua" or n == "água" then
+					table.insert(_aguaCache, obj)
+				end
+			end
+		end
+	end
+	for _, pastaNome in ipairs({"Areias", "AreiasPraia"}) do
+		local pasta = workspace:FindFirstChild(pastaNome)
+		if pasta then
+			for _, obj in ipairs(pasta:GetChildren()) do
+				if obj:IsA("BasePart") then table.insert(_areiaCache, obj) end
+			end
+		end
+	end
+end
+
+local function DetectarAguaPorPart(pos, raio)
+	raio = raio or 15
+	AtualizarCacheAguaAreia()
+	local maisPerto, menorDist, yAgua = nil, math.huge, nil
+	for _, part in ipairs(_aguaCache) do
+		if part and part.Parent then
+			local p = part.Position
+			local dist = (Vector3.new(p.X, 0, p.Z) - Vector3.new(pos.X, 0, pos.Z)).Magnitude
+			local tamanho = part.Size
+			local distReal = math.max(0, dist - math.max(tamanho.X, tamanho.Z) * 0.5)
+			if distReal < raio and distReal < menorDist then
+				menorDist = distReal; maisPerto = part; yAgua = p.Y
+			end
+		end
+	end
+	if maisPerto then return true, yAgua or (pos.Y - 5), menorDist end
+	return false, nil, nil
+end
+
+local function DetectarAreia(pos, raio)
+	raio = raio or 12
+	AtualizarCacheAguaAreia()
+	for _, part in ipairs(_areiaCache) do
+		if part and part.Parent then
+			local p = part.Position
+			local dist = (Vector3.new(p.X, 0, p.Z) - Vector3.new(pos.X, 0, pos.Z)).Magnitude
+			local tamanho = part.Size
+			local distReal = math.max(0, dist - math.max(tamanho.X, tamanho.Z) * 0.5)
+			if distReal < raio then return true, distReal end
+		end
+	end
+	return false, nil
+end
+
+-- ⭐ DETECÇÃO ULTRA-FORTE (v3.2 — Region3 CORRIGIDO)
+local function DetectarAguaForte(pos, raioBaixo, raioLonge, raioPerimetro)
+	raioBaixo = raioBaixo or 30
+	raioLonge = raioLonge or 8
+	raioPerimetro = raioPerimetro or 15
+
+	local temAgua, yAgua = DetectarAguaPorPart(pos, raioPerimetro)
+	if temAgua then return true, yAgua end
+
+	local hum = GetHum()
+	local hrp = GetHRP()
+	if hum and hrp and (hrp.Position - pos).Magnitude < 15 then
+		if hum.FloorMaterial == Enum.Material.Water then
+			return true, hrp.Position.Y
+		end
+	end
+
+	-- ⭐ Region3 CORRIGIDO (garante min < max)
+	local ok, material = pcall(function()
+		local minY = pos.Y - raioBaixo
+		local maxY = pos.Y + raioLonge
+		if minY > maxY then minY, maxY = maxY, minY end
+
+		local cantoA = Vector3.new(pos.X - 8, minY, pos.Z - 8)
+		local cantoB = Vector3.new(pos.X + 8, maxY, pos.Z + 8)
+
+		if (cantoB.X - cantoA.X) <= 0 or (cantoB.Y - cantoA.Y) <= 0 or (cantoB.Z - cantoA.Z) <= 0 then
+			return false
+		end
+
+		local region = Region3.new(cantoA, cantoB):ExpandToGrid(4)
+		local materiais = workspace.Terrain:ReadVoxels(region, 4)
+		for x = 1, materiais.Size.X do
+			for y = 1, materiais.Size.Y do
+				for z = 1, materiais.Size.Z do
+					if materiais[x][y][z] == Enum.Material.Water then
+						return true
+					end
+				end
+			end
+		end
+		return false
+	end)
+
+	if ok and material then return true, pos.Y - 5 end
+	return false, nil
+end
+
+local function TemAguaNoCaminho(posA, posB)
+	local distancia = (Vector3.new(posB.X, 0, posB.Z) - Vector3.new(posA.X, 0, posA.Z)).Magnitude
+	local passos = math.max(8, math.floor(distancia / 5))
+	local primeiroPontoAgua = nil
+	local ultimoPontoAgua = nil
+
+	for i = 1, passos do
+		local t = i / passos
+		local ponto = posA:Lerp(Vector3.new(posB.X, posA.Y, posB.Z), t)
+		local temAgua = DetectarAguaPorPart(ponto, 12)
+		if temAgua then
+			if not primeiroPontoAgua then primeiroPontoAgua = ponto end
+			ultimoPontoAgua = ponto
+		end
+	end
+
+	if DetectarAguaPorPart(posB, 12) then
+		if not primeiroPontoAgua then primeiroPontoAgua = posB end
+		ultimoPontoAgua = posB
+	end
+
+	if primeiroPontoAgua then
+		return true, primeiroPontoAgua, ultimoPontoAgua
+	end
+	return false, nil, nil
+end
+
+local function PrecisoVoar(posAlvo)
+	local hrp = GetHRP()
+	if not hrp then return false, "nochar" end
+	if posAlvo.Y - hrp.Position.Y > 12 then return true, "alvo_alto" end
+	if DetectarAguaPorPart(hrp.Position, 15) then return true, "agua_atual" end
+	if DetectarAreia(hrp.Position, 12) then return true, "areia_atual" end
+	local perigo, tipo = TemAguaNoCaminho(hrp.Position, posAlvo)
+	if perigo then return true, tipo end
+	return false, "chao"
+end
+
+-- CÂMERA
+local _cameraConn = nil
+local function TravarCameraNoAlvo(posAlvo)
+	if not Config.travarCamera then return end
+	local camera = workspace.CurrentCamera
+	if not camera then return end
+	if _cameraConn then pcall(function() _cameraConn:Disconnect() end); _cameraConn = nil end
+	camera.CameraType = Enum.CameraType.Scriptable
+	_cameraConn = RunService.RenderStepped:Connect(function()
+		local hrp = GetHRP()
+		if not hrp then return end
+		local alvoPos = Vector3.new(posAlvo.X, posAlvo.Y + 3, posAlvo.Z)
+		local origem = hrp.Position + Vector3.new(0, 8, 0)
+		local dir = (alvoPos - origem).Unit
+		local camPos = origem - dir * 12 + Vector3.new(0, 4, 0)
+		camera.CFrame = CFrame.new(camPos, alvoPos)
+	end)
+end
+
+local function DestravarCamera()
+	if _cameraConn then pcall(function() _cameraConn:Disconnect() end); _cameraConn = nil end
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera.CameraType = Enum.CameraType.Custom
+		local hum = GetHum()
+		if hum then camera.CameraSubject = hum end
+	end
+end
+
+-- ⭐ VOO STEALTH v3.2 — Passa POR CIMA da água
+local function VooStealth(posAlvo, timeout)
 	if not posAlvo then return false end
+	if _suspenderTudo then return false end
+	if tick() - _ultimoVoo < 2 then return false end
+
 	local hrp = GetHRP(); local hum = GetHum()
 	if not hrp or not hum then return false end
-	timeout = timeout or 35
+
+	local posInicial = hrp.Position
+	local temAgua, pontoEntrada, pontoSaida = TemAguaNoCaminho(posInicial, posAlvo)
+	local diffY = posAlvo.Y - posInicial.Y
+	local alvoAlto = diffY > 12
+
+	if not temAgua and not alvoAlto then return false end
+
+	_ultimoVoo = tick()
+	timeout = timeout or 40
+
+	local alturaVoo
+	if alvoAlto then
+		alturaVoo = posAlvo.Y + 5
+	else
+		alturaVoo = posInicial.Y + 25
+	end
+
+	local distTotal = (Vector3.new(posAlvo.X, 0, posAlvo.Z) - Vector3.new(posInicial.X, 0, posInicial.Z)).Magnitude
+	if distTotal < 20 then return false end
+
+	local velBase = math.min(VelFlyEfetiva(), 45)
+	local velAtual = velBase + math.random(-3, 3)
+
+	local humProps = {
+		WalkSpeed = hum.WalkSpeed,
+		AutoRotate = hum.AutoRotate,
+		PlatformStand = hum.PlatformStand,
+	}
+
+	pcall(function()
+		hum.AutoRotate = true
+		hum.WalkSpeed = 0
+		hum:ChangeState(Enum.HumanoidStateType.Physics)
+	end)
+
+	local bv = Instance.new("BodyVelocity")
+	bv.Name = "SailentBV_" .. math.random(10000, 99999)
+	bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	bv.Velocity = Vector3.new(0, 0, 0)
+	bv.P = 3000
+	bv.Parent = hrp
+
+	local bg = Instance.new("BodyGyro")
+	bg.Name = "SailentBG_" .. math.random(10000, 99999)
+	bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	bg.P = 5000
+	bg.D = 500
+	bg.CFrame = hrp.CFrame
+	bg.Parent = hrp
+
+	local function LimparTudo()
+		if bv and bv.Parent then pcall(function() bv:Destroy() end) end
+		if bg and bg.Parent then pcall(function() bg:Destroy() end) end
+	end
+
+	-- FASE 1: SOBE 25 studs
 	local t0 = tick()
-
-	local colideOriginal = {}
-	for _, p in ipairs(lp.Character:GetDescendants()) do
-		if p:IsA("BasePart") then
-			colideOriginal[p] = p.CanCollide
-			p.CanCollide = false
-		end
+	while tick() - t0 < 5 do
+		local h = GetHRP()
+		if not h or not h.Parent then break end
+		local diffAltura = alturaVoo - h.Position.Y
+		if diffAltura <= 1 then break end
+		local velSubida = math.min(20, diffAltura * 3)
+		bv.Velocity = Vector3.new(0, velSubida, 0)
+		pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end)
+		task.wait(0.04)
 	end
 
-	local velFrame = VelFlyEfetiva() * 0.05
-	local alturaSegura = 30
-
-	-- FASE 1: sobe até a altura segura
-	local hrpIni = GetHRP()
-	if hrpIni then
-		local alvoSobe = hrpIni.Position.Y + alturaSegura
-		local tSobe = tick()
-		while tick() - tSobe < 4 do
-			local h = GetHRP()
-			if not h then break end
-			if h.Position.Y >= alvoSobe then break end
-			pcall(function()
-				h.CFrame = CFrame.new(h.Position + Vector3.new(0, 2.5, 0))
-			end)
-			task.wait(0.03)
-		end
-	end
-
-	-- FASE 2: voa reto na altura segura
-	local alturaVoo = nil
-	local hTemp = GetHRP()
-	if hTemp then alturaVoo = hTemp.Position.Y end
+	-- FASE 2: VOO RETO
+	local chegou = false
+	local ultimaDist = distTotal
+	local ultimoDir = Vector3.new(0, 0, -1)
 
 	while tick() - t0 < timeout do
 		local h = GetHRP()
-		if not h then break end
+		if not h or not h.Parent then break end
 
-		if alturaVoo and h.Position.Y < alturaVoo - 10 then
+		local posAtual = h.Position
+		local dirH = Vector3.new(posAlvo.X - posAtual.X, 0, posAlvo.Z - posAtual.Z)
+		local distH = dirH.Magnitude
+
+		if distH < 6 then chegou = true; break end
+		if distH > ultimaDist + 3 then chegou = true; break end
+		ultimaDist = distH
+
+		local dirUnit = dirH.Unit
+		ultimoDir = dirUnit
+
+		local yAlvo = alturaVoo
+
+		local temAguaAgora, nivelAgua = DetectarAguaForte(posAtual, 40, 8, 15)
+		if temAguaAgora and nivelAgua then
+			yAlvo = math.max(alturaVoo, nivelAgua + 20)
+		end
+
+		if posAtual.Y < alturaVoo - 8 then
 			pcall(function()
-				h.CFrame = CFrame.new(Vector3.new(h.Position.X, alturaVoo, h.Position.Z))
+				h.CFrame = CFrame.new(Vector3.new(posAtual.X, alturaVoo, posAtual.Z))
+				h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 			end)
 		end
 
-		if h.Position.Y < -5 then
-			pcall(function()
-				h.CFrame = CFrame.new(h.Position + Vector3.new(0, 5, 0))
-			end)
+		velAtual = velBase + math.random(-3, 3)
+		if distH < 20 then velAtual = velAtual * 0.7 end
+		if distH < 12 then velAtual = velAtual * 0.5 end
+
+		local velY = math.clamp((yAlvo - posAtual.Y) * 3, -4, 10)
+		bv.Velocity = Vector3.new(dirUnit.X * velAtual, velY, dirUnit.Z * velAtual)
+
+		pcall(function()
+			local look = CFrame.new(posAtual, Vector3.new(posAlvo.X, posAtual.Y, posAlvo.Z))
+			bg.CFrame = look
+		end)
+
+		if _suspenderTudo then
+			bv.Velocity = Vector3.new(0, 0, 0)
+			break
 		end
 
-		local distHorizontal = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z).Magnitude
-		if distHorizontal < 6 then break end
-
-		local direcao = Vector3.new(posAlvo.X - h.Position.X, 0, posAlvo.Z - h.Position.Z).Unit
-		local novaPos = h.Position + (direcao * velFrame)
-
-		if alturaVoo then
-			novaPos = Vector3.new(novaPos.X, alturaVoo, novaPos.Z)
-		end
-
-		pcall(function() h.CFrame = CFrame.new(novaPos) end)
-		task.wait(0.03)
+		task.wait(0.04)
 	end
 
-	-- FASE 3: desce até o chão
-	local tChao = tick(); local ultimaY = nil; local parado = 0
-	while tick() - tChao < 6 do
-		local h = GetHRP(); if not h then break end
-		local yAtual = h.Position.Y
-		pcall(function() h.CFrame = CFrame.new(h.Position - Vector3.new(0, 1.2, 0)) end)
-		if ultimaY then
-			if math.abs(yAtual - ultimaY) < 0.05 then
-				parado = parado + 1
-				if parado >= 5 then break end
-			else
-				parado = 0
-			end
-		end
-		ultimaY = yAtual
-		task.wait(0.05)
-	end
+	-- FASE 3: DESCE
+	bv.Velocity = Vector3.new(0, 0, 0)
 	task.wait(0.15)
 
-	for p, v in pairs(colideOriginal) do
-		if p and p.Parent then pcall(function() p.CanCollide = v end) end
+	local tDesce = tick()
+	while tick() - tDesce < 5 do
+		local h = GetHRP()
+		if not h or not h.Parent then break end
+
+		local temAguaAbaixo = DetectarAguaForte(h.Position, 12, 3, 8)
+		if temAguaAbaixo then
+			bv.Velocity = Vector3.new(ultimoDir.X * 15, 0, ultimoDir.Z * 15)
+			task.wait(0.1)
+			break
+		end
+
+		local diffY2 = h.Position.Y - (posAlvo.Y + 3)
+		if diffY2 <= 0.5 then break end
+
+		bv.Velocity = Vector3.new(0, -math.min(10, diffY2 * 3), 0)
+		task.wait(0.04)
 	end
+
+	bv.Velocity = Vector3.new(0, 0, 0)
+	task.wait(0.2)
+
+	LimparTudo()
+
+	pcall(function()
+		hum.WalkSpeed = humProps.WalkSpeed or 100
+		hum.AutoRotate = humProps.AutoRotate ~= false
+		hum.PlatformStand = false
+		hum:ChangeState(Enum.HumanoidStateType.Running)
+	end)
 
 	local h = GetHRP()
 	if h then pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end) end
-	return true
+
+	return chegou
 end
 
 local function AndarAte(posAlvo, timeout, distParada)
@@ -702,15 +979,19 @@ local function AndarAte(posAlvo, timeout, distParada)
 end
 
 local function IrPara(posAlvo, timeout)
-	if Config.modoVoo then return VoarAte(posAlvo, timeout)
-	else return AndarAte(posAlvo, timeout) end
+	if not posAlvo then return false end
+	if _suspenderTudo then return AndarAte(posAlvo, timeout) end
+	local precisa = PrecisoVoar(posAlvo)
+	if precisa then
+		if VooStealth(posAlvo, timeout) then return true end
+		return AndarAte(posAlvo, timeout)
+	end
+	return AndarAte(posAlvo, timeout)
 end
 
 local function TemPizza()
 	local doce = workspace:FindFirstChild(lp.Name)
-	if doce then
-		return doce:FindFirstChild("PizzaTemplate") ~= nil
-	end
+	if doce then return doce:FindFirstChild("PizzaTemplate") ~= nil end
 	return false
 end
 
@@ -907,7 +1188,7 @@ local function IniciarScript()
 	TLogo.Size = UDim2.new(0, 40, 1, 0); TLogo.Parent = TB
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Pizza v" .. KEY_CONFIG.VERSAO .. " [" .. KeyState.nivel:upper() .. "]"
+	TTitle.Text = "Auto Pizza v" .. KEY_CONFIG.VERSAO .. " 🚁 [" .. KeyState.nivel:upper() .. "]"
 	TTitle.Font = Enum.Font.GothamBold; TTitle.TextSize = 14; TTitle.TextColor3 = C.Text
 	TTitle.BackgroundTransparency = 1; TTitle.Position = UDim2.new(0, 55, 0, 0)
 	TTitle.Size = UDim2.new(0, 250, 1, 0); TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.Parent = TB
@@ -1079,20 +1360,22 @@ local function IniciarScript()
 	local PararTudo
 	local entregaRun = 0
 
-	-- ===================== CONTA / STATS / GOD =====================
 	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
-	Sec("📊 ESTATÍSTICAS DA SESSÃO", C.Blue)
+	Sec("🛡️ ANTI-DETECÇÃO", C.Green)
+	local statusAnti = Stat("Avisos anticheat: 0", C.Green)
+	local statusVoo = Stat("Voo: ● STANDBY", C.Blue)
+
+	Sec("📊 ESTATÍSTICAS", C.Blue)
 	local statsLabel = Stat(ResumoStats(), C.Text)
 	Btn("🔄 Zerar estatísticas", C.Purple, function()
 		Stats.entregues, Stats.pegos, Stats.erros = 0, 0, 0
 		Stats.inicio = tick()
-		Notificar("📊 Estatísticas zeradas", C.Purple, 1.5)
+		Notificar("📊 Zeradas", C.Purple, 1.5)
 	end)
 
 	Sec("🛡️ GOD MODE", C.Green)
 	Stat("Status: ● ATIVO", C.Green)
 
-	-- ===================== AUTO ENTREGADOR =====================
 	Sec("🍕 AUTO ENTREGADOR", C.Accent)
 	local entregaStatus = Stat("Status: PARADO", C.Sub)
 
@@ -1117,31 +1400,32 @@ local function IniciarScript()
 			local info = AcharLocalMarcado()
 			if info and info.pos then
 				entregaStatus.Text = "📤 Indo pro cliente (" .. info.pad.Name .. ")..."
-				IrPara(info.pos, 25)
-				if myRun ~= entregaRun then return end
+				TravarCameraNoAlvo(info.pos)
+				IrPara(info.pos, 30)
+				if myRun ~= entregaRun then DestravarCamera(); return end
 				Esp(0.3)
-				entregaStatus.Text = "📤 Entregando (clicando a cada 4s)..."
+				entregaStatus.Text = "📤 Entregando..."
 				local prompt = AcharPromptPorTexto("Entregar Pedido")
 				if prompt then
-					-- ⭐ CLICA DE 4 EM 4 SEGUNDOS ATÉ ENTREGAR
 					local t0 = tick()
 					local tentativas = 0
 					while tick() - t0 < 30 do
 						if not TemPizza() then break end
 						pcall(function() fireproximityprompt(prompt) end)
 						tentativas = tentativas + 1
-						entregaStatus.Text = "📤 Entregando... (" .. tentativas .. " tentativas)"
+						entregaStatus.Text = "📤 Entregando... (" .. tentativas .. "x)"
 						task.wait(4)
 					end
 				else
-					entregaStatus.Text = "⚠️ Prompt 'Entregar Pedido' não encontrado"
+					entregaStatus.Text = "⚠️ Prompt não encontrado"
 				end
+				DestravarCamera()
 				if not TemPizza() then
 					Stats.entregues = Stats.entregues + 1
-					Notificar("📤 Pedido entregue! #" .. Stats.entregues, C.Blue, 1.5)
+					Notificar("📤 Entregue! #" .. Stats.entregues, C.Blue, 1.5)
 				end
 			else
-				entregaStatus.Text = "⚠️ Sem cliente ativo"
+				entregaStatus.Text = "⚠️ Sem cliente"
 				task.wait(1.5)
 			end
 		else
@@ -1150,21 +1434,21 @@ local function IniciarScript()
 			if promptPegar then
 				local pos = PosDe(promptPegar.Parent)
 				if not pos then
-					entregaStatus.Text = "⚠️ Posição do pedido inválida"
+					entregaStatus.Text = "⚠️ Posição inválida"
 					task.wait(1.5)
 					return
 				end
-				entregaStatus.Text = "📥 Indo pegar pedido..."
-				IrPara(pos, 25)
+				entregaStatus.Text = "📥 Indo pegar..."
+				IrPara(pos, 30)
 				if myRun ~= entregaRun then return end
 				Esp(0.3)
 				entregaStatus.Text = "📥 Pegando..."
 				pcall(function() fireproximityprompt(promptPegar) end)
 				Esp(1.2)
 				Stats.pegos = Stats.pegos + 1
-				Notificar("📥 Pedido pego!", C.Green, 1.2)
+				Notificar("📥 Pego!", C.Green, 1.2)
 			else
-				entregaStatus.Text = "⚠️ Sem pedido na pizzaria"
+				entregaStatus.Text = "⚠️ Sem pedido"
 				task.wait(1.5)
 			end
 		end
@@ -1179,35 +1463,34 @@ local function IniciarScript()
 			local myRun = entregaRun
 			AtivarNoclip()
 			AplicarVelocidade()
-			entregaStatus.Text = "Status: ● ATIVO (noclip ON)"
+			entregaStatus.Text = "Status: ● ATIVO"
 			entregaStatus.TextColor3 = C.Green
-			Notificar("🍕 Auto Entregador ATIVADO", C.Green, 1.5)
+			Notificar("🍕 ATIVADO", C.Green, 1.5)
 			task.spawn(function()
 				while Config.autoEntregar and myRun == entregaRun do
 					local ok, err = pcall(CicloEntrega, myRun)
 					if not ok then ErroLoop(err) end
 					Esp(0.5)
 				end
+				DestravarCamera()
 			end)
 		else
 			DesativarNoclip()
+			DestravarCamera()
 			entregaStatus.Text = "Status: PARADO"
 			entregaStatus.TextColor3 = C.Sub
-			Notificar("🍕 Auto Entregador DESATIVADO", C.Yellow, 1.5)
+			Notificar("🍕 DESATIVADO", C.Yellow, 1.5)
 			local hum = GetHum()
 			if hum then hum.WalkSpeed = 16 end
 		end
 	end)
 
-	-- ===================== PERFIS =====================
-	Sec("📁 PERFIS RÁPIDOS", C.Accent)
-
+	Sec("📁 PERFIS", C.Accent)
 	local Perfis = {
-		["⚡ Rápido"] = { velocidade = 100, velFly = 100, modoSeguro = false },
-		["🛡️ Seguro"] = { velocidade = 30, velFly = 35, modoSeguro = true },
-		["🌙 AFK"] = { velocidade = 45, velFly = 40, modoSeguro = true, antiAfk = true, autoReconnect = true },
+		["⚡ Rápido"] = { velocidade = 100, velFly = 45, modoSeguro = false },
+		["🛡️ Seguro"] = { velocidade = 30, velFly = 30, modoSeguro = true },
+		["🌙 AFK"] = { velocidade = 45, velFly = 35, modoSeguro = true, antiAfk = true, autoReconnect = true },
 	}
-
 	local function AplicarPerfil(nome)
 		local p = Perfis[nome]
 		if not p then return end
@@ -1217,16 +1500,14 @@ local function IniciarScript()
 		if p.antiAfk ~= nil and UI.setAfk then UI.setAfk(p.antiAfk) end
 		if p.autoReconnect ~= nil and UI.setReconnect then UI.setReconnect(p.autoReconnect) end
 		SalvarConfig()
-		Notificar("📁 Perfil " .. nome .. " aplicado", C.Accent, 1.8)
+		Notificar("📁 " .. nome .. " aplicado", C.Accent, 1.8)
 	end
-
 	for _, nome in ipairs({"⚡ Rápido", "🛡️ Seguro", "🌙 AFK"}) do
 		Btn(nome, C.Accent, function() AplicarPerfil(nome) end)
 	end
 
-	-- ===================== CONVENIÊNCIA =====================
 	Sec("🛡️ CONVENIÊNCIA", C.Blue)
-	UI.setSeguro = Toggle("Modo seguro (delays variáveis, vel. limitada)", Config.modoSeguro, function(s)
+	UI.setSeguro = Toggle("Modo seguro", Config.modoSeguro, function(s)
 		Config.modoSeguro = s
 		SalvarConfig()
 		if Config.autoEntregar then AplicarVelocidade() end
@@ -1236,68 +1517,55 @@ local function IniciarScript()
 		SalvarConfig()
 		SetAntiAfk(s)
 	end)
-	UI.setReconnect = Toggle("Auto-reconectar se cair", Config.autoReconnect, function(s)
+	UI.setReconnect = Toggle("Auto-reconectar", Config.autoReconnect, function(s)
 		Config.autoReconnect = s
 		SalvarConfig()
-		if s and KEY_CONFIG.URL_SCRIPT == "" then
-			Notificar("⚠️ Defina URL_SCRIPT para reexecutar após reconectar", C.Yellow, 3)
-		end
 	end)
-	Toggle("FPS boost (sem sombras/partículas)", Config.fpsBoost, function(s)
+	Toggle("FPS boost", Config.fpsBoost, function(s)
 		Config.fpsBoost = s
 		SalvarConfig()
 		AplicarFPS(s)
 	end)
-	Btn("🌐 Trocar de servidor (server hop)", C.Blue, function() ServerHop() end)
-
-	-- ===================== LOCOMOÇÃO =====================
-	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
-	local modoStatus = Stat(Config.modoVoo and "Modo: 🚁 VOANDO" or "Modo: 🚶 A PÉ", C.Yellow)
-
-	Btn("🚶 A PÉ (padrão)", C.Green, function()
-		Config.modoVoo = false
-		modoStatus.Text = "Modo: 🚶 A PÉ"
-		modoStatus.TextColor3 = C.Green
+	Toggle("🎥 Travar câmera no cliente", Config.travarCamera, function(s)
+		Config.travarCamera = s
 		SalvarConfig()
+		if not s then DestravarCamera() end
 	end)
+	Btn("🌐 Server hop", C.Blue, function() ServerHop() end)
 
-	Btn("🚁 VOAR (fly direto)", C.Blue, function()
-		Config.modoVoo = true
-		modoStatus.Text = "Modo: 🚁 VOANDO"
-		modoStatus.TextColor3 = C.Blue
-		SalvarConfig()
-	end)
+	Sec("🚁 LOCOMOÇÃO 🚁 v" .. KEY_CONFIG.VERSAO, C.Yellow)
+	Stat("Sobe 25 studs ANTES da água", C.Green)
+	Stat("Region3 corrigido (sem erro)", C.Blue)
+	Stat("Se cair, teleporta de volta", C.Purple)
 
-	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
-	UI.setVel = CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
+	Sec("⚡ VELOCIDADE", C.Yellow)
+	UI.setVel = CriarSlider(Content, "⚡ Velocidade a pé", 16, 200, Config.velocidade, function(valor)
 		Config.velocidade = valor
 		AplicarVelocidade()
 	end)
 
-	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
-	UI.setVelFly = CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 80, function(valor)
+	Sec("🚀 VELOCIDADE VOO", C.Blue)
+	UI.setVelFly = CriarSlider(Content, "🚀 Velocidade voo", 16, 60, Config.velFly or 40, function(valor)
 		Config.velFly = valor
 	end)
 
-	-- ===================== HOTKEYS =====================
-	Sec("⌨️ HOTKEYS (clique e aperte a nova tecla)", C.Yellow)
+	Sec("⌨️ HOTKEYS", C.Yellow)
 	local aguardandoTecla = nil
 	local botoesTecla = {}
 	local Acoes = {
 		{ cfg = "keyUI", nome = "Abrir/Fechar UI" },
 		{ cfg = "keyPanic", nome = "PANIC" },
-		{ cfg = "keyEntregar", nome = "Liga/Desliga Entregar" },
+		{ cfg = "keyEntregar", nome = "Liga/Desliga" },
 	}
 	for _, a in ipairs(Acoes) do
 		local b
 		b = Btn(a.nome .. ": " .. tostring(Config[a.cfg]), C.Yellow, function()
 			aguardandoTecla = a.cfg
-			b.Text = a.nome .. ": aperte uma tecla..."
+			b.Text = a.nome .. ": aperte tecla..."
 		end)
 		botoesTecla[a.cfg] = { btn = b, nome = a.nome }
 	end
 
-	-- ===================== EMERGÊNCIA =====================
 	Sec("🚨 EMERGÊNCIA", C.Red)
 
 	PararTudo = function()
@@ -1305,6 +1573,7 @@ local function IniciarScript()
 		entregaRun = entregaRun + 1
 		if UI.setEntregar then UI.setEntregar(false) end
 		DesativarNoclip()
+		DestravarCamera()
 		entregaStatus.Text = "Status: PARADO"
 		entregaStatus.TextColor3 = C.Sub
 		local hum = GetHum()
@@ -1314,19 +1583,16 @@ local function IniciarScript()
 
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		PararTudo()
-		Notificar("🛑 Tudo parado!", C.Red, 2)
+		Notificar("🛑 Parado!", C.Red, 2)
 	end)
 
-	-- ===================== ABRIR / FECHAR =====================
 	local uiAberta = true
-
 	local function FecharUI()
 		uiAberta = false
 		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
 		task.wait(0.2); Main.Visible = false
 		FloatBtn.Text = "🍕"
 	end
-
 	local function AbrirUI()
 		uiAberta = true; Main.Visible = true
 		Main.Size = UDim2.new(0, 0, 0, 0)
@@ -1379,11 +1645,23 @@ local function IniciarScript()
 
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
-	-- ===================== SERVIÇOS EM SEGUNDO PLANO =====================
 	task.spawn(function()
 		while SG.Parent do
 			task.wait(1)
-			pcall(function() statsLabel.Text = ResumoStats() end)
+			pcall(function()
+				statsLabel.Text = ResumoStats()
+				statusAnti.Text = "Avisos anticheat: " .. _avisosAnticheat
+				if _suspenderTudo then
+					statusVoo.Text = "Voo: ⏸️ SUSPENSO"
+					statusVoo.TextColor3 = C.Red
+				elseif tick() - _ultimoVoo < 2 then
+					statusVoo.Text = "Voo: ⏱️ cooldown"
+					statusVoo.TextColor3 = C.Yellow
+				else
+					statusVoo.Text = "Voo: ● STANDBY"
+					statusVoo.TextColor3 = C.Blue
+				end
+			end)
 		end
 	end)
 
@@ -1391,7 +1669,7 @@ local function IniciarScript()
 		task.wait(1.5)
 		if Config.autoEntregar then
 			AplicarVelocidade()
-			Notificar("♻️ Respawn detectado — retomando", C.Blue, 2)
+			Notificar("♻️ Respawn", C.Blue, 2)
 		end
 	end)
 
@@ -1407,7 +1685,7 @@ local function IniciarScript()
 			if not ok and not erroRede then
 				PararTudo()
 				LimparKeyLocal()
-				Notificar("🚫 Key revogada/expirada: " .. tostring(res), C.Red, 5)
+				Notificar("🚫 Key revogada: " .. tostring(res), C.Red, 5)
 				task.wait(3)
 				pcall(function() SG:Destroy() end)
 				pcall(function() SGBtn:Destroy() end)
@@ -1422,12 +1700,11 @@ local function IniciarScript()
 	AtualizarIndicador()
 
 	Log("═══════════════════════════════════")
-	Log("🍕 Sailent Auto Pizza v" .. KEY_CONFIG.VERSAO .. " [KEY OK]")
+	Log("🍕 Sailent Auto Pizza v" .. KEY_CONFIG.VERSAO .. " 🚁")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
-	Log("⌨️ UI=" .. Config.keyUI .. " | Panic=" .. Config.keyPanic .. " | Entregar=" .. Config.keyEntregar)
 	Log("═══════════════════════════════════")
 
-	Notificar("🍕 Auto Pizza v" .. KEY_CONFIG.VERSAO .. " carregado!", C.Accent, 2.5)
+	Notificar("🍕 Auto Pizza v" .. KEY_CONFIG.VERSAO .. " 🚁 carregado!", C.Accent, 2.5)
 end
 
 Log("🔐 Verificando key...")
@@ -1437,11 +1714,11 @@ task.spawn(function()
 	if k and k ~= "" then
 		local ok = ValidarKey(k)
 		if ok then
-			Log("✅ Key salva válida! Iniciando...")
+			Log("✅ Key salva válida!")
 			IniciarScript()
 			return
 		else
-			Log("⚠️ Key salva inválida, pedindo nova...")
+			Log("⚠️ Key inválida, pedindo nova...")
 		end
 	end
 	MostrarUILogin(function() IniciarScript() end)
