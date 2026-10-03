@@ -349,7 +349,6 @@
 		{
 			id: "prisao",
 			icon: "🔓",
-			icon: "🔓",
 			name: "Sailent Auto Prisão",
 			file: "prisao.lua",
 			desc: "Varre o perímetro completo e entrega caixas. Reduz a pena sem esforço.",
@@ -361,9 +360,9 @@
 			icon: "🍕",
 			name: "Sailent Auto Pizza",
 			file: "pizza.lua",
-			desc: "Pega pedido, voa em altura segura e entrega no cliente. Clique automático de 4s.",
+			desc: "Pega o pedido, voa em altura segura e entrega no cliente automaticamente. Clique automático e proteção anti-água.",
 			color: "#fbbf24",
-			tags: ["Fly seguro", "Auto-clique", "Anti-água"]
+			tags: ["Fly seguro", "Auto-clique", "Anti-água", "Auto-entrega"]
 		},
 		{
 			id: "eletricista",
@@ -452,7 +451,6 @@
 					copyBtn.innerHTML = '📋 Copiar Loadstring';
 				}, 1800);
 			} catch (err) {
-				// Fallback
 				const ta = document.createElement('textarea');
 				ta.value = text;
 				document.body.appendChild(ta);
