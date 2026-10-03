@@ -1,9 +1,6 @@
 -- ============================================================
--- SAILENT AUTO PIZZA v2.1 (COM KEY)
--- Mesmas melhorias do Auto Prisão v2.1: Anti-AFK, Auto-reconectar,
--- Server hop, Estatísticas, Webhook Discord, Perfis, Modo seguro,
--- FPS boost, Hotkeys editáveis, retomada após morrer, revalidação
--- de key, tokens de loop, pcall e toggle salvo que realmente inicia.
+-- SAILENT AUTO PIZZA v2.3 (COM KEY)
+-- Webhook removido + clique de 4s + voo em altura segura
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -21,11 +18,10 @@ local lp = Players.LocalPlayer
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Pizza v2.1",
-	-- Link RAW deste script (usado para reexecutar após reconectar / trocar de servidor)
+	NOME_SCRIPT = "Sailent Auto Pizza v2.3",
 	URL_SCRIPT = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/pizza.lua",
-	VERSAO = "2.1",
-	REVALIDAR_SEG = 1800, -- revalida a key a cada 30 min
+	VERSAO = "2.3",
+	REVALIDAR_SEG = 1800,
 }
 
 for _, name in ipairs({"SailentPizza", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
@@ -146,7 +142,6 @@ local function BaixarKeys()
 	return decoded, nil
 end
 
--- retorna: ok, entry|mensagem, erroDeRede
 local function ValidarKey(keyInput)
 	if not keyInput or keyInput == "" then return false, "Digite uma key!" end
 	keyInput = keyInput:gsub("%s+", "")
@@ -356,14 +351,10 @@ local Config = {
 	velFly = 80,
 	autoEntregar = false,
 	modoVoo = false,
-	-- novos
 	antiAfk = true,
 	autoReconnect = false,
 	modoSeguro = false,
 	fpsBoost = false,
-	webhookAtivo = false,
-	webhookUrl = "",
-	webhookMin = 30,
 	keyUI = "F2",
 	keyPanic = "F1",
 	keyEntregar = "F3",
@@ -412,28 +403,7 @@ local function ResumoStats()
 	return string.format("⏱ %s | 📦 %d | 📈 %d/h | ⌀ %ds", FmtTempo(dec), Stats.entregues, porHora, media)
 end
 
--- WEBHOOK DISCORD
-local function Webhook(txt, forcar)
-	if not forcar and (not Config.webhookAtivo or Config.webhookUrl == "") then return end
-	if not Config.webhookUrl or Config.webhookUrl == "" then return end
-	local httpFn = GetHttp()
-	if not httpFn then return end
-	task.spawn(function()
-		pcall(function()
-			httpFn({
-				Url = Config.webhookUrl,
-				Method = "POST",
-				Headers = { ["Content-Type"] = "application/json" },
-				Body = HttpService:JSONEncode({
-					username = "Sailent Pizza",
-					content = "**[" .. lp.Name .. "]** " .. tostring(txt),
-				}),
-			})
-		end)
-	end)
-end
-
--- HUMANIZAÇÃO (modo seguro)
+-- HUMANIZAÇÃO
 local function Esp(t)
 	if Config.modoSeguro then t = t * (0.8 + math.random() * 0.7) end
 	task.wait(t)
@@ -474,7 +444,7 @@ local function SetAntiAfk(on)
 	end
 end
 
--- REEXECUTAR APÓS TELEPORTE
+-- REEXECUTAR
 local function QueueReexec()
 	if KEY_CONFIG.URL_SCRIPT ~= "" and queue_on_teleport then
 		pcall(function()
@@ -493,7 +463,6 @@ local function IniciarAutoReconnect()
 			overlay.ChildAdded:Connect(function(c)
 				if c.Name == "ErrorPrompt" and Config.autoReconnect then
 					Log("Desconectado — reconectando...")
-					Webhook("⚠️ Desconectado. Tentando reconectar...")
 					task.wait(2)
 					QueueReexec()
 					for _ = 1, 5 do
@@ -506,7 +475,7 @@ local function IniciarAutoReconnect()
 	end)
 end
 
--- TROCAR DE SERVIDOR
+-- SERVER HOP
 local function ServerHop()
 	local httpFn = GetHttp()
 	if not httpFn then Notificar("❌ Executor sem HTTP", C.Red, 2); return end
@@ -528,7 +497,6 @@ local function ServerHop()
 	end
 	if #candidatos == 0 then Notificar("⚠️ Nenhum servidor livre", C.Yellow, 2); return end
 	QueueReexec()
-	Webhook("🌐 Trocando de servidor...")
 	pcall(function()
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, candidatos[math.random(1, #candidatos)], lp)
 	end)
@@ -561,7 +529,7 @@ local function AplicarFPS(on)
 	end
 end
 
--- POSIÇÃO DE UM OBJETO (BasePart / Model / Attachment)
+-- POSIÇÃO
 local function PosDe(obj)
 	if not obj then return nil end
 	if obj:IsA("BasePart") then return obj.Position end
@@ -620,13 +588,14 @@ local function AcharLocalMarcado()
 	return nil
 end
 
--- VOAR (teleporte suave por CFrame)
+-- ⭐ VOAR EM ALTURA SEGURA (não mergulha na água)
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP(); local hum = GetHum()
 	if not hrp or not hum then return false end
-	timeout = timeout or 25
+	timeout = timeout or 35
 	local t0 = tick()
+
 	local colideOriginal = {}
 	for _, p in ipairs(lp.Character:GetDescendants()) do
 		if p:IsA("BasePart") then
@@ -634,35 +603,84 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
+
 	local velFrame = VelFlyEfetiva() * 0.05
+	local alturaSegura = 30
+
+	-- FASE 1: sobe até a altura segura
+	local hrpIni = GetHRP()
+	if hrpIni then
+		local alvoSobe = hrpIni.Position.Y + alturaSegura
+		local tSobe = tick()
+		while tick() - tSobe < 4 do
+			local h = GetHRP()
+			if not h then break end
+			if h.Position.Y >= alvoSobe then break end
+			pcall(function()
+				h.CFrame = CFrame.new(h.Position + Vector3.new(0, 2.5, 0))
+			end)
+			task.wait(0.03)
+		end
+	end
+
+	-- FASE 2: voa reto na altura segura
+	local alturaVoo = nil
+	local hTemp = GetHRP()
+	if hTemp then alturaVoo = hTemp.Position.Y end
+
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h then break end
-		local diff = posAlvo - h.Position
-		if diff.Magnitude < 6 then break end
-		local direcao = diff.Unit
+
+		if alturaVoo and h.Position.Y < alturaVoo - 10 then
+			pcall(function()
+				h.CFrame = CFrame.new(Vector3.new(h.Position.X, alturaVoo, h.Position.Z))
+			end)
+		end
+
+		if h.Position.Y < -5 then
+			pcall(function()
+				h.CFrame = CFrame.new(h.Position + Vector3.new(0, 5, 0))
+			end)
+		end
+
+		local distHorizontal = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z).Magnitude
+		if distHorizontal < 6 then break end
+
+		local direcao = Vector3.new(posAlvo.X - h.Position.X, 0, posAlvo.Z - h.Position.Z).Unit
 		local novaPos = h.Position + (direcao * velFrame)
+
+		if alturaVoo then
+			novaPos = Vector3.new(novaPos.X, alturaVoo, novaPos.Z)
+		end
+
 		pcall(function() h.CFrame = CFrame.new(novaPos) end)
 		task.wait(0.03)
 	end
+
+	-- FASE 3: desce até o chão
 	local tChao = tick(); local ultimaY = nil; local parado = 0
-	while tick() - tChao < 5 do
+	while tick() - tChao < 6 do
 		local h = GetHRP(); if not h then break end
 		local yAtual = h.Position.Y
-		pcall(function() h.CFrame = CFrame.new(h.Position - Vector3.new(0, 0.8, 0)) end)
+		pcall(function() h.CFrame = CFrame.new(h.Position - Vector3.new(0, 1.2, 0)) end)
 		if ultimaY then
 			if math.abs(yAtual - ultimaY) < 0.05 then
 				parado = parado + 1
 				if parado >= 5 then break end
-			else parado = 0 end
+			else
+				parado = 0
+			end
 		end
 		ultimaY = yAtual
 		task.wait(0.05)
 	end
 	task.wait(0.15)
+
 	for p, v in pairs(colideOriginal) do
 		if p and p.Parent then pcall(function() p.CanCollide = v end) end
 	end
+
 	local h = GetHRP()
 	if h then pcall(function() h.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end) end
 	return true
@@ -811,7 +829,6 @@ local function IniciarScript()
 	local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(1, 0); BtnCorner.Parent = FloatBtn
 	local BtnStroke = Instance.new("UIStroke"); BtnStroke.Color = C.Accent; BtnStroke.Thickness = 2; BtnStroke.Parent = FloatBtn
 
-	-- indicador de status no botão flutuante (verde = rodando)
 	local function AtualizarIndicador()
 		local rodando = Config.autoEntregar
 		Tween(FloatBtn, {BackgroundColor3 = rodando and C.Green or C.Black}, 0.25)
@@ -991,7 +1008,6 @@ local function IniciarScript()
 		return set
 	end
 
-	-- slider: retorna função para definir o valor por código
 	local function CriarSlider(parent, label, min, max, default, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58); frame.BackgroundColor3 = C.Card
@@ -1059,48 +1075,7 @@ local function IniciarScript()
 		end
 	end
 
-	local function Campo(label, valorInicial, placeholder, cb)
-		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 0, 62)
-		frame.BackgroundColor3 = C.Card
-		frame.BorderSizePixel = 0
-		frame.Parent = Content
-		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
-		local titulo = Instance.new("TextLabel")
-		titulo.Text = label
-		titulo.Font = Enum.Font.GothamBold
-		titulo.TextSize = 12
-		titulo.TextColor3 = C.Text
-		titulo.BackgroundTransparency = 1
-		titulo.Position = UDim2.new(0, 12, 0, 4)
-		titulo.Size = UDim2.new(1, -24, 0, 18)
-		titulo.TextXAlignment = Enum.TextXAlignment.Left
-		titulo.Parent = frame
-		local box = Instance.new("TextBox")
-		box.Text = valorInicial or ""
-		box.PlaceholderText = placeholder or ""
-		box.Font = Enum.Font.Code
-		box.TextSize = 11
-		box.TextColor3 = C.Text
-		box.PlaceholderColor3 = Color3.fromRGB(90,90,110)
-		box.BackgroundColor3 = C.BG
-		box.BorderSizePixel = 0
-		box.ClearTextOnFocus = false
-		box.TextXAlignment = Enum.TextXAlignment.Left
-		box.Position = UDim2.new(0, 12, 0, 26)
-		box.Size = UDim2.new(1, -24, 0, 28)
-		box.Parent = frame
-		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0, 6); bc.Parent = box
-		local pad = Instance.new("UIPadding"); pad.PaddingLeft = UDim.new(0, 8); pad.Parent = box
-		box.Focused:Connect(function() _G.SailentBloquearDrag = true end)
-		box.FocusLost:Connect(function()
-			_G.SailentBloquearDrag = false
-			if cb then cb(box.Text) end
-		end)
-		return box
-	end
-
-	local UI = {} -- setters para perfis / hotkeys
+	local UI = {}
 	local PararTudo
 	local entregaRun = 0
 
@@ -1126,7 +1101,6 @@ local function IniciarScript()
 		Log("Erro: " .. tostring(err))
 		entregaStatus.Text = "⚠️ Erro: " .. tostring(err):sub(1, 38)
 		entregaStatus.TextColor3 = C.Red
-		if Stats.erros % 5 == 0 then Webhook("❗ " .. Stats.erros .. " erros na sessão. Último: " .. tostring(err):sub(1, 120)) end
 		task.wait(2)
 	end
 
@@ -1146,11 +1120,21 @@ local function IniciarScript()
 				IrPara(info.pos, 25)
 				if myRun ~= entregaRun then return end
 				Esp(0.3)
-				entregaStatus.Text = "📤 Entregando..."
+				entregaStatus.Text = "📤 Entregando (clicando a cada 4s)..."
 				local prompt = AcharPromptPorTexto("Entregar Pedido")
 				if prompt then
-					pcall(function() fireproximityprompt(prompt) end)
-					Esp(0.8)
+					-- ⭐ CLICA DE 4 EM 4 SEGUNDOS ATÉ ENTREGAR
+					local t0 = tick()
+					local tentativas = 0
+					while tick() - t0 < 30 do
+						if not TemPizza() then break end
+						pcall(function() fireproximityprompt(prompt) end)
+						tentativas = tentativas + 1
+						entregaStatus.Text = "📤 Entregando... (" .. tentativas .. " tentativas)"
+						task.wait(4)
+					end
+				else
+					entregaStatus.Text = "⚠️ Prompt 'Entregar Pedido' não encontrado"
 				end
 				if not TemPizza() then
 					Stats.entregues = Stats.entregues + 1
@@ -1266,29 +1250,6 @@ local function IniciarScript()
 	end)
 	Btn("🌐 Trocar de servidor (server hop)", C.Blue, function() ServerHop() end)
 
-	-- ===================== WEBHOOK =====================
-	Sec("📨 WEBHOOK DISCORD", C.Purple)
-	Campo("URL do webhook", Config.webhookUrl, "https://discord.com/api/webhooks/...", function(txt)
-		Config.webhookUrl = txt:gsub("%s+", "")
-		SalvarConfig()
-	end)
-	Toggle("Enviar avisos pro Discord", Config.webhookAtivo, function(s)
-		Config.webhookAtivo = s
-		SalvarConfig()
-	end)
-	CriarSlider(Content, "⏲ Resumo a cada (min)", 5, 120, Config.webhookMin, function(v)
-		Config.webhookMin = v
-	end)
-	Btn("🧪 Testar webhook", C.Purple, function()
-		if Config.webhookUrl == "" then Notificar("⚠️ Cole a URL primeiro", C.Yellow, 2); return end
-		Webhook("✅ Teste do Sailent Pizza v" .. KEY_CONFIG.VERSAO, true)
-		Notificar("📨 Teste enviado", C.Purple, 1.5)
-	end)
-	Btn("📊 Enviar resumo agora", C.Purple, function()
-		Webhook("📊 " .. ResumoStats(), true)
-		Notificar("📨 Resumo enviado", C.Purple, 1.5)
-	end)
-
 	-- ===================== LOCOMOÇÃO =====================
 	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
 	local modoStatus = Stat(Config.modoVoo and "Modo: 🚁 VOANDO" or "Modo: 🚶 A PÉ", C.Yellow)
@@ -1379,7 +1340,6 @@ local function IniciarScript()
 	end)
 
 	UserInput.InputBegan:Connect(function(input, gp)
-		-- redefinir tecla
 		if aguardandoTecla and input.UserInputType == Enum.UserInputType.Keyboard then
 			local cfg = aguardandoTecla
 			aguardandoTecla = nil
@@ -1420,8 +1380,6 @@ local function IniciarScript()
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
 	-- ===================== SERVIÇOS EM SEGUNDO PLANO =====================
-
-	-- atualiza estatísticas na tela
 	task.spawn(function()
 		while SG.Parent do
 			task.wait(1)
@@ -1429,13 +1387,11 @@ local function IniciarScript()
 		end
 	end)
 
-	-- retomar após morrer / resetar
 	lp.CharacterAdded:Connect(function()
 		task.wait(1.5)
 		if Config.autoEntregar then
 			AplicarVelocidade()
 			Notificar("♻️ Respawn detectado — retomando", C.Blue, 2)
-			Webhook("♻️ Personagem renasceu, retomando entregas.")
 		end
 	end)
 
@@ -1443,19 +1399,6 @@ local function IniciarScript()
 	IniciarAutoReconnect()
 	if Config.fpsBoost then AplicarFPS(true) end
 
-	-- resumo periódico no Discord
-	task.spawn(function()
-		local ultimo = tick()
-		while SG.Parent do
-			task.wait(5)
-			if Config.webhookAtivo and Config.webhookUrl ~= "" and tick() - ultimo >= Config.webhookMin * 60 then
-				ultimo = tick()
-				Webhook("📊 " .. ResumoStats())
-			end
-		end
-	end)
-
-	-- revalida a key periodicamente (derruba se revogada/expirada)
 	task.spawn(function()
 		while SG.Parent do
 			task.wait(KEY_CONFIG.REVALIDAR_SEG)
@@ -1465,7 +1408,6 @@ local function IniciarScript()
 				PararTudo()
 				LimparKeyLocal()
 				Notificar("🚫 Key revogada/expirada: " .. tostring(res), C.Red, 5)
-				Webhook("🚫 Key invalidada durante o uso: " .. tostring(res))
 				task.wait(3)
 				pcall(function() SG:Destroy() end)
 				pcall(function() SGBtn:Destroy() end)
@@ -1476,7 +1418,6 @@ local function IniciarScript()
 
 	AtivarGodMode()
 
-	-- se estava ligado quando fechou, religa (o toggle salvo agora realmente inicia)
 	if Config.autoEntregar then UI.setEntregar(true) end
 	AtualizarIndicador()
 
