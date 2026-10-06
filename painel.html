@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ SAILENT — Painel Completo</title>
+<title>⚡ SAILENT HUB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -12,223 +12,81 @@
 
 	:root {
 		--bg: #0a0a0f;
-		--bg2: #0d0d14;
 		--card: #12121a;
 		--card-hover: #1a1a26;
 		--border: #1f1f2e;
 		--accent: #7c9eff;
-		--accent-glow: rgba(124, 158, 255, 0.15);
 		--text: #f0f0f5;
 		--sub: #8a8a9e;
 		--green: #4ade80;
 		--yellow: #fbbf24;
 		--purple: #a78bfa;
 		--red: #f87171;
-		--pink: #f472b6;
 	}
 
 	body {
-		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		font-family: 'Inter', sans-serif;
 		background: var(--bg);
 		color: var(--text);
 		min-height: 100vh;
-		padding: 30px 20px;
+		padding: 40px 24px;
 		background-image:
-			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.10) 0%, transparent 40%),
-			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.10) 0%, transparent 40%);
+			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.08) 0%, transparent 40%),
+			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08) 0%, transparent 40%);
 		background-attachment: fixed;
 	}
 
-	.container { max-width: 1180px; margin: 0 auto; }
+	.container { max-width: 1200px; margin: 0 auto; }
 
 	header {
 		text-align: center;
-		margin-bottom: 28px;
+		margin-bottom: 50px;
 	}
 
 	.logo {
-		font-size: 44px;
+		font-size: 48px;
 		font-weight: 800;
 		letter-spacing: -2px;
-		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 50%, #f472b6 100%);
-		background-size: 200% 200%;
+		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
-		margin-bottom: 8px;
-		animation: gradShift 6s ease-in-out infinite;
-	}
-
-	@keyframes gradShift {
-		0%, 100% { background-position: 0% 50%; }
-		50% { background-position: 100% 50%; }
+		margin-bottom: 10px;
 	}
 
 	.subtitle {
-		font-size: 14px;
+		font-size: 15px;
 		color: var(--sub);
-		font-weight: 500;
-		margin-bottom: 16px;
+		margin-bottom: 18px;
 	}
 
-	.top-badges {
-		display: flex;
-		gap: 8px;
-		justify-content: center;
-		flex-wrap: wrap;
-		margin-bottom: 20px;
-	}
-
-	.badge-top {
+	.lock-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		padding: 5px 13px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 999px;
-		font-size: 11px;
-		color: var(--sub);
-		font-family: 'JetBrains Mono', monospace;
-		font-weight: 600;
-	}
-
-	.badge-top .dot {
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: var(--green);
-		box-shadow: 0 0 8px var(--green);
-		animation: pulse 2s infinite;
-	}
-
-	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.4; }
-	}
-
-	.tabs {
-		display: flex;
-		gap: 4px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 14px;
-		padding: 5px;
-		margin-bottom: 24px;
-		overflow-x: auto;
-	}
-
-	.tab {
-		flex: 1;
-		padding: 12px 18px;
-		background: transparent;
-		border: none;
-		border-radius: 10px;
-		color: var(--sub);
-		font-family: 'Inter', sans-serif;
-		font-size: 13px;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.2s;
-		white-space: nowrap;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		gap: 8px;
-	}
-
-	.tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-
-	.tab.active {
-		background: linear-gradient(135deg, rgba(124, 158, 255, 0.15), rgba(167, 139, 250, 0.15));
-		color: var(--text);
-		box-shadow: 0 0 0 1px rgba(124, 158, 255, 0.3) inset;
-	}
-
-	.tab .tab-badge {
-		background: var(--accent);
-		color: #0a0a0f;
-		font-size: 10px;
-		padding: 2px 7px;
+		padding: 8px 16px;
+		background: var(--card);
+		border: 1px solid var(--border);
 		border-radius: 999px;
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.panel { display: none; }
-	.panel.active { display: block; animation: fadeIn 0.3s ease; }
-
-	@keyframes fadeIn {
-		from { opacity: 0; transform: translateY(6px); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-
-	.toolbar {
-		display: flex;
-		gap: 10px;
-		margin-bottom: 20px;
-		flex-wrap: wrap;
-		align-items: center;
-	}
-
-	.search {
-		flex: 1;
-		min-width: 220px;
-		padding: 12px 16px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 12px;
-		color: var(--text);
-		font-family: 'Inter', sans-serif;
-		font-size: 13px;
-		outline: none;
-		transition: all 0.2s;
-	}
-
-	.search::placeholder { color: var(--sub); }
-	.search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-
-	.toolbar-btn {
-		padding: 12px 18px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 12px;
-		color: var(--text);
-		font-family: 'Inter', sans-serif;
 		font-size: 12px;
+		color: var(--sub);
 		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.15s;
-		white-space: nowrap;
-	}
-
-	.toolbar-btn:hover {
-		background: var(--card-hover);
-		border-color: var(--accent);
-		transform: translateY(-1px);
 	}
 
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-		gap: 20px;
-	}
-
-	.grid-2col {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 20px;
-	}
-
-	@media (max-width: 900px) {
-		.grid-2col { grid-template-columns: 1fr; }
+		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+		gap: 24px;
+		max-width: 1100px;
+		margin: 0 auto;
 	}
 
 	.card {
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: 16px;
-		padding: 24px;
-		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		padding: 28px;
+		transition: all 0.25s;
 		position: relative;
 		overflow: hidden;
 	}
@@ -239,29 +97,26 @@
 		top: 0; left: 0; right: 0;
 		height: 3px;
 		background: var(--card-color, var(--accent));
-		opacity: 0.9;
 	}
 
 	.card:hover {
 		background: var(--card-hover);
 		border-color: var(--card-color, var(--accent));
 		transform: translateY(-4px);
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--card-color, var(--accent));
+		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 	}
 
 	.card-header {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: 14px;
-		margin-bottom: 14px;
-		position: relative;
-		z-index: 1;
+		margin-bottom: 18px;
 	}
 
 	.card-icon {
-		font-size: 26px;
-		width: 54px;
-		height: 54px;
+		font-size: 32px;
+		width: 56px;
+		height: 56px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -274,62 +129,51 @@
 	.card-title-wrap { flex: 1; min-width: 0; }
 
 	.card-title {
-		font-size: 16px;
+		font-size: 17px;
 		font-weight: 700;
-		letter-spacing: -0.3px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		margin-bottom: 4px;
 	}
 
-	.card-sub {
-		font-size: 10px;
+	.card-file {
+		font-size: 11px;
 		color: var(--sub);
 		font-family: 'JetBrains Mono', monospace;
-		margin-top: 3px;
 	}
 
-	.card-status {
+	.card-check {
+		position: absolute;
+		top: 22px;
+		right: 22px;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: var(--green);
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		font-size: 10px;
-		font-family: 'JetBrains Mono', monospace;
-		font-weight: 600;
+		justify-content: center;
+		color: #0a0a0f;
+		font-size: 14px;
+		font-weight: 700;
 	}
-
-	.status-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: var(--yellow);
-		box-shadow: 0 0 6px var(--yellow);
-	}
-
-	.card-status.ok .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
-	.card-status.ok { color: var(--green); }
-	.card-status.err { color: var(--red); }
-	.card-status.err .status-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
-	.card-status.checking { color: var(--yellow); }
 
 	.card-desc {
-		font-size: 13px;
+		font-size: 13.5px;
 		color: var(--sub);
-		line-height: 1.6;
-		margin-bottom: 16px;
+		line-height: 1.65;
+		margin-bottom: 18px;
 	}
 
 	.tags {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 6px;
-		margin-bottom: 16px;
+		margin-bottom: 18px;
 	}
 
 	.tag {
-		font-size: 10px;
+		font-size: 10.5px;
 		font-weight: 600;
-		padding: 3px 9px;
+		padding: 5px 11px;
 		border-radius: 6px;
 		background: rgba(124, 158, 255, 0.1);
 		color: var(--accent);
@@ -341,262 +185,70 @@
 		background: #08080c;
 		border: 1px solid var(--border);
 		border-radius: 10px;
-		padding: 12px 14px;
-		margin-bottom: 16px;
+		padding: 14px 16px;
+		margin-bottom: 18px;
 		font-family: 'JetBrains Mono', monospace;
-		font-size: 10.5px;
+		font-size: 11px;
 		color: var(--sub);
 		word-break: break-all;
 		line-height: 1.5;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
-	.code-preview .cmd { color: var(--purple); font-weight: 600; }
+	.code-preview .cmd { color: var(--purple); }
 	.code-preview .arg { color: var(--green); }
 	.code-preview .url { color: var(--accent); }
 
 	.actions {
 		display: flex;
-		gap: 8px;
+		gap: 10px;
 	}
 
 	.btn {
-		flex: 1;
-		padding: 11px 14px;
+		padding: 13px 18px;
 		border: none;
 		border-radius: 10px;
 		font-family: 'Inter', sans-serif;
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 700;
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all 0.15s;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 6px;
+		gap: 8px;
 	}
 
-	.btn-primary {
+	.btn-copy {
+		flex: 1;
 		background: var(--card-color, var(--accent));
 		color: #0a0a0f;
 	}
 
-	.btn-primary:hover {
+	.btn-copy:hover {
 		filter: brightness(1.15);
 		transform: translateY(-1px);
-		box-shadow: 0 6px 20px var(--card-color, var(--accent));
+		box-shadow: 0 8px 25px var(--card-color, var(--accent));
 	}
 
-	.btn-secondary {
+	.btn-copy.copied {
+		background: var(--green);
+		color: #0a0a0f;
+	}
+
+	.btn-raw {
 		background: rgba(255, 255, 255, 0.05);
 		color: var(--text);
 		border: 1px solid var(--border);
-		flex: 0 0 auto;
+		padding: 13px 22px;
 	}
 
-	.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
-
-	.btn-copied {
-		background: var(--green) !important;
-		color: #0a0a0f !important;
-	}
-
-	.card-stats {
-		display: flex;
-		justify-content: space-between;
-		font-size: 10px;
-		color: var(--sub);
-		font-family: 'JetBrains Mono', monospace;
-		margin-top: 12px;
-		padding-top: 12px;
-		border-top: 1px dashed var(--border);
-	}
-
-	label {
-		display: block;
-		font-size: 11px;
-		color: var(--sub);
-		margin-bottom: 6px;
-		margin-top: 14px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
-	label:first-of-type { margin-top: 0; }
-
-	input[type="text"], input[type="number"], select {
-		width: 100%;
-		background: #0f0f16;
-		border: 1px solid var(--border);
-		color: var(--text);
-		padding: 11px 14px;
-		border-radius: 8px;
-		font-size: 13px;
-		font-family: 'JetBrains Mono', monospace;
-		transition: all 0.2s;
-		outline: none;
-	}
-
-	input:focus, select:focus {
+	.btn-raw:hover {
+		background: rgba(255, 255, 255, 0.1);
 		border-color: var(--accent);
-		box-shadow: 0 0 0 3px var(--accent-glow);
 	}
-
-	input::placeholder { color: #555566; }
-
-	.row {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 12px;
-	}
-
-	.btn-form {
-		width: 100%;
-		padding: 13px;
-		border: none;
-		border-radius: 10px;
-		font-size: 13px;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.2s;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		margin-top: 18px;
-		font-family: 'Inter', sans-serif;
-	}
-
-	.btn-form-primary { background: var(--green); color: #0a0a0f; }
-	.btn-form-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3); }
-
-	.btn-form-blue { background: var(--accent); color: #0a0a0f; margin-top: 8px; }
-	.btn-form-blue:hover { filter: brightness(1.15); }
-
-	.btn-form-red { background: var(--red); color: #fff; margin-top: 8px; }
-	.btn-form-red:hover { filter: brightness(1.15); }
-
-	.btn-form-gold { background: var(--yellow); color: #0a0a0f; margin-top: 8px; }
-	.btn-form-gold:hover { filter: brightness(1.15); }
-
-	.info-aviso {
-		font-size: 10.5px;
-		color: var(--sub);
-		margin-top: 10px;
-		line-height: 1.6;
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.lista-keys {
-		max-height: 500px;
-		overflow-y: auto;
-		padding-right: 6px;
-	}
-
-	.lista-keys::-webkit-scrollbar { width: 6px; }
-	.lista-keys::-webkit-scrollbar-track { background: #0f0f16; border-radius: 3px; }
-	.lista-keys::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
-
-	.key-item {
-		background: #0f0f16;
-		border: 1px solid var(--border);
-		border-radius: 10px;
-		padding: 12px;
-		margin-bottom: 8px;
-		cursor: pointer;
-		transition: all 0.2s;
-		position: relative;
-	}
-
-	.key-item:hover {
-		border-color: var(--green);
-		background: #14141e;
-		transform: translateX(3px);
-	}
-
-	.key-item .key-code {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 12px;
-		color: var(--green);
-		font-weight: 600;
-		margin-bottom: 5px;
-		word-break: break-all;
-	}
-
-	.key-item .key-info {
-		font-size: 10px;
-		color: var(--sub);
-		margin-bottom: 3px;
-	}
-
-	.key-item .key-hwid {
-		font-size: 9px;
-		color: #64647a;
-		font-family: 'JetBrains Mono', monospace;
-		margin-top: 4px;
-		word-break: break-all;
-	}
-
-	.key-item .badge {
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		font-size: 9px;
-		padding: 3px 8px;
-		border-radius: 4px;
-		font-weight: 700;
-		text-transform: uppercase;
-	}
-
-	.badge-admin { background: var(--yellow); color: #0a0a0f; }
-	.badge-vip { background: var(--purple); color: #fff; }
-	.badge-normal { background: var(--green); color: #0a0a0f; }
-
-	.empty {
-		text-align: center;
-		padding: 40px 20px;
-		color: #555566;
-		font-size: 12px;
-	}
-
-	.stats-row {
-		display: flex;
-		gap: 12px;
-		margin-bottom: 16px;
-	}
-
-	.stat-box {
-		flex: 1;
-		background: #0f0f16;
-		border: 1px solid var(--border);
-		border-radius: 10px;
-		padding: 12px;
-		text-align: center;
-	}
-
-	.stat-box .num {
-		font-size: 22px;
-		font-weight: 800;
-		color: var(--green);
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.stat-box .lbl {
-		font-size: 9px;
-		color: var(--sub);
-		text-transform: uppercase;
-		margin-top: 2px;
-		letter-spacing: 0.5px;
-	}
-
-	footer {
-		text-align: center;
-		margin-top: 50px;
-		padding-top: 25px;
-		border-top: 1px solid var(--border);
-		color: var(--sub);
-		font-size: 12px;
-	}
-
-	footer .highlight { color: var(--accent); font-weight: 600; }
 
 	.toast {
 		position: fixed;
@@ -616,30 +268,21 @@
 	}
 
 	.toast.show { transform: translateY(0); opacity: 1; }
-	.toast.error { background: var(--red); box-shadow: 0 10px 40px rgba(248, 113, 113, 0.4); }
+	.toast.error { background: var(--red); }
 
-	.skeleton {
-		background: linear-gradient(90deg, var(--card) 0%, var(--card-hover) 50%, var(--card) 100%);
-		background-size: 200% 100%;
-		animation: skeleton 1.5s infinite;
-		border-radius: 16px;
-		height: 320px;
+	footer {
+		text-align: center;
+		margin-top: 60px;
+		color: var(--sub);
+		font-size: 12px;
 	}
 
-	@keyframes skeleton {
-		0% { background-position: 200% 0; }
-		100% { background-position: -200% 0; }
-	}
-
-	@media (max-width: 600px) {
-		body { padding: 20px 12px; }
-		.logo { font-size: 30px; letter-spacing: -1px; }
-		.grid { grid-template-columns: 1fr; gap: 14px; }
-		.card { padding: 18px; }
-		.search { min-width: 100%; }
-		.toolbar-btn { flex: 1; }
-		.toast { left: 12px; right: 12px; bottom: 12px; text-align: center; }
-		.tab { font-size: 11px; padding: 10px 12px; }
+	@media (max-width: 700px) {
+		body { padding: 24px 14px; }
+		.logo { font-size: 34px; }
+		.grid { grid-template-columns: 1fr; gap: 16px; }
+		.card { padding: 22px; }
+		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
 	}
 </style>
 </head>
@@ -648,160 +291,15 @@
 <div class="container">
 
 	<header>
-		<h1 class="logo">⚡ SAILENT</h1>
-		<p class="subtitle">Painel completo — Scripts + Gerador de Keys</p>
-		<div class="top-badges">
-			<span class="badge-top"><span class="dot"></span> ONLINE</span>
-			<span class="badge-top">🔒 ACESSO RESTRITO</span>
-			<span class="badge-top" id="lastUpdate">📅 —</span>
-		</div>
+		<h1 class="logo">⚡ SAILENT HUB</h1>
+		<p class="subtitle">Painel privado de scripts</p>
+		<div class="lock-badge">🔒 Acesso restrito</div>
 	</header>
 
-	<div class="tabs">
-		<button class="tab active" data-tab="scripts">
-			🎮 Scripts <span class="tab-badge" id="tabCountScripts">2</span>
-		</button>
-		<button class="tab" data-tab="gerador">
-			🔑 Gerador
-		</button>
-		<button class="tab" data-tab="keys">
-			📋 Keys <span class="tab-badge" id="tabCountKeys">0</span>
-		</button>
-	</div>
-
-	<div class="panel active" id="panel-scripts">
-		<div class="toolbar">
-			<input type="text" class="search" id="searchScripts" placeholder="🔍 Buscar script...">
-			<button class="toolbar-btn" id="btnRefreshAll">🔄 Atualizar</button>
-			<button class="toolbar-btn" id="btnCopyAll">📋 Copiar todos</button>
-		</div>
-
-		<div class="grid" id="gridScripts">
-			<div class="skeleton"></div>
-			<div class="skeleton"></div>
-		</div>
-	</div>
-
-	<div class="panel" id="panel-gerador">
-		<div class="grid-2col">
-			<div class="card" style="--card-color: var(--green);">
-				<div class="card-header">
-					<div class="card-icon">✨</div>
-					<div>
-						<div class="card-title">Gerar Nova Key</div>
-						<div class="card-sub">Preencha e clique em gerar</div>
-					</div>
-				</div>
-
-				<label>Nome do Cliente</label>
-				<input type="text" id="nome" placeholder="Ex: João Silva">
-
-				<div class="row">
-					<div>
-						<label>Nível</label>
-						<select id="nivel">
-							<option value="normal">Normal</option>
-							<option value="vip">VIP</option>
-							<option value="admin">Admin</option>
-						</select>
-					</div>
-					<div>
-						<label>Duração (dias)</label>
-						<input type="number" id="duracao" placeholder="30" value="30" min="0">
-					</div>
-				</div>
-
-				<label>HWID (opcional — vazio = qualquer dispositivo)</label>
-				<input type="text" id="hwid" placeholder="Cole o HWID do cliente...">
-
-				<label>Máximo de usos (-1 = ilimitado)</label>
-				<input type="number" id="usos" value="-1" min="-1">
-
-				<div class="info-aviso">
-					💡 <b>Dias = 0</b> → key nunca expira<br>
-					💡 <b>HWID vazio</b> → funciona em qualquer dispositivo
-				</div>
-
-				<button class="btn-form btn-form-primary" onclick="gerarKey()">✨ Gerar Key</button>
-			</div>
-
-			<div class="card" style="--card-color: var(--purple);">
-				<div class="card-header">
-					<div class="card-icon">👁️</div>
-					<div>
-						<div class="card-title">Preview em Tempo Real</div>
-						<div class="card-sub">Como vai ficar no keys.json</div>
-					</div>
-				</div>
-
-				<div class="code-preview" id="previewKey" style="font-size: 12px; min-height: 220px; white-space: pre; overflow-x: auto;">
-					Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div class="panel" id="panel-keys">
-		<div class="toolbar">
-			<input type="text" class="search" id="searchKeys" placeholder="🔍 Buscar por nome, key ou hash...">
-			<button class="toolbar-btn" onclick="copiarJSON()">📋 Copiar JSON</button>
-			<button class="toolbar-btn" onclick="baixarJSON()">💾 Baixar</button>
-			<button class="toolbar-btn" onclick="limparTudo()" style="border-color: var(--red); color: var(--red);">🗑️ Limpar</button>
-		</div>
-
-		<div class="grid-2col">
-			<div class="card" style="--card-color: var(--accent);">
-				<div class="card-header">
-					<div class="card-icon">📊</div>
-					<div>
-						<div class="card-title">Estatísticas</div>
-						<div class="card-sub">Resumo das keys</div>
-					</div>
-				</div>
-
-				<div class="stats-row">
-					<div class="stat-box">
-						<div class="num" id="statTotal">0</div>
-						<div class="lbl">Total</div>
-					</div>
-					<div class="stat-box">
-						<div class="num" id="statAdmin" style="color: var(--yellow);">0</div>
-						<div class="lbl">Admin</div>
-					</div>
-					<div class="stat-box">
-						<div class="num" id="statVip" style="color: var(--purple);">0</div>
-						<div class="lbl">VIP</div>
-					</div>
-					<div class="stat-box">
-						<div class="num" id="statNormal" style="color: var(--green);">0</div>
-						<div class="lbl">Normal</div>
-					</div>
-				</div>
-
-				<div class="info-aviso">
-					💡 <b>Clique em uma key</b> na lista pra copiar ela individualmente.<br>
-					💡 <b>Copiar JSON</b> gera o conteúdo completo pra colar no <code>keys.json</code> do GitHub.
-				</div>
-			</div>
-
-			<div class="card" style="--card-color: var(--green);">
-				<div class="card-header">
-					<div class="card-icon">🔑</div>
-					<div>
-						<div class="card-title">Keys Geradas</div>
-						<div class="card-sub">Clique em uma pra copiar</div>
-					</div>
-				</div>
-
-				<div class="lista-keys" id="listaKeys">
-					<div class="empty">Nenhuma key gerada ainda...<br>Vai na aba <b>🔑 Gerador</b> e cria uma!</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	<div class="grid" id="grid"></div>
 
 	<footer>
-		Painel <span class="highlight">Sailent</span> • Scripts + Keys em 1 lugar • Uso pessoal
+		Painel <b style="color: var(--accent)">Sailent</b> • Scripts privados
 	</footer>
 
 </div>
@@ -809,20 +307,35 @@
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// ⚙️ CONFIGURAÇÃO
-// ═══════════════════════════════════════════════════════════
 const USER = "simiao64santos-dot";
 const REPO = "sailent-";
 const BRANCH = "main";
 
 const SCRIPTS = [
 	{
+		id: "gari",
+		icon: "🍔",
+		name: "Sailent Auto Gari",
+		file: "main.lua",
+		desc: "Coleta e entrega lixo automaticamente. Modo A Pé ou Voar, noclip embutido e God Mode.",
+		color: "#4ade80",
+		tags: ["A Pé/Voar", "Noclip", "God Mode", "Anti-admin"]
+	},
+	{
+		id: "prisao",
+		icon: "🔓",
+		name: "Sailent Auto Prisão",
+		file: "prisao.lua",
+		desc: "Varre o perímetro completo e entrega caixas. Reduz a pena sem esforço.",
+		color: "#a78bfa",
+		tags: ["Varredura", "Caixas", "Noclip"]
+	},
+	{
 		id: "pizza",
 		icon: "🍕",
 		name: "Sailent Auto Pizza v6.1b",
 		file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro (andar rápido) por padrão + anti-dano de queda + detecção de água. Voo aéreo opcional com aviso de risco.",
+		desc: "Pega o pedido e entrega automaticamente. Modo Seguro (andar rápido) por padrão com anti-kick e anti-dano de queda. Voo aéreo opcional com aviso de risco. Velocidade única (a pé + voo), espera entre entregas e anti-sit.",
 		color: "#fbbf24",
 		tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
 	},
@@ -831,7 +344,7 @@ const SCRIPTS = [
 		icon: "⚡",
 		name: "Sailent Auto Eletricista v3.2",
 		file: "eletricista.lua",
-		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode + anti-dano ativo.",
+		desc: "Pega a escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode ativo + velocidade única + anti-sit + noclip.",
 		color: "#f87171",
 		tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
 	}
@@ -845,345 +358,44 @@ function buildLoadstring(file) {
 	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
 
-function getCopyCount(id) {
-	return parseInt(localStorage.getItem(`sailent_copies_${id}`) || "0");
-}
+const grid = document.getElementById("grid");
 
-function incCopyCount(id) {
-	const n = getCopyCount(id) + 1;
-	localStorage.setItem(`sailent_copies_${id}`, n);
-	return n;
-}
-
-async function fetchScriptInfo(file) {
-	try {
-		const url = buildURL(file) + "?t=" + Date.now();
-		const res = await fetch(url, { method: "GET", cache: "no-store" });
-		if (!res.ok) return { ok: false, error: res.status };
-		const text = await res.text();
-		const versionMatch = text.match(/v(\d+\.\d+(\.\d+)?[a-z]?)/);
-		return {
-			ok: true,
-			size: text.length,
-			version: versionMatch ? "v" + versionMatch[1] : null,
-			lines: text.split("\n").length
-		};
-	} catch (e) {
-		return { ok: false, error: e.message };
-	}
-}
-
-function escapeHtml(t) {
-	const d = document.createElement("div");
-	d.textContent = t;
-	return d.innerHTML;
-}
-
-document.querySelectorAll(".tab").forEach(tab => {
-	tab.addEventListener("click", () => {
-		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-		document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-		tab.classList.add("active");
-		document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
-	});
-});
-
-const gridScripts = document.getElementById("gridScripts");
-const searchScripts = document.getElementById("searchScripts");
-let renderedCards = [];
-
-function renderCard(s) {
+SCRIPTS.forEach(s => {
 	const card = document.createElement("div");
 	card.className = "card";
 	card.style.setProperty("--card-color", s.color);
-	card.dataset.id = s.id;
-	card.dataset.name = s.name.toLowerCase();
-	card.dataset.tags = s.tags.join(" ").toLowerCase();
 
 	const url = buildURL(s.file);
 	const load = buildLoadstring(s.file);
-	const copies = getCopyCount(s.id);
 
 	card.innerHTML = `
+		<div class="card-check">✓</div>
 		<div class="card-header">
 			<div class="card-icon">${s.icon}</div>
 			<div class="card-title-wrap">
-				<div class="card-title">${escapeHtml(s.name)}</div>
-				<div class="card-sub">${escapeHtml(s.file)}</div>
-			</div>
-			<div class="card-status checking" data-status>
-				<span class="status-dot"></span>
-				<span data-status-text>...</span>
+				<div class="card-title">${s.name}</div>
+				<div class="card-file">${s.file}</div>
 			</div>
 		</div>
-		<div class="card-desc">${escapeHtml(s.desc)}</div>
+		<div class="card-desc">${s.desc}</div>
 		<div class="tags">
-			${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+			${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}
 		</div>
 		<div class="code-preview">
-			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
+			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${url}"</span>))()
 		</div>
 		<div class="actions">
-			<button class="btn btn-primary" data-copy="${encodeURIComponent(load)}" data-id="${s.id}">
+			<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">
 				📋 Copiar Loadstring
 			</button>
-			<button class="btn btn-secondary" data-open="${escapeHtml(url)}" title="Abrir raw no GitHub">
-				🔗
+			<button class="btn btn-raw" data-open="${url}">
+				🔗 Raw
 			</button>
-		</div>
-		<div class="card-stats">
-			<span data-version>📦 —</span>
-			<span data-lines>📄 —</span>
-			<span data-copies>📋 ${copies}×</span>
 		</div>
 	`;
 
-	return card;
-}
-
-function renderScripts() {
-	gridScripts.innerHTML = "";
-	renderedCards = [];
-	SCRIPTS.forEach(s => {
-		const card = renderCard(s);
-		gridScripts.appendChild(card);
-		renderedCards.push(card);
-	});
-	document.getElementById("tabCountScripts").textContent = SCRIPTS.length;
-}
-
-async function checkAllScripts() {
-	let okCount = 0;
-	for (const s of SCRIPTS) {
-		const card = renderedCards.find(c => c.dataset.id === s.id);
-		if (!card) continue;
-
-		const statusEl = card.querySelector("[data-status]");
-		const statusText = card.querySelector("[data-status-text]");
-		const versionEl = card.querySelector("[data-version]");
-		const linesEl = card.querySelector("[data-lines]");
-
-		statusEl.className = "card-status checking";
-		statusText.textContent = "...";
-
-		const info = await fetchScriptInfo(s.file);
-
-		if (info.ok) {
-			okCount++;
-			statusEl.className = "card-status ok";
-			statusText.textContent = "OK";
-			if (info.version) versionEl.textContent = "📦 " + info.version;
-			else versionEl.textContent = "📦 ok";
-			linesEl.textContent = "📄 " + info.lines;
-		} else {
-			statusEl.className = "card-status err";
-			statusText.textContent = "ERRO";
-			versionEl.textContent = "📦 não achou";
-			linesEl.textContent = "📄 —";
-		}
-	}
-
-	const now = new Date();
-	const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-	document.getElementById("lastUpdate").textContent = `📅 ${okCount}/${SCRIPTS.length} OK às ${timeStr}`;
-}
-
-searchScripts.addEventListener("input", () => {
-	const q = searchScripts.value.trim().toLowerCase();
-	renderedCards.forEach(card => {
-		const match = !q || card.dataset.name.includes(q) || card.dataset.tags.includes(q);
-		card.style.display = match ? "" : "none";
-	});
+	grid.appendChild(card);
 });
-
-async function sha256(msg) {
-	const enc = new TextEncoder();
-	const data = enc.encode(msg);
-	const hash = await crypto.subtle.digest("SHA-256", data);
-	return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function gerarKeyAleatoria() {
-	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-	const bloco = () => {
-		let s = "";
-		for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
-		return s;
-	};
-	return `SAILENT-${bloco()}-${bloco()}-${bloco()}`;
-}
-
-let keys = [];
-
-async function gerarKey() {
-	const nome = document.getElementById("nome").value.trim() || "Cliente";
-	const nivel = document.getElementById("nivel").value;
-	const duracao = parseInt(document.getElementById("duracao").value) || 0;
-	const hwid = document.getElementById("hwid").value.trim() || null;
-	const usos = parseInt(document.getElementById("usos").value) || -1;
-
-	const key = gerarKeyAleatoria();
-	const hash = await sha256(key);
-	const agora = Math.floor(Date.now() / 1000);
-	const expira = duracao === 0 ? 99999999999 : agora + (duracao * 86400);
-
-	keys.push({
-		key, hash, nome, nivel,
-		criada: agora, expira, hwid,
-		max_usos: usos, usos: 0
-	});
-
-	document.getElementById("nome").value = "";
-	document.getElementById("hwid").value = "";
-	document.getElementById("duracao").value = "30";
-	document.getElementById("usos").value = "-1";
-
-	renderizarKeys();
-	renderPreview(key, hash, nome, nivel, expira, hwid, usos);
-	showToast("✅ Key gerada!");
-	incCopyCount("key-gen");
-}
-
-function renderPreview(key, hash, nome, nivel, expira, hwid, usos) {
-	const preview = document.getElementById("previewKey");
-	preview.innerHTML = `
-<span style="color: var(--sub);">// Key gerada</span>
-<span style="color: var(--green);">${key}</span>
-
-<span style="color: var(--sub);">// Hash SHA-256</span>
-<span style="color: var(--purple);">${hash}</span>
-
-<span style="color: var(--sub);">// JSON entry</span>
-<span style="color: var(--accent);">"${hash}"</span>: {
-  "nome": "${escapeHtml(nome)}",
-  "nivel": "${nivel}",
-  "expira": ${expira},${hwid ? `\n  "hwid": "${escapeHtml(hwid)}",` : ""}
-  "status": "ativa",
-  "max_usos": ${usos},
-  "usos": 0
-}
-	`.trim();
-}
-
-function renderizarKeys() {
-	const lista = document.getElementById("listaKeys");
-
-	document.getElementById("statTotal").textContent = keys.length;
-	document.getElementById("statAdmin").textContent = keys.filter(k => k.nivel === "admin").length;
-	document.getElementById("statVip").textContent = keys.filter(k => k.nivel === "vip").length;
-	document.getElementById("statNormal").textContent = keys.filter(k => k.nivel === "normal").length;
-	document.getElementById("tabCountKeys").textContent = keys.length;
-
-	if (keys.length === 0) {
-		lista.innerHTML = '<div class="empty">Nenhuma key gerada ainda...<br>Vai na aba <b>🔑 Gerador</b> e cria uma!</div>';
-		return;
-	}
-
-	const q = (document.getElementById("searchKeys").value || "").trim().toLowerCase();
-	const filtradas = keys.filter(k => !q || k.key.toLowerCase().includes(q) || k.hash.toLowerCase().includes(q) || k.nome.toLowerCase().includes(q));
-
-	if (filtradas.length === 0) {
-		lista.innerHTML = '<div class="empty">Nada encontrado com essa busca.</div>';
-		return;
-	}
-
-	lista.innerHTML = "";
-	[...filtradas].reverse().forEach(k => {
-		const item = document.createElement("div");
-		item.className = "key-item";
-
-		const dias = k.expira >= 99999999999
-			? "∞"
-			: Math.max(0, Math.floor((k.expira - Math.floor(Date.now() / 1000)) / 86400)) + "d";
-
-		item.innerHTML = `
-			<div class="badge badge-${k.nivel}">${k.nivel}</div>
-			<div class="key-code">${escapeHtml(k.key)}</div>
-			<div class="key-info">👤 ${escapeHtml(k.nome)} • ⏰ ${dias} • 🔁 ${k.max_usos === -1 ? "∞" : k.max_usos}</div>
-			${k.hwid ? `<div class="key-hwid">🔒 HWID: ${escapeHtml(k.hwid.substring(0, 28))}...</div>` : ""}
-		`;
-
-		item.onclick = () => {
-			navigator.clipboard.writeText(k.key).then(() => {
-				showToast("📋 Key copiada!");
-			}).catch(() => {
-				const ta = document.createElement("textarea");
-				ta.value = k.key;
-				document.body.appendChild(ta);
-				ta.select();
-				document.execCommand("copy");
-				document.body.removeChild(ta);
-				showToast("📋 Key copiada!");
-			});
-		};
-
-		lista.appendChild(item);
-	});
-}
-
-document.getElementById("searchKeys").addEventListener("input", renderizarKeys);
-
-function gerarJSON() {
-	const obj = {
-		versao: "2.0",
-		ultima_atualizacao: Math.floor(Date.now() / 1000),
-		keys: {}
-	};
-
-	keys.forEach(k => {
-		const entry = {
-			nome: k.nome,
-			nivel: k.nivel,
-			criada: k.criada,
-			expira: k.expira,
-			status: "ativa",
-			max_usos: k.max_usos,
-			usos: k.usos
-		};
-		if (k.hwid) entry.hwid = k.hwid;
-		obj.keys[k.hash] = entry;
-	});
-
-	return JSON.stringify(obj, null, 2);
-}
-
-function copiarJSON() {
-	if (keys.length === 0) { showToast("⚠️ Nenhuma key gerada ainda!", true); return; }
-	const json = gerarJSON();
-	navigator.clipboard.writeText(json).then(() => {
-		showToast("✅ JSON copiado! Cola no keys.json do GitHub");
-	}).catch(() => {
-		const ta = document.createElement("textarea");
-		ta.value = json;
-		document.body.appendChild(ta);
-		ta.select();
-		document.execCommand("copy");
-		document.body.removeChild(ta);
-		showToast("✅ JSON copiado!");
-	});
-}
-
-function baixarJSON() {
-	if (keys.length === 0) { showToast("⚠️ Nenhuma key gerada ainda!", true); return; }
-	const json = gerarJSON();
-	const blob = new Blob([json], { type: "application/json" });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = "keys.json";
-	a.click();
-	URL.revokeObjectURL(url);
-	showToast("💾 keys.json baixado!");
-}
-
-function limparTudo() {
-	if (keys.length === 0) return;
-	if (!confirm("Apagar TODAS as keys?")) return;
-	keys = [];
-	renderizarKeys();
-	document.getElementById("previewKey").innerHTML = 'Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...';
-	showToast("🗑️ Lista limpa");
-}
 
 const toast = document.getElementById("toast");
 let toastTimer;
@@ -1192,7 +404,7 @@ function showToast(txt, isError = false) {
 	toast.textContent = txt;
 	toast.className = "toast show" + (isError ? " error" : "");
 	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.className = "toast", 2500);
+	toastTimer = setTimeout(() => toast.className = "toast", 2200);
 }
 
 async function copyText(text) {
@@ -1216,20 +428,15 @@ document.addEventListener("click", async (e) => {
 	const copyBtn = e.target.closest("[data-copy]");
 	if (copyBtn) {
 		const text = decodeURIComponent(copyBtn.dataset.copy);
-		const id = copyBtn.dataset.id;
 		const ok = await copyText(text);
 		if (ok) {
-			incCopyCount(id);
-			const card = copyBtn.closest(".card");
-			const copiesEl = card.querySelector("[data-copies]");
-			if (copiesEl) copiesEl.textContent = `📋 ${getCopyCount(id)}×`;
-
-			copyBtn.classList.add("btn-copied");
+			copyBtn.classList.add("copied");
+			const original = copyBtn.innerHTML;
 			copyBtn.innerHTML = "✅ Copiado!";
 			showToast("✅ Loadstring copiado!");
 			setTimeout(() => {
-				copyBtn.classList.remove("btn-copied");
-				copyBtn.innerHTML = "📋 Copiar Loadstring";
+				copyBtn.classList.remove("copied");
+				copyBtn.innerHTML = original;
 			}, 1800);
 		}
 		return;
@@ -1238,39 +445,6 @@ document.addEventListener("click", async (e) => {
 	const openBtn = e.target.closest("[data-open]");
 	if (openBtn) window.open(openBtn.dataset.open, "_blank");
 });
-
-document.getElementById("btnRefreshAll").addEventListener("click", () => {
-	showToast("🔄 Verificando scripts...");
-	checkAllScripts();
-});
-
-document.getElementById("btnCopyAll").addEventListener("click", async () => {
-	const all = SCRIPTS.map(s => `-- ${s.name}\n${buildLoadstring(s.file)}`).join("\n\n");
-	const ok = await copyText(all);
-	if (ok) showToast("✅ Todos os loadstrings copiados!");
-	else showToast("❌ Falha ao copiar", true);
-});
-
-function salvarLocal() {
-	try { localStorage.setItem("sailent_keys", JSON.stringify(keys)); } catch (e) {}
-}
-
-function carregarLocal() {
-	try {
-		const dados = localStorage.getItem("sailent_keys");
-		if (dados) {
-			keys = JSON.parse(dados);
-			renderizarKeys();
-		}
-	} catch (e) {}
-}
-
-const _origRender = renderizarKeys;
-renderizarKeys = function() { _origRender(); salvarLocal(); };
-
-renderScripts();
-checkAllScripts();
-carregarLocal();
 </script>
 
 </body>
