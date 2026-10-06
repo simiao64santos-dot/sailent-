@@ -73,7 +73,6 @@
 		font-weight: 600;
 	}
 
-	/* TABS */
 	.tabs {
 		display: flex;
 		gap: 4px;
@@ -130,7 +129,6 @@
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* GRID SCRIPTS */
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -303,7 +301,6 @@
 		border-color: var(--accent);
 	}
 
-	/* GERADOR */
 	.grid-2col {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -380,7 +377,6 @@
 		font-family: 'JetBrains Mono', monospace;
 	}
 
-	/* KEYS */
 	.stats-row {
 		display: flex;
 		gap: 12px;
@@ -520,7 +516,6 @@
 		overflow-x: auto;
 	}
 
-	/* TOAST */
 	.toast {
 		position: fixed;
 		bottom: 30px;
@@ -570,7 +565,6 @@
 		<div class="lock-badge">🔒 Acesso restrito</div>
 	</header>
 
-	<!-- TABS -->
 	<div class="tabs">
 		<button class="tab active" data-tab="scripts">
 			🎮 Scripts <span class="badge" id="tabCountScripts">4</span>
@@ -581,12 +575,10 @@
 		</button>
 	</div>
 
-	<!-- PANEL SCRIPTS -->
 	<div class="panel active" id="panel-scripts">
 		<div class="grid" id="gridScripts"></div>
 	</div>
 
-	<!-- PANEL GERADOR -->
 	<div class="panel" id="panel-gerador">
 		<div class="grid-2col">
 			<div class="card" style="--card-color: var(--green);">
@@ -639,14 +631,11 @@
 					</div>
 				</div>
 
-				<div class="code-preview-keys" id="previewKey">
-Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
-				</div>
+				<div class="code-preview-keys" id="previewKey">Aperte Gerar Key pra ver o preview aqui...</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- PANEL KEYS -->
 	<div class="panel" id="panel-keys">
 		<div class="grid-2col">
 			<div class="card" style="--card-color: var(--accent);">
@@ -769,7 +758,6 @@ function escapeHtml(t) {
 	return d.innerHTML;
 }
 
-/* TABS */
 document.querySelectorAll(".tab").forEach(tab => {
 	tab.addEventListener("click", () => {
 		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -779,7 +767,6 @@ document.querySelectorAll(".tab").forEach(tab => {
 	});
 });
 
-/* SCRIPTS */
 const grid = document.getElementById("gridScripts");
 
 SCRIPTS.forEach(s => {
@@ -821,7 +808,6 @@ SCRIPTS.forEach(s => {
 
 document.getElementById("tabCountScripts").textContent = SCRIPTS.length;
 
-/* TOAST */
 const toast = document.getElementById("toast");
 let toastTimer;
 
@@ -871,7 +857,6 @@ document.addEventListener("click", async (e) => {
 	if (openBtn) window.open(openBtn.dataset.open, "_blank");
 });
 
-/* KEYS */
 async function sha256(msg) {
 	const enc = new TextEncoder();
 	const data = enc.encode(msg);
