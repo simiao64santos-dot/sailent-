@@ -41,7 +41,6 @@
 
 	.container { max-width: 1180px; margin: 0 auto; }
 
-	/* ═══ Header ═══ */
 	header {
 		text-align: center;
 		margin-bottom: 28px;
@@ -108,7 +107,6 @@
 		50% { opacity: 0.4; }
 	}
 
-	/* ═══ Tabs ═══ */
 	.tabs {
 		display: flex;
 		gap: 4px;
@@ -156,7 +154,6 @@
 		font-family: 'JetBrains Mono', monospace;
 	}
 
-	/* ═══ Painéis ═══ */
 	.panel { display: none; }
 	.panel.active { display: block; animation: fadeIn 0.3s ease; }
 
@@ -165,7 +162,6 @@
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* ═══ Toolbar ═══ */
 	.toolbar {
 		display: flex;
 		gap: 10px;
@@ -211,7 +207,6 @@
 		transform: translateY(-1px);
 	}
 
-	/* ═══ Grids ═══ */
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -228,7 +223,6 @@
 		.grid-2col { grid-template-columns: 1fr; }
 	}
 
-	/* ═══ Card ═══ */
 	.card {
 		background: var(--card);
 		border: 1px solid var(--border);
@@ -417,7 +411,6 @@
 		border-top: 1px dashed var(--border);
 	}
 
-	/* ═══ Form (Keys) ═══ */
 	label {
 		display: block;
 		font-size: 11px;
@@ -492,7 +485,6 @@
 		font-family: 'JetBrains Mono', monospace;
 	}
 
-	/* ═══ Lista de keys ═══ */
 	.lista-keys {
 		max-height: 500px;
 		overflow-y: auto;
@@ -595,7 +587,6 @@
 		letter-spacing: 0.5px;
 	}
 
-	/* ═══ Footer ═══ */
 	footer {
 		text-align: center;
 		margin-top: 50px;
@@ -607,7 +598,6 @@
 
 	footer .highlight { color: var(--accent); font-weight: 600; }
 
-	/* ═══ Toast ═══ */
 	.toast {
 		position: fixed;
 		bottom: 30px;
@@ -667,10 +657,9 @@
 		</div>
 	</header>
 
-	<!-- ═══ TABS ═══ -->
 	<div class="tabs">
 		<button class="tab active" data-tab="scripts">
-			🎮 Scripts <span class="tab-badge" id="tabCountScripts">4</span>
+			🎮 Scripts <span class="tab-badge" id="tabCountScripts">2</span>
 		</button>
 		<button class="tab" data-tab="gerador">
 			🔑 Gerador
@@ -680,7 +669,6 @@
 		</button>
 	</div>
 
-	<!-- ═══════════ PAINEL: SCRIPTS ═══════════ -->
 	<div class="panel active" id="panel-scripts">
 		<div class="toolbar">
 			<input type="text" class="search" id="searchScripts" placeholder="🔍 Buscar script...">
@@ -691,15 +679,11 @@
 		<div class="grid" id="gridScripts">
 			<div class="skeleton"></div>
 			<div class="skeleton"></div>
-			<div class="skeleton"></div>
-			<div class="skeleton"></div>
 		</div>
 	</div>
 
-	<!-- ═══════════ PAINEL: GERADOR ═══════════ -->
 	<div class="panel" id="panel-gerador">
 		<div class="grid-2col">
-			<!-- Formulário -->
 			<div class="card" style="--card-color: var(--green);">
 				<div class="card-header">
 					<div class="card-icon">✨</div>
@@ -741,7 +725,6 @@
 				<button class="btn-form btn-form-primary" onclick="gerarKey()">✨ Gerar Key</button>
 			</div>
 
-			<!-- Preview -->
 			<div class="card" style="--card-color: var(--purple);">
 				<div class="card-header">
 					<div class="card-icon">👁️</div>
@@ -758,7 +741,6 @@
 		</div>
 	</div>
 
-	<!-- ═══════════ PAINEL: KEYS ═══════════ -->
 	<div class="panel" id="panel-keys">
 		<div class="toolbar">
 			<input type="text" class="search" id="searchKeys" placeholder="🔍 Buscar por nome, key ou hash...">
@@ -828,7 +810,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// ⚙️ CONFIGURAÇÃO — EDITE AQUI
+// ⚙️ CONFIGURAÇÃO
 // ═══════════════════════════════════════════════════════════
 const USER = "simiao64santos-dot";
 const REPO = "sailent-";
@@ -836,46 +818,25 @@ const BRANCH = "main";
 
 const SCRIPTS = [
 	{
-		id: "gari",
-		icon: "🍔",
-		name: "Sailent Auto Gari",
-		file: "main.lua",
-		desc: "Coleta e entrega lixo automaticamente. Modo A Pé ou Voar, noclip embutido e God Mode.",
-		color: "#4ade80",
-		tags: ["A Pé/Voar", "Noclip", "God Mode", "Anti-admin"]
-	},
-	{
-		id: "prisao",
-		icon: "🔓",
-		name: "Sailent Auto Prisão",
-		file: "prisao.lua",
-		desc: "Varre o perímetro completo e entrega caixas. Reduz a pena sem esforço.",
-		color: "#a78bfa",
-		tags: ["Varredura", "Caixas", "Noclip"]
-	},
-	{
 		id: "pizza",
 		icon: "🍕",
-		name: "Sailent Auto Pizza",
+		name: "Sailent Auto Pizza v6.1b",
 		file: "pizza.lua",
-		desc: "Pega o pedido, voa em altura segura e entrega no cliente automaticamente. Clique automático e proteção anti-água.",
+		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro (andar rápido) por padrão + anti-dano de queda + detecção de água. Voo aéreo opcional com aviso de risco.",
 		color: "#fbbf24",
-		tags: ["Fly seguro", "Auto-clique", "Anti-água", "Auto-entrega"]
+		tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
 	},
 	{
 		id: "eletricista",
 		icon: "⚡",
-		name: "Sailent Auto Eletricista",
+		name: "Sailent Auto Eletricista v3.2",
 		file: "eletricista.lua",
-		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos.",
+		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode + anti-dano ativo.",
 		color: "#f87171",
-		tags: ["TP topo", "Part suporte", "Marca postes"]
+		tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
 	}
 ];
 
-// ═══════════════════════════════════════════════════════════
-// 🔧 HELPERS
-// ═══════════════════════════════════════════════════════════
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`;
 }
@@ -900,7 +861,7 @@ async function fetchScriptInfo(file) {
 		const res = await fetch(url, { method: "GET", cache: "no-store" });
 		if (!res.ok) return { ok: false, error: res.status };
 		const text = await res.text();
-		const versionMatch = text.match(/v(\d+\.\d+(\.\d+)?)/);
+		const versionMatch = text.match(/v(\d+\.\d+(\.\d+)?[a-z]?)/);
 		return {
 			ok: true,
 			size: text.length,
@@ -918,9 +879,6 @@ function escapeHtml(t) {
 	return d.innerHTML;
 }
 
-// ═══════════════════════════════════════════════════════════
-// 🎨 TABS
-// ═══════════════════════════════════════════════════════════
 document.querySelectorAll(".tab").forEach(tab => {
 	tab.addEventListener("click", () => {
 		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -930,9 +888,6 @@ document.querySelectorAll(".tab").forEach(tab => {
 	});
 });
 
-// ═══════════════════════════════════════════════════════════
-// 🎮 SCRIPTS
-// ═══════════════════════════════════════════════════════════
 const gridScripts = document.getElementById("gridScripts");
 const searchScripts = document.getElementById("searchScripts");
 let renderedCards = [];
@@ -1041,9 +996,6 @@ searchScripts.addEventListener("input", () => {
 	});
 });
 
-// ═══════════════════════════════════════════════════════════
-// 🔑 GERADOR DE KEYS
-// ═══════════════════════════════════════════════════════════
 async function sha256(msg) {
 	const enc = new TextEncoder();
 	const data = enc.encode(msg);
@@ -1233,9 +1185,6 @@ function limparTudo() {
 	showToast("🗑️ Lista limpa");
 }
 
-// ═══════════════════════════════════════════════════════════
-// 📋 AÇÕES GERAIS
-// ═══════════════════════════════════════════════════════════
 const toast = document.getElementById("toast");
 let toastTimer;
 
@@ -1302,9 +1251,6 @@ document.getElementById("btnCopyAll").addEventListener("click", async () => {
 	else showToast("❌ Falha ao copiar", true);
 });
 
-// ═══════════════════════════════════════════════════════════
-// 💾 SALVAR / CARREGAR
-// ═══════════════════════════════════════════════════════════
 function salvarLocal() {
 	try { localStorage.setItem("sailent_keys", JSON.stringify(keys)); } catch (e) {}
 }
@@ -1322,9 +1268,6 @@ function carregarLocal() {
 const _origRender = renderizarKeys;
 renderizarKeys = function() { _origRender(); salvarLocal(); };
 
-// ═══════════════════════════════════════════════════════════
-// 🚀 INICIALIZA
-// ═══════════════════════════════════════════════════════════
 renderScripts();
 checkAllScripts();
 carregarLocal();
