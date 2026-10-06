@@ -1,12 +1,21 @@
 {
   "versao": "2.0",
-  "ultima_atualizacao": 1790826234,
+  "ultima_atualizacao": 1791324831,
   "keys": {
-    "8cbe501059372c806aabd93ba24fd045d203ef4e906bdce22796b2906ad55dfa": {
-      "nome": "dono",
+    "5436a603d9f53f0c257b6dee7f54a907300c6ea16206685f268c483efac18dc3": {
+      "nome": "DONOS",
       "nivel": "admin",
-      "criada": 1790826225,
-      "expira": 864000000001790800000,
+      "criada": 1791324789,
+      "expira": 99999999999,
+      "status": "ativa",
+      "max_usos": -1,
+      "usos": 0
+    },
+    "873f95cb9d29ccc91e7cffe4016a22af452134629e52dab3806f5df5c8ee70c5": {
+      "nome": "satff",
+      "nivel": "admin",
+      "criada": 1791324819,
+      "expira": 1791411219,
       "status": "ativa",
       "max_usos": -1,
       "usos": 0
