@@ -1,6 +1,6 @@
 -- ============================================================
--- SAILENT AUTO ELETRICISTA v3.1 — OTIMIZADO
--- TP + Part invisível + espera prompt desabilitar
+-- SAILENT AUTO ELETRICISTA v3.2 — UI Pizza + Vel Única + Anti-Sit
+-- TP + Part invisível + God Mode + Anti-Sit
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -15,7 +15,7 @@ local lp = Players.LocalPlayer
 local KEY_CONFIG = {
 	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
 	ARQUIVO_CACHE = "sailent_gari_key.txt",
-	NOME_SCRIPT = "Sailent Auto Eletricista v3.1",
+	NOME_SCRIPT = "Sailent Auto Eletricista v3.2",
 }
 
 for _, name in ipairs({"SailentEletricista", "SailentFloatBtn", "SailentKeyUI", "SailentToast"}) do
@@ -24,12 +24,14 @@ for _, name in ipairs({"SailentEletricista", "SailentFloatBtn", "SailentKeyUI", 
 end
 
 local C = {
-	BG = Color3.fromRGB(12,12,18), Card = Color3.fromRGB(25,25,35),
-	Accent = Color3.fromRGB(255,200,80), Text = Color3.fromRGB(240,240,245),
-	Sub = Color3.fromRGB(150,150,165), Green = Color3.fromRGB(80,220,120),
-	Red = Color3.fromRGB(230,70,80), Yellow = Color3.fromRGB(255,200,80),
-	Blue = Color3.fromRGB(80,160,240), Purple = Color3.fromRGB(180,120,255),
-	Black = Color3.fromRGB(10, 10, 15),
+	BG = Color3.fromRGB(12,12,20), BG2 = Color3.fromRGB(16,16,26),
+	Card = Color3.fromRGB(24,24,36), Border = Color3.fromRGB(42,42,62),
+	Accent = Color3.fromRGB(124,158,255), Text = Color3.fromRGB(240,240,250),
+	Sub = Color3.fromRGB(140,140,165),
+	Green = Color3.fromRGB(80,220,140), Red = Color3.fromRGB(240,90,100),
+	Yellow = Color3.fromRGB(255,200,80), Blue = Color3.fromRGB(124,158,255),
+	Purple = Color3.fromRGB(180,120,255),
+	Black = Color3.fromRGB(6,6,12),
 }
 
 local function Tween(o, p, t)
@@ -164,8 +166,8 @@ SGBToast.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 SGBToast.IgnoreGuiInset = true; SGBToast.DisplayOrder = 999; SGBToast.Parent = CoreGui
 
 local toastContainer = Instance.new("Frame")
-toastContainer.Size = UDim2.new(0, 300, 1, 0)
-toastContainer.Position = UDim2.new(1, -320, 0, 0)
+toastContainer.Size = UDim2.new(0, 320, 1, 0)
+toastContainer.Position = UDim2.new(1, -340, 0, 0)
 toastContainer.BackgroundTransparency = 1; toastContainer.Parent = SGBToast
 
 local toastLay = Instance.new("UIListLayout")
@@ -184,22 +186,25 @@ local function Notificar(txt, cor, duracao)
 	toastCounter = toastCounter + 1
 	local t = Instance.new("TextLabel")
 	t.Text = tostring(txt); t.Font = Enum.Font.GothamBold; t.TextSize = 12
-	t.TextColor3 = C.Black; t.BackgroundColor3 = cor
-	t.BackgroundTransparency = 1; t.TextTransparency = 1
-	t.Size = UDim2.new(1, 0, 0, 34); t.TextWrapped = true
+	t.TextColor3 = C.Text; t.BackgroundColor3 = C.Card
+	t.BackgroundTransparency = 0.05
+	t.Size = UDim2.new(1, 0, 0, 36); t.TextWrapped = true
 	t.LayoutOrder = toastCounter; t.Parent = toastContainer
-	local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0, 8); tc.Parent = t
+	local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0, 10); tc.Parent = t
 	local tp = Instance.new("UIPadding")
-	tp.PaddingLeft = UDim.new(0, 10); tp.PaddingRight = UDim.new(0, 10)
-	tp.PaddingTop = UDim.new(0, 6); tp.PaddingBottom = UDim.new(0, 6); tp.Parent = t
-	Tween(t, {BackgroundTransparency = 0.1, TextTransparency = 0}, 0.2)
+	tp.PaddingLeft = UDim.new(0, 14); tp.PaddingRight = UDim.new(0, 14); tp.Parent = t
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.new(0, 3, 1, -12); bar.Position = UDim2.new(0, 6, 0, 6)
+	bar.BackgroundColor3 = cor; bar.BorderSizePixel = 0; bar.Parent = t
+	local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(1, 0); bc.Parent = bar
+	Tween(t, {BackgroundTransparency = 0.05}, 0.2)
 	task.delay(duracao, function()
 		Tween(t, {BackgroundTransparency = 1, TextTransparency = 1}, 0.4)
 		task.wait(0.5); pcall(function() t:Destroy() end)
 	end)
 end
 
--- LOGIN
+-- LOGIN (mesma UI do Pizza)
 local function MostrarUILogin(callbackSucesso)
 	local SGK = Instance.new("ScreenGui")
 	SGK.Name = "SailentKeyUI"; SGK.ResetOnSpawn = false
@@ -208,62 +213,92 @@ local function MostrarUILogin(callbackSucesso)
 
 	local BG = Instance.new("Frame")
 	BG.Size = UDim2.new(1, 0, 1, 0); BG.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	BG.BackgroundTransparency = 0.4; BG.BorderSizePixel = 0; BG.Parent = SGK
+	BG.BackgroundTransparency = 0.5; BG.BorderSizePixel = 0; BG.Parent = SGK
 
 	local Box = Instance.new("Frame")
-	Box.Size = UDim2.new(0, 380, 0, 340); Box.Position = UDim2.new(0.5, -190, 0.5, -170)
-	Box.BackgroundColor3 = C.BG; Box.BorderSizePixel = 0; Box.Parent = SGK
-	local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 14); BC.Parent = Box
-	local BS = Instance.new("UIStroke"); BS.Color = C.Accent; BS.Thickness = 2; BS.Parent = Box
+	Box.Size = UDim2.new(0, 380, 0, 360); Box.Position = UDim2.new(0.5, -190, 0.5, -180)
+	Box.BackgroundColor3 = C.BG2; Box.BorderSizePixel = 0; Box.Parent = SGK
+	local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 18); BC.Parent = Box
+	local BS = Instance.new("UIStroke"); BS.Color = C.Accent; BS.Thickness = 1.5; BS.Transparency = 0.4; BS.Parent = Box
+
+	local Top = Instance.new("Frame")
+	Top.Size = UDim2.new(1, 0, 0, 4); Top.BackgroundColor3 = C.Accent
+	Top.BorderSizePixel = 0; Top.Parent = Box
+	local TopC = Instance.new("UICorner"); TopC.CornerRadius = UDim.new(0, 18); TopC.Parent = Top
+	local TopG = Instance.new("UIGradient")
+	TopG.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, C.Accent),
+		ColorSequenceKeypoint.new(0.5, C.Purple),
+		ColorSequenceKeypoint.new(1, C.Yellow),
+	})
+	TopG.Parent = Top
 
 	local Title = Instance.new("TextLabel")
-	Title.Text = "⚡ SAILENT ELETRICISTA — AUTH"
-	Title.Font = Enum.Font.GothamBold; Title.TextSize = 16; Title.TextColor3 = C.Accent
-	Title.BackgroundTransparency = 1; Title.Position = UDim2.new(0, 0, 0, 18)
+	Title.Text = "⚡ SAILENT ELETRICISTA"
+	Title.Font = Enum.Font.GothamBold; Title.TextSize = 20; Title.TextColor3 = C.Text
+	Title.BackgroundTransparency = 1; Title.Position = UDim2.new(0, 0, 0, 20)
 	Title.Size = UDim2.new(1, 0, 0, 26); Title.Parent = Box
 
 	local Sub = Instance.new("TextLabel")
-	Sub.Text = "Cole sua key para liberar o script"; Sub.Font = Enum.Font.Gotham
+	Sub.Text = "Cole sua key"; Sub.Font = Enum.Font.Gotham
 	Sub.TextSize = 12; Sub.TextColor3 = C.Sub; Sub.BackgroundTransparency = 1
 	Sub.Position = UDim2.new(0, 0, 0, 48); Sub.Size = UDim2.new(1, 0, 0, 18); Sub.Parent = Box
 
-	local hwidLbl = Instance.new("TextLabel")
-	hwidLbl.Text = "HWID: " .. GetHWID():sub(1, 26) .. "..."
-	hwidLbl.Font = Enum.Font.Code; hwidLbl.TextSize = 10
-	hwidLbl.TextColor3 = Color3.fromRGB(100,100,120); hwidLbl.BackgroundTransparency = 1
-	hwidLbl.Position = UDim2.new(0, 0, 0, 68); hwidLbl.Size = UDim2.new(1, 0, 0, 14); hwidLbl.Parent = Box
+	local hp = Instance.new("Frame")
+	hp.Size = UDim2.new(0, 280, 0, 22); hp.Position = UDim2.new(0.5, -140, 0, 74)
+	hp.BackgroundColor3 = C.Card; hp.BorderSizePixel = 0; hp.Parent = Box
+	local hpc = Instance.new("UICorner"); hpc.CornerRadius = UDim.new(1, 0); hpc.Parent = hp
+
+	local hw = Instance.new("TextLabel")
+	hw.Text = "🔒 " .. GetHWID():sub(1, 22) .. "..."
+	hw.Font = Enum.Font.Code; hw.TextSize = 10
+	hw.TextColor3 = C.Sub; hw.BackgroundTransparency = 1
+	hw.Size = UDim2.new(1, 0, 1, 0); hw.Parent = hp
 
 	local Input = Instance.new("TextBox")
 	Input.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"; Input.Font = Enum.Font.Code
 	Input.TextSize = 13; Input.TextColor3 = C.Text; Input.PlaceholderColor3 = Color3.fromRGB(90,90,110)
 	Input.BackgroundColor3 = C.Card; Input.BorderSizePixel = 0; Input.ClearTextOnFocus = false
-	Input.Text = ""; Input.Position = UDim2.new(0, 20, 0, 100); Input.Size = UDim2.new(1, -40, 0, 42); Input.Parent = Box
-	local IC = Instance.new("UICorner"); IC.CornerRadius = UDim.new(0, 8); IC.Parent = Input
-	local IS = Instance.new("UIStroke"); IS.Color = Color3.fromRGB(50,50,70); IS.Thickness = 1; IS.Parent = Input
+	Input.Text = ""; Input.Position = UDim2.new(0, 28, 0, 110); Input.Size = UDim2.new(1, -56, 0, 44); Input.Parent = Box
+	local IC = Instance.new("UICorner"); IC.CornerRadius = UDim.new(0, 10); IC.Parent = Input
+	local IS = Instance.new("UIStroke"); IS.Color = C.Border; IS.Thickness = 1; IS.Parent = Input
 
 	local Status = Instance.new("TextLabel")
 	Status.Text = ""; Status.Font = Enum.Font.GothamBold; Status.TextSize = 11
 	Status.TextColor3 = C.Red; Status.BackgroundTransparency = 1
-	Status.Position = UDim2.new(0, 20, 0, 150); Status.Size = UDim2.new(1, -40, 0, 40)
+	Status.Position = UDim2.new(0, 28, 0, 162); Status.Size = UDim2.new(1, -56, 0, 32)
 	Status.TextWrapped = true; Status.TextYAlignment = Enum.TextYAlignment.Top; Status.Parent = Box
 
 	local BtnValidar = Instance.new("TextButton")
-	BtnValidar.Text = "✅ VALIDAR KEY"; BtnValidar.Font = Enum.Font.GothamBold
-	BtnValidar.TextSize = 14; BtnValidar.TextColor3 = C.Black; BtnValidar.BackgroundColor3 = C.Green
-	BtnValidar.BorderSizePixel = 0; BtnValidar.Position = UDim2.new(0, 20, 0, 200)
-	BtnValidar.Size = UDim2.new(1, -40, 0, 46); BtnValidar.Parent = Box
-	local BtnC = Instance.new("UICorner"); BtnC.CornerRadius = UDim.new(0, 8); BtnC.Parent = BtnValidar
+	BtnValidar.Text = "VALIDAR"; BtnValidar.Font = Enum.Font.GothamBold
+	BtnValidar.TextSize = 14; BtnValidar.TextColor3 = Color3.fromRGB(255,255,255)
+	BtnValidar.BackgroundColor3 = C.Accent; BtnValidar.BorderSizePixel = 0
+	BtnValidar.Position = UDim2.new(0, 28, 0, 210); BtnValidar.Size = UDim2.new(1, -56, 0, 48)
+	BtnValidar.AutoButtonColor = false; BtnValidar.Parent = Box
+	local BtnC = Instance.new("UICorner"); BtnC.CornerRadius = UDim.new(0, 10); BtnC.Parent = BtnValidar
+	local BtnG = Instance.new("UIGradient")
+	BtnG.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, C.Accent),
+		ColorSequenceKeypoint.new(1, C.Purple),
+	})
+	BtnG.Parent = BtnValidar
 
 	local BtnLimpar = Instance.new("TextButton")
-	BtnLimpar.Text = "🗑️ Limpar key salva"; BtnLimpar.Font = Enum.Font.Gotham
-	BtnLimpar.TextSize = 10; BtnLimpar.TextColor3 = Color3.fromRGB(120,120,140)
-	BtnLimpar.BackgroundTransparency = 1; BtnLimpar.Position = UDim2.new(0, 20, 0, 300)
-	BtnLimpar.Size = UDim2.new(1, -40, 0, 20); BtnLimpar.Parent = Box
+	BtnLimpar.Text = "🗑️ Limpar key"; BtnLimpar.Font = Enum.Font.Gotham
+	BtnLimpar.TextSize = 10; BtnLimpar.TextColor3 = C.Sub
+	BtnLimpar.BackgroundTransparency = 1; BtnLimpar.Position = UDim2.new(0, 28, 0, 275)
+	BtnLimpar.Size = UDim2.new(1, -56, 0, 18); BtnLimpar.Parent = Box
+
+	local Ver = Instance.new("TextLabel")
+	Ver.Text = "v3.2"; Ver.Font = Enum.Font.Code; Ver.TextSize = 9
+	Ver.TextColor3 = C.Sub; Ver.BackgroundTransparency = 1
+	Ver.Position = UDim2.new(0, 0, 0, 332); Ver.Size = UDim2.new(1, 0, 0, 14); Ver.Parent = Box
 
 	local function SucessoLogin()
 		Status.Text = "✅ Bem-vindo, " .. KeyState.nome .. "!"
-		Status.TextColor3 = C.Green; BtnValidar.Text = "✅ SUCESSO!"
-		task.wait(0.3); pcall(function() SGK:Destroy() end)
+		Status.TextColor3 = C.Green; BtnValidar.Text = "SUCESSO!"
+		Tween(BtnValidar, {BackgroundColor3 = C.Green}, 0.2)
+		task.wait(0.4); pcall(function() SGK:Destroy() end)
 		task.wait(0.1); callbackSucesso()
 	end
 
@@ -271,7 +306,7 @@ local function MostrarUILogin(callbackSucesso)
 		task.wait(0.2)
 		local k = CarregarKeyLocal()
 		if k and k ~= "" then
-			Input.Text = k; Status.Text = "🔄 Verificando key salva..."; Status.TextColor3 = C.Yellow
+			Input.Text = k; Status.Text = "🔄 Verificando..."; Status.TextColor3 = C.Yellow
 			local ok, res = ValidarKey(k)
 			if ok then SucessoLogin() else
 				Status.Text = "❌ " .. tostring(res); Status.TextColor3 = C.Red; LimparKeyLocal()
@@ -281,21 +316,21 @@ local function MostrarUILogin(callbackSucesso)
 
 	BtnValidar.MouseButton1Click:Connect(function()
 		local k = Input.Text:gsub("%s+", "")
-		if k == "" then Status.Text = "⚠️ Cole uma key!"; Status.TextColor3 = C.Yellow; return end
+		if k == "" then Status.Text = "⚠️ Cole uma key"; Status.TextColor3 = C.Yellow; return end
 		Status.Text = "🔄 Validando..."; Status.TextColor3 = C.Yellow
-		BtnValidar.Text = "⏳ AGUARDE..."; BtnValidar.BackgroundColor3 = C.Yellow
+		BtnValidar.Text = "AGUARDE..."
 		task.spawn(function()
 			local ok, res = ValidarKey(k)
 			if ok then SucessoLogin() else
 				Status.Text = "❌ " .. tostring(res); Status.TextColor3 = C.Red
-				BtnValidar.Text = "✅ VALIDAR KEY"; BtnValidar.BackgroundColor3 = C.Green
+				BtnValidar.Text = "VALIDAR"; BtnValidar.BackgroundColor3 = C.Accent
 			end
 		end)
 	end)
 
 	BtnLimpar.MouseButton1Click:Connect(function()
 		LimparKeyLocal(); Input.Text = ""
-		Status.Text = "🗑️ Removida."; Status.TextColor3 = C.Sub
+		Status.Text = "🗑️ Removida"; Status.TextColor3 = C.Sub
 	end)
 end
 
@@ -333,10 +368,75 @@ local function DesativarNoclip()
 	if noclipConn then pcall(function() noclipConn:Disconnect() end); noclipConn = nil end
 end
 
--- CONFIG
+-- ⭐⭐⭐ ANTI-SITAR ⭐⭐⭐
+local antiSitConns = {}
+local antiSitAtivo = false
+local function AtivarAntiSit()
+	if antiSitAtivo then return end
+	antiSitAtivo = true
+
+	local function AplicarNoChar(char)
+		if not char then return end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+
+		pcall(function() hum:SetStateEnabled(Enum.HumanoidStateType.Sitting, false) end)
+		pcall(function() hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false) end)
+		pcall(function() hum.Sit = false end)
+
+		local conn1 = hum.Changed:Connect(function(prop)
+			if prop == "Sit" and hum.Sit then
+				pcall(function() hum.Sit = false end)
+			end
+		end)
+		table.insert(antiSitConns, conn1)
+
+		local conn2 = hum.ChildAdded:Connect(function(c)
+			if c:IsA("Weld") and (c.Name == "SeatWeld" or c.Name:lower():find("seat")) then
+				pcall(function() c:Destroy() end)
+			end
+		end)
+		table.insert(antiSitConns, conn2)
+
+		for _, c in ipairs(hum:GetChildren()) do
+			if c:IsA("Weld") and (c.Name == "SeatWeld" or c.Name:lower():find("seat")) then
+				pcall(function() c:Destroy() end)
+			end
+		end
+
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			for _, c in ipairs(hrp:GetChildren()) do
+				if c:IsA("Weld") and (c.Name == "SeatWeld" or c.Name:lower():find("seat")) then
+					pcall(function() c:Destroy() end)
+				end
+			end
+		end
+	end
+
+	if lp.Character then AplicarNoChar(lp.Character) end
+	if _G.SailentAntiSitConn then pcall(function() _G.SailentAntiSitConn:Disconnect() end) end
+	_G.SailentAntiSitConn = lp.CharacterAdded:Connect(function(c)
+		task.wait(0.3)
+		AplicarNoChar(c)
+	end)
+end
+
+local function DesativarAntiSit()
+	antiSitAtivo = false
+	for _, c in ipairs(antiSitConns) do pcall(function() c:Disconnect() end) end
+	antiSitConns = {}
+	if _G.SailentAntiSitConn then pcall(function() _G.SailentAntiSitConn:Disconnect() end); _G.SailentAntiSitConn = nil end
+end
+
+-- CONFIG (velocidade única + toggles)
 local CONFIG_FILE = "sailent_eletricista_config.txt"
 local Config = {
-	velocidade = 100, velFly = 80, autoTrabalhar = false, modoVoo = false,
+	velocidade = 120,
+	autoTrabalhar = false,
+	modoVoo = false,
+	antiSit = true,
+	noclip = true,
 }
 
 local function SalvarConfig()
@@ -360,6 +460,8 @@ local function CarregarConfig()
 			end
 		end
 	end)
+	-- compatibilidade: se tinha velFly antigo, migra
+	if Config.velFly then Config.velFly = nil end
 end
 
 CarregarConfig()
@@ -475,7 +577,7 @@ local function EquiparEscada()
 	return false
 end
 
--- VOAR
+-- ⭐⭐⭐ VOO (usa velocidade ÚNICA) ⭐⭐⭐
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP(); local hum = GetHum()
@@ -489,13 +591,16 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-	local velFrame = (Config.velFly or 80) * 0.05
+	-- ⭐ Multiplicador ajustado para que velocidade = studs/s aproximado
+	-- a cada 0.03s move (vel * 0.05) studs → velocidade efetiva = vel * 1.67
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h then break end
 		local diff = posAlvo - h.Position
 		if diff.Magnitude < 4 then break end
 		local direcao = diff.Unit
+		local velAtual = Config.velocidade or 100
+		local velFrame = velAtual * 0.03
 		local novaPos = h.Position + (direcao * velFrame)
 		pcall(function() h.CFrame = CFrame.new(novaPos) end)
 		task.wait(0.03)
@@ -514,9 +619,12 @@ local function AndarAte(posAlvo, timeout, distParada)
 	local hrp = GetHRP(); local hum = GetHum()
 	if not hrp or not hum then return false end
 	timeout = timeout or 30; distParada = distParada or 4
-	local t0 = tick(); hum:MoveTo(posAlvo)
+	local t0 = tick()
+	hum.WalkSpeed = Config.velocidade or 100
+	hum:MoveTo(posAlvo)
 	while tick() - t0 < timeout do
 		local h = GetHRP(); if not h then return false end
+		hum.WalkSpeed = Config.velocidade or 100
 		local diff = Vector3.new(h.Position.X - posAlvo.X, 0, h.Position.Z - posAlvo.Z)
 		if diff.Magnitude < distParada then hum:MoveTo(h.Position); return true end
 		hum:MoveTo(posAlvo); task.wait(0.1)
@@ -533,7 +641,6 @@ end
 local GodModeConns = {}
 local ultimaPosSegura = nil; local ultimoReset = 0
 local godModeAtivo = true
-local velocidadeAtual = Config.velocidade
 local trabalhando = false
 local entregasCount = 0
 local setTrabalharGlobal = nil
@@ -624,7 +731,7 @@ local function AtivarGodMode()
 	end)
 end
 
--- UI
+-- UI (mesmo estilo do Pizza)
 local function IniciarScript()
 
 	for _, name in ipairs({"SailentKeyUI", "SailentEletricista", "SailentFloatBtn"}) do
@@ -674,11 +781,24 @@ local function IniciarScript()
 	SG.IgnoreGuiInset = true; SG.DisplayOrder = 10; SG.Parent = CoreGui
 
 	local Main = Instance.new("Frame")
-	Main.Size = UDim2.new(0, 400, 0, 560); Main.Position = UDim2.new(0.5, -200, 0.5, -280)
-	Main.BackgroundColor3 = C.BG; Main.BorderSizePixel = 0; Main.Parent = SG
+	Main.Size = UDim2.new(0, 420, 0, 640); Main.Position = UDim2.new(0.5, -210, 0.5, -320)
+	Main.BackgroundColor3 = C.BG2; Main.BorderSizePixel = 0; Main.BackgroundTransparency = 0.03
+	Main.Parent = SG
 
-	local MC = Instance.new("UICorner"); MC.CornerRadius = UDim.new(0, 14); MC.Parent = Main
-	local MS = Instance.new("UIStroke"); MS.Color = C.Accent; MS.Thickness = 1.5; MS.Transparency = 0.3; MS.Parent = Main
+	local MC = Instance.new("UICorner"); MC.CornerRadius = UDim.new(0, 16); MC.Parent = Main
+	local MS = Instance.new("UIStroke"); MS.Color = C.Border; MS.Thickness = 1; MS.Transparency = 0.3; MS.Parent = Main
+
+	local TopBar = Instance.new("Frame")
+	TopBar.Size = UDim2.new(1, 0, 0, 3); TopBar.BackgroundColor3 = C.Accent
+	TopBar.BorderSizePixel = 0; TopBar.Parent = Main
+	local TopBarC = Instance.new("UICorner"); TopBarC.CornerRadius = UDim.new(0, 16); TopBarC.Parent = TopBar
+	local TopBarG = Instance.new("UIGradient")
+	TopBarG.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, C.Accent),
+		ColorSequenceKeypoint.new(0.5, C.Purple),
+		ColorSequenceKeypoint.new(1, C.Yellow),
+	})
+	TopBarG.Parent = TopBar
 
 	_G.SailentBloquearDrag = false
 	do
@@ -705,41 +825,61 @@ local function IniciarScript()
 		end)
 	end
 
-	local TB = Instance.new("Frame")
-	TB.Size = UDim2.new(1, 0, 0, 56); TB.BackgroundColor3 = C.Card
-	TB.BorderSizePixel = 0; TB.Parent = Main
-	local TBC = Instance.new("UICorner"); TBC.CornerRadius = UDim.new(0, 14); TBC.Parent = TB
-	local TBov = Instance.new("Frame")
-	TBov.Size = UDim2.new(1, 0, 0, 14); TBov.Position = UDim2.new(0, 0, 1, -14)
-	TBov.BackgroundColor3 = C.Card; TBov.BorderSizePixel = 0; TBov.Parent = TB
+	-- Header
+	local HB = Instance.new("Frame")
+	HB.Size = UDim2.new(1, 0, 0, 64); HB.BackgroundColor3 = C.Card
+	HB.BackgroundTransparency = 0.5; HB.BorderSizePixel = 0; HB.Parent = Main
+	local HBC = Instance.new("UICorner"); HBC.CornerRadius = UDim.new(0, 16); HBC.Parent = HB
 
-	local TLogo = Instance.new("TextLabel")
-	TLogo.Text = "⚡"; TLogo.Font = Enum.Font.GothamBold; TLogo.TextSize = 22
-	TLogo.BackgroundTransparency = 1; TLogo.Position = UDim2.new(0, 14, 0, 0)
-	TLogo.Size = UDim2.new(0, 40, 1, 0); TLogo.Parent = TB
+	local Logo = Instance.new("Frame")
+	Logo.Size = UDim2.new(0, 40, 0, 40); Logo.Position = UDim2.new(0, 14, 0.5, -20)
+	Logo.BackgroundColor3 = C.Accent; Logo.BorderSizePixel = 0; Logo.Parent = HB
+	local LogoC = Instance.new("UICorner"); LogoC.CornerRadius = UDim.new(0, 10); LogoC.Parent = Logo
+	local LogoG = Instance.new("UIGradient")
+	LogoG.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, C.Accent),
+		ColorSequenceKeypoint.new(1, C.Purple),
+	})
+	LogoG.Rotation = 45; LogoG.Parent = Logo
+
+	local LogoIcon = Instance.new("TextLabel")
+	LogoIcon.Text = "⚡"; LogoIcon.Font = Enum.Font.GothamBold; LogoIcon.TextSize = 22
+	LogoIcon.BackgroundTransparency = 1; LogoIcon.Size = UDim2.new(1, 0, 1, 0); LogoIcon.Parent = Logo
 
 	local TTitle = Instance.new("TextLabel")
-	TTitle.Text = "Auto Eletricista v3.1 [" .. KeyState.nivel:upper() .. "]"
-	TTitle.Font = Enum.Font.GothamBold; TTitle.TextSize = 13; TTitle.TextColor3 = C.Text
-	TTitle.BackgroundTransparency = 1; TTitle.Position = UDim2.new(0, 55, 0, 0)
-	TTitle.Size = UDim2.new(0, 280, 1, 0); TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.Parent = TB
+	TTitle.Text = "Auto Eletricista"; TTitle.Font = Enum.Font.GothamBold; TTitle.TextSize = 15
+	TTitle.TextColor3 = C.Text; TTitle.BackgroundTransparency = 1
+	TTitle.Position = UDim2.new(0, 62, 0, 12); TTitle.Size = UDim2.new(0, 220, 0, 18)
+	TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.Parent = HB
+
+	local VerTag = Instance.new("Frame")
+	VerTag.Size = UDim2.new(0, 180, 0, 16); VerTag.Position = UDim2.new(0, 62, 0, 34)
+	VerTag.BackgroundColor3 = C.Yellow; VerTag.BackgroundTransparency = 0.75
+	VerTag.BorderSizePixel = 0; VerTag.Parent = HB
+	local VerTagC = Instance.new("UICorner"); VerTagC.CornerRadius = UDim.new(1, 0); VerTagC.Parent = VerTag
+	local VerTxt = Instance.new("TextLabel")
+	VerTxt.Text = "v3.2 • VEL ÚNICA + ANTI-SIT"; VerTxt.Font = Enum.Font.GothamBold; VerTxt.TextSize = 7
+	VerTxt.TextColor3 = C.Yellow; VerTxt.BackgroundTransparency = 1
+	VerTxt.Size = UDim2.new(1, 0, 1, 0); VerTxt.Parent = VerTag
 
 	local MinBtn = Instance.new("TextButton")
 	MinBtn.Text = "−"; MinBtn.Font = Enum.Font.GothamBold; MinBtn.TextSize = 20
-	MinBtn.TextColor3 = C.Yellow; MinBtn.BackgroundColor3 = C.Card; MinBtn.BorderSizePixel = 0
-	MinBtn.Size = UDim2.new(0, 36, 1, 0); MinBtn.Position = UDim2.new(1, -92, 0, 0); MinBtn.Parent = TB
-	local MinC = Instance.new("UICorner"); MinC.CornerRadius = UDim.new(0, 14); MinC.Parent = MinBtn
+	MinBtn.TextColor3 = C.Yellow; MinBtn.BackgroundColor3 = C.Card; MinBtn.BackgroundTransparency = 0.4
+	MinBtn.BorderSizePixel = 0; MinBtn.Size = UDim2.new(0, 30, 0, 30)
+	MinBtn.Position = UDim2.new(1, -72, 0.5, -15); MinBtn.AutoButtonColor = false; MinBtn.Parent = HB
+	local MinC = Instance.new("UICorner"); MinC.CornerRadius = UDim.new(0, 8); MinC.Parent = MinBtn
 
 	local CloseBtn = Instance.new("TextButton")
-	CloseBtn.Text = "✕"; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18
-	CloseBtn.TextColor3 = C.Sub; CloseBtn.BackgroundColor3 = C.Card; CloseBtn.BorderSizePixel = 0
-	CloseBtn.Size = UDim2.new(0, 56, 1, 0); CloseBtn.Position = UDim2.new(1, -56, 0, 0); CloseBtn.Parent = TB
-	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 14); CC.Parent = CloseBtn
+	CloseBtn.Text = "✕"; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 14
+	CloseBtn.TextColor3 = C.Red; CloseBtn.BackgroundColor3 = C.Card; CloseBtn.BackgroundTransparency = 0.4
+	CloseBtn.BorderSizePixel = 0; CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+	CloseBtn.Position = UDim2.new(1, -36, 0.5, -15); CloseBtn.AutoButtonColor = false; CloseBtn.Parent = HB
+	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
 
 	local Content = Instance.new("ScrollingFrame")
-	Content.Size = UDim2.new(1, -20, 1, -76); Content.Position = UDim2.new(0, 10, 0, 66)
+	Content.Size = UDim2.new(1, -20, 1, -84); Content.Position = UDim2.new(0, 10, 0, 74)
 	Content.BackgroundTransparency = 1; Content.BorderSizePixel = 0
-	Content.ScrollBarThickness = 4; Content.ScrollBarImageColor3 = C.Accent
+	Content.ScrollBarThickness = 3; Content.ScrollBarImageColor3 = C.Accent
 	Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Content.AutomaticCanvasSize = Enum.AutomaticSize.Y; Content.Parent = Main
 
@@ -747,25 +887,28 @@ local function IniciarScript()
 
 	local function Sec(txt, color)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, 26); f.BackgroundColor3 = C.Card
-		f.BorderSizePixel = 0; f.Parent = Content
-		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
+		f.Size = UDim2.new(1, 0, 0, 22); f.BackgroundTransparency = 1; f.Parent = Content
+		local d = Instance.new("Frame")
+		d.Size = UDim2.new(0, 5, 0, 5); d.Position = UDim2.new(0, 3, 0.5, -2.5)
+		d.BackgroundColor3 = color or C.Accent; d.BorderSizePixel = 0; d.Parent = f
+		local dc = Instance.new("UICorner"); dc.CornerRadius = UDim.new(1, 0); dc.Parent = d
 		local l = Instance.new("TextLabel")
-		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 11
+		l.Text = txt:upper(); l.Font = Enum.Font.GothamBold; l.TextSize = 10
 		l.TextColor3 = color or C.Accent; l.BackgroundTransparency = 1
-		l.Position = UDim2.new(0, 12, 0, 0); l.Size = UDim2.new(1, -24, 1, 0)
+		l.Position = UDim2.new(0, 16, 0, 0); l.Size = UDim2.new(1, -16, 1, 0)
 		l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 	end
 
-	local function Stat(txt, color)
+	local function StatL(txt, color)
 		local f = Instance.new("Frame")
-		f.Size = UDim2.new(1, 0, 0, 32); f.BackgroundColor3 = C.Card
+		f.Size = UDim2.new(1, 0, 0, 30); f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0; f.Parent = Content
-		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = f
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = f
+		local s = Instance.new("UIStroke"); s.Color = C.Border; s.Thickness = 1; s.Transparency = 0.5; s.Parent = f
 		local l = Instance.new("TextLabel")
 		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 11
 		l.TextColor3 = color or C.Text; l.BackgroundTransparency = 1
-		l.Position = UDim2.new(0, 12, 0, 0); l.Size = UDim2.new(1, -24, 1, 0)
+		l.Position = UDim2.new(0, 14, 0, 0); l.Size = UDim2.new(1, -20, 1, 0)
 		l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 		return l
 	end
@@ -775,92 +918,121 @@ local function IniciarScript()
 		b.Text = txt; b.Font = Enum.Font.GothamBold; b.TextSize = 12
 		b.TextColor3 = C.Text; b.BackgroundColor3 = C.Card; b.BorderSizePixel = 0
 		b.Size = UDim2.new(1, 0, 0, 38); b.AutoButtonColor = false; b.Parent = Content
-		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = b
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 10); c.Parent = b
+		local s = Instance.new("UIStroke"); s.Color = C.Border; s.Thickness = 1; s.Transparency = 0.4; s.Parent = b
+		b.MouseEnter:Connect(function()
+			Tween(b, {BackgroundColor3 = Color3.fromRGB(32, 32, 48)}, 0.15)
+			Tween(s, {Color = color or C.Accent, Transparency = 0.2}, 0.15)
+		end)
+		b.MouseLeave:Connect(function()
+			Tween(b, {BackgroundColor3 = C.Card}, 0.15)
+			Tween(s, {Color = C.Border, Transparency = 0.4}, 0.15)
+		end)
 		b.MouseButton1Click:Connect(function()
 			Tween(b, {BackgroundColor3 = color or C.Accent}, 0.08)
-			task.wait(0.12); Tween(b, {BackgroundColor3 = C.Card}, 0.15)
+			task.wait(0.1); Tween(b, {BackgroundColor3 = C.Card}, 0.15)
 			if cb then task.spawn(cb) end
 		end)
 		return b
 	end
 
-	local function Toggle(txt, default, cb)
+	local function Toggle(txt, default, color, cb)
 		local f = Instance.new("Frame")
 		f.Size = UDim2.new(1, 0, 0, 42); f.BackgroundColor3 = C.Card
 		f.BorderSizePixel = 0; f.Parent = Content
-		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 8); c.Parent = f
+		local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 10); c.Parent = f
+		local s = Instance.new("UIStroke"); s.Color = C.Border; s.Thickness = 1; s.Transparency = 0.4; s.Parent = f
 		local l = Instance.new("TextLabel")
 		l.Text = txt; l.Font = Enum.Font.GothamBold; l.TextSize = 12; l.TextColor3 = C.Text
-		l.BackgroundTransparency = 1; l.Position = UDim2.new(0, 12, 0, 0)
-		l.Size = UDim2.new(1, -70, 1, 0); l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
+		l.BackgroundTransparency = 1; l.Position = UDim2.new(0, 14, 0, 0)
+		l.Size = UDim2.new(1, -80, 1, 0); l.TextXAlignment = Enum.TextXAlignment.Left; l.Parent = f
 		local bg = Instance.new("Frame")
 		bg.Size = UDim2.new(0, 44, 0, 22); bg.Position = UDim2.new(1, -56, 0.5, -11)
-		bg.BackgroundColor3 = Color3.fromRGB(50,50,60); bg.BorderSizePixel = 0; bg.Parent = f
+		bg.BackgroundColor3 = Color3.fromRGB(50, 50, 65); bg.BorderSizePixel = 0; bg.Parent = f
 		local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(1, 0); bc.Parent = bg
 		local k = Instance.new("Frame")
 		k.Size = UDim2.new(0, 18, 0, 18); k.Position = UDim2.new(0, 2, 0.5, -9)
-		k.BackgroundColor3 = C.Text; k.BorderSizePixel = 0; k.Parent = bg
+		k.BackgroundColor3 = Color3.fromRGB(200, 200, 215); k.BorderSizePixel = 0; k.Parent = bg
 		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = k
 		local st = default or false
 		local function set(v)
 			st = v
 			if st then
 				Tween(bg, {BackgroundColor3 = C.Green}, 0.2)
-				Tween(k, {Position = UDim2.new(1, -20, 0.5, -9)}, 0.2)
+				Tween(k, {
+					Position = UDim2.new(1, -20, 0.5, -9),
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				}, 0.2)
 			else
-				Tween(bg, {BackgroundColor3 = Color3.fromRGB(50,50,60)}, 0.2)
-				Tween(k, {Position = UDim2.new(0, 2, 0.5, -9)}, 0.2)
+				Tween(bg, {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}, 0.2)
+				Tween(k, {
+					Position = UDim2.new(0, 2, 0.5, -9),
+					BackgroundColor3 = Color3.fromRGB(200, 200, 215),
+				}, 0.2)
 			end
 			if cb then cb(st) end
 		end
-		if st then bg.BackgroundColor3 = C.Green; k.Position = UDim2.new(1, -20, 0.5, -9) end
+		if st then
+			bg.BackgroundColor3 = C.Green
+			k.Position = UDim2.new(1, -20, 0.5, -9)
+			k.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		end
 		local cl = Instance.new("TextButton")
 		cl.Text = ""; cl.BackgroundTransparency = 1; cl.Size = UDim2.new(1, 0, 1, 0); cl.Parent = f
 		cl.MouseButton1Click:Connect(function() set(not st) end)
 		return set
 	end
 
-	local function CriarSlider(parent, label, min, max, default, callback)
+	local function Slider(parent, label, min, max, default, cor, callback)
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 58); frame.BackgroundColor3 = C.Card
 		frame.BorderSizePixel = 0; frame.Parent = parent
-		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 8); fc.Parent = frame
+		local fc = Instance.new("UICorner"); fc.CornerRadius = UDim.new(0, 10); fc.Parent = frame
+		local fst = Instance.new("UIStroke"); fst.Color = C.Border; fst.Thickness = 1; fst.Transparency = 0.4; fst.Parent = frame
 		local titulo = Instance.new("TextLabel")
 		titulo.Text = label; titulo.Font = Enum.Font.GothamBold; titulo.TextSize = 12
 		titulo.TextColor3 = C.Text; titulo.BackgroundTransparency = 1
-		titulo.Position = UDim2.new(0, 12, 0, 6); titulo.Size = UDim2.new(0.7, 0, 0, 18)
+		titulo.Position = UDim2.new(0, 14, 0, 6); titulo.Size = UDim2.new(0.7, 0, 0, 18)
 		titulo.TextXAlignment = Enum.TextXAlignment.Left; titulo.Parent = frame
 		local valorLabel = Instance.new("TextLabel")
 		valorLabel.Text = tostring(default); valorLabel.Font = Enum.Font.GothamBold
-		valorLabel.TextSize = 14; valorLabel.TextColor3 = C.Green; valorLabel.BackgroundTransparency = 1
-		valorLabel.Position = UDim2.new(0.7, 0, 0, 6); valorLabel.Size = UDim2.new(0.3, -12, 0, 18)
+		valorLabel.TextSize = 13; valorLabel.TextColor3 = cor or C.Green; valorLabel.BackgroundTransparency = 1
+		valorLabel.Position = UDim2.new(0.7, 0, 0, 6); valorLabel.Size = UDim2.new(0.3, -14, 0, 18)
 		valorLabel.TextXAlignment = Enum.TextXAlignment.Right; valorLabel.Parent = frame
 		local bgBar = Instance.new("Frame")
-		bgBar.Size = UDim2.new(1, -24, 0, 12); bgBar.Position = UDim2.new(0, 12, 0, 32)
-		bgBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60); bgBar.BorderSizePixel = 0; bgBar.Parent = frame
+		bgBar.Size = UDim2.new(1, -28, 0, 10); bgBar.Position = UDim2.new(0, 14, 0, 34)
+		bgBar.BackgroundColor3 = Color3.fromRGB(40, 40, 55); bgBar.BorderSizePixel = 0; bgBar.Parent = frame
 		local bbc = Instance.new("UICorner"); bbc.CornerRadius = UDim.new(1, 0); bbc.Parent = bgBar
 		local fillBar = Instance.new("Frame")
-		fillBar.Size = UDim2.new(0, 0, 1, 0); fillBar.BackgroundColor3 = C.Green
+		fillBar.Size = UDim2.new(0, 0, 1, 0); fillBar.BackgroundColor3 = cor or C.Accent
 		fillBar.BorderSizePixel = 0; fillBar.Parent = bgBar
 		local fbc = Instance.new("UICorner"); fbc.CornerRadius = UDim.new(1, 0); fbc.Parent = fillBar
+		local fg = Instance.new("UIGradient")
+		fg.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, cor or C.Accent),
+			ColorSequenceKeypoint.new(1, C.Purple),
+		})
+		fg.Parent = fillBar
 		local knob = Instance.new("Frame")
-		knob.Size = UDim2.new(0, 22, 0, 22); knob.Position = UDim2.new(0, -11, 0.5, -11)
-		knob.BackgroundColor3 = C.Text; knob.BorderSizePixel = 0; knob.Parent = bgBar
+		knob.Size = UDim2.new(0, 16, 0, 16); knob.Position = UDim2.new(0, -8, 0.5, -8)
+		knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); knob.BorderSizePixel = 0; knob.Parent = bgBar
 		local kc = Instance.new("UICorner"); kc.CornerRadius = UDim.new(1, 0); kc.Parent = knob
 		local valor = default
 		local arrastando = false
-		local function Atualizar(posX)
-			local bgAbs = bgBar.AbsolutePosition.X; local bgSize = bgBar.AbsoluteSize.X
-			local percent = math.clamp((posX - bgAbs) / bgSize, 0, 1)
+		local function Aplicar(percent)
 			valor = math.floor(min + (max - min) * percent)
 			valorLabel.Text = tostring(valor)
 			fillBar.Size = UDim2.new(percent, 0, 1, 0)
-			knob.Position = UDim2.new(percent, -11, 0.5, -11)
+			knob.Position = UDim2.new(percent, -8, 0.5, -8)
 			if callback then callback(valor) end
+		end
+		local function Atualizar(posX)
+			local bgAbs = bgBar.AbsolutePosition.X; local bgSize = bgBar.AbsoluteSize.X
+			Aplicar(math.clamp((posX - bgAbs) / bgSize, 0, 1))
 		end
 		local initPercent = (default - min) / (max - min)
 		fillBar.Size = UDim2.new(initPercent, 0, 1, 0)
-		knob.Position = UDim2.new(initPercent, -11, 0.5, -11)
+		knob.Position = UDim2.new(initPercent, -8, 0.5, -8)
 		bgBar.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 				arrastando = true; _G.SailentBloquearDrag = true; Atualizar(i.Position.X)
@@ -881,17 +1053,19 @@ local function IniciarScript()
 		end)
 	end
 
-	Sec("👤 CONTA: " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
-	Sec("📊 ESTATÍSTICAS", C.Blue)
-	local statPostes = Stat("⚡ Postes: 0/15", C.Text)
+	Sec("Conta", C.Purple)
+	StatL("👤 " .. KeyState.nome .. " [" .. KeyState.nivel:upper() .. "]", C.Purple)
 
-	Sec("🛡️ GOD MODE", C.Green)
-	Stat("Status: ● ATIVO", C.Green)
+	Sec("Stats", C.Blue)
+	local statPostes = StatL("⚡ Postes: 0/15", C.Text)
 
-	Sec("⚡ AUTO ELETRICISTA (v3.1)", C.Accent)
-	local trabalhoStatus = Stat("Status: PARADO", C.Sub)
+	Sec("🛡️ God Mode", C.Green)
+	StatL("Status: ● ATIVO", C.Green)
 
-	setTrabalharGlobal = Toggle("Auto Eletricista", Config.autoTrabalhar, function(s)
+	Sec("Auto Eletricista", C.Accent)
+	local trabalhoStatus = StatL("Status: PARADO", C.Sub)
+
+	setTrabalharGlobal = Toggle("⚡ Auto Eletricista", Config.autoTrabalhar, C.Accent, function(s)
 		Config.autoTrabalhar = s
 		SalvarConfig()
 		if s then
@@ -903,11 +1077,10 @@ local function IniciarScript()
 			Tween(FloatBtn, {BackgroundColor3 = C.Green}, 0.25)
 			BtnStroke.Color = C.Green
 			local hum = GetHum()
-			if hum then hum.WalkSpeed = velocidadeAtual end
+			if hum then hum.WalkSpeed = Config.velocidade end
 
 			task.spawn(function()
 				while trabalhando do
-					-- 1. Verifica escada
 					local temEscada = TemEscada()
 					if not temEscada then
 						local carro = AcharCarro()
@@ -932,16 +1105,13 @@ local function IniciarScript()
 							task.wait(2)
 						end
 					else
-						-- 2. Procura poste
 						trabalhoStatus.Text = "🔎 Procurando poste..."
 						local posteInfo = AcharPosteMaisProximo()
 						if posteInfo then
-							-- 3. Anda até o poste
 							trabalhoStatus.Text = "📥 Indo pro poste..."
 							IrPara(posteInfo.pos + Vector3.new(0, 0, -4), 25)
 							task.wait(0.3)
 
-							-- 4. Coloca escada
 							trabalhoStatus.Text = "🪜 Colocando escada..."
 							local promptLadder = AcharPromptPoste(posteInfo.poste, "place")
 							if promptLadder then
@@ -949,10 +1119,9 @@ local function IniciarScript()
 								task.wait(0.8)
 							end
 
-							-- 5. TP pro topo + Part invisível
 							trabalhoStatus.Text = "🪜 Subindo pro topo..."
 							local hrp = GetHRP()
-							
+
 							if hrp and posteInfo.poste then
 								local maxY = posteInfo.pos.Y
 								local maxPart = nil
@@ -968,9 +1137,9 @@ local function IniciarScript()
 										end
 									end
 								end
-								
+
 								local alvoPos = Vector3.new(posteInfo.pos.X, maxY + 3, posteInfo.pos.Z)
-								
+
 								local partInvisivel = Instance.new("Part")
 								partInvisivel.Name = "PartSuporte_Temp"
 								partInvisivel.Size = Vector3.new(6, 1, 6)
@@ -979,23 +1148,21 @@ local function IniciarScript()
 								partInvisivel.CanCollide = false
 								partInvisivel.Transparency = 1
 								partInvisivel.Parent = posteInfo.poste
-								
+
 								pcall(function()
 									hrp.CFrame = CFrame.new(alvoPos + Vector3.new(0, 3, 0))
 								end)
 								task.wait(0.3)
-								
+
 								posteInfo.partSuporte = partInvisivel
 							end
 							task.wait(0.5)
 
-							-- 6. ⭐ Conserta esperando prompt desabilitar
 							trabalhoStatus.Text = "🔧 Consertando..."
 							local promptRepair = AcharPromptPoste(posteInfo.poste, "repair", true)
 							if promptRepair then
 								pcall(function() fireproximityprompt(promptRepair) end)
-								
-								-- Espera o prompt desabilitar (= consertou)
+
 								local t0 = tick()
 								while tick() - t0 < 7 do
 									if not promptRepair.Enabled then
@@ -1009,14 +1176,13 @@ local function IniciarScript()
 								print("[Eletricista] ⚠️ Prompt 'To repair' não encontrado")
 							end
 
-							-- 7. Remove Part + Desce
 							trabalhoStatus.Text = "⬇️ Descendo..."
-							
+
 							if posteInfo.partSuporte then
 								pcall(function() posteInfo.partSuporte:Destroy() end)
 								posteInfo.partSuporte = nil
 							end
-							
+
 							local hrp2 = GetHRP()
 							if hrp2 then
 								local chaoY = posteInfo.pos.Y
@@ -1031,7 +1197,6 @@ local function IniciarScript()
 							end
 							task.wait(0.3)
 
-							-- 8. Marca como consertado
 							postesConsertados[posteInfo.poste] = true
 
 							entregasCount = entregasCount + 1
@@ -1072,8 +1237,8 @@ local function IniciarScript()
 		end
 	end)
 
-	Sec("🚁 MODO DE LOCOMOÇÃO", C.Yellow)
-	local modoStatus = Stat(Config.modoVoo and "Modo: 🚁 VOANDO" or "Modo: 🚶 A PÉ", C.Yellow)
+	Sec("Modo de Locomoção", C.Yellow)
+	local modoStatus = StatL(Config.modoVoo and "Modo: 🚁 VOANDO" or "Modo: 🚶 A PÉ", C.Yellow)
 
 	Btn("🚶 A PÉ (padrão)", C.Green, function()
 		Config.modoVoo = false
@@ -1089,20 +1254,31 @@ local function IniciarScript()
 		SalvarConfig()
 	end)
 
-	Sec("⚡ VELOCIDADE (A PÉ)", C.Yellow)
-	CriarSlider(Content, "⚡ Velocidade", 16, 200, Config.velocidade, function(valor)
-		velocidadeAtual = valor
+	Sec("⚡ Velocidade (a pé + voo)", C.Green)
+	StatL("Muda na hora", C.Sub)
+	local setVelGlobal = Slider(Content, "⚡ Velocidade", 20, 400, Config.velocidade or 120, C.Green, function(valor)
 		Config.velocidade = valor
 		local hum = GetHum()
-		if hum then hum.WalkSpeed = valor end
+		if hum and not Config.modoVoo then
+			hum.WalkSpeed = valor
+		end
 	end)
 
-	Sec("🚀 VELOCIDADE DE VOO", C.Blue)
-	CriarSlider(Content, "🚀 Velocidade voo", 16, 100, Config.velFly or 80, function(valor)
-		Config.velFly = valor
+	Sec("Comportamento", C.Purple)
+	Toggle("🚪 Noclip", Config.noclip, C.Green, function(s)
+		Config.noclip = s; SalvarConfig()
+		if s then
+			if Config.autoTrabalhar then AtivarNoclip() end
+		else
+			DesativarNoclip()
+		end
+	end)
+	Toggle("🪑 Anti-Sentar", Config.antiSit, C.Yellow, function(s)
+		Config.antiSit = s; SalvarConfig()
+		if s then AtivarAntiSit() else DesativarAntiSit() end
 	end)
 
-	Sec("🚨 EMERGÊNCIA", C.Red)
+	Sec("Emergência", C.Red)
 	Btn("🛑 PARAR TUDO", C.Red, function()
 		Config.autoTrabalhar = false
 		trabalhando = false
@@ -1119,15 +1295,15 @@ local function IniciarScript()
 
 	local function FecharUI()
 		uiAberta = false
-		Tween(Main, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-		task.wait(0.2); Main.Visible = false
+		Tween(Main, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}, 0.25)
+		task.wait(0.25); Main.Visible = false
 		FloatBtn.Text = "⚡"
 	end
 
 	local function AbrirUI()
 		uiAberta = true; Main.Visible = true
-		Main.Size = UDim2.new(0, 0, 0, 0)
-		Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
+		Main.Size = UDim2.new(0, 0, 0, 0); Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+		Tween(Main, {Size = UDim2.new(0, 420, 0, 640), Position = UDim2.new(0.5, -210, 0.5, -320)}, 0.3, Enum.EasingStyle.Back)
 		FloatBtn.Text = "✕"
 	end
 
@@ -1156,10 +1332,10 @@ local function IniciarScript()
 	MinBtn.MouseButton1Click:Connect(function()
 		minimizado = not minimizado
 		if minimizado then
-			Tween(Main, {Size = UDim2.new(0, 400, 0, 56)}, 0.25)
+			Tween(Main, {Size = UDim2.new(0, 420, 0, 64)}, 0.25)
 			MinBtn.Text = "+"
 		else
-			Tween(Main, {Size = UDim2.new(0, 400, 0, 560)}, 0.25)
+			Tween(Main, {Size = UDim2.new(0, 420, 0, 640)}, 0.25)
 			MinBtn.Text = "−"
 		end
 	end)
@@ -1167,14 +1343,16 @@ local function IniciarScript()
 	CloseBtn.MouseButton1Click:Connect(function() FecharUI() end)
 
 	AtivarGodMode()
+	if Config.antiSit then AtivarAntiSit() end
+	if Config.noclip and Config.autoTrabalhar then AtivarNoclip() end
 
 	Log("═══════════════════════════════════")
-	Log("⚡ Sailent Auto Eletricista v3.1")
+	Log("⚡ Sailent Auto Eletricista v3.2")
 	Log("👤 " .. KeyState.nome .. " | " .. KeyState.nivel:upper())
 	Log("⚡ F2 = UI | F1 = Panic")
 	Log("═══════════════════════════════════")
 
-	Notificar("⚡ Auto Eletricista v3.1 carregado!", C.Accent, 2.5)
+	Notificar("⚡ Auto Eletricista v3.2 carregado!", C.Accent, 2.5)
 end
 
 Log("🔐 Verificando key...")
