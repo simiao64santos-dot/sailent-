@@ -40,7 +40,7 @@
 
 	header {
 		text-align: center;
-		margin-bottom: 50px;
+		margin-bottom: 40px;
 	}
 
 	.logo {
@@ -73,12 +73,68 @@
 		font-weight: 600;
 	}
 
+	/* TABS */
+	.tabs {
+		display: flex;
+		gap: 4px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		padding: 5px;
+		margin-bottom: 30px;
+		max-width: 720px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.tab {
+		flex: 1;
+		padding: 12px 18px;
+		background: transparent;
+		border: none;
+		border-radius: 10px;
+		color: var(--sub);
+		font-family: 'Inter', sans-serif;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+	}
+
+	.tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+	.tab.active {
+		background: linear-gradient(135deg, rgba(124, 158, 255, 0.15), rgba(167, 139, 250, 0.15));
+		color: var(--text);
+		box-shadow: 0 0 0 1px rgba(124, 158, 255, 0.3) inset;
+	}
+
+	.tab .badge {
+		background: var(--accent);
+		color: #0a0a0f;
+		font-size: 10px;
+		padding: 2px 7px;
+		border-radius: 999px;
+		font-family: 'JetBrains Mono', monospace;
+	}
+
+	.panel { display: none; }
+	.panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(6px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	/* GRID SCRIPTS */
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 		gap: 24px;
-		max-width: 1100px;
-		margin: 0 auto;
 	}
 
 	.card {
@@ -104,6 +160,22 @@
 		border-color: var(--card-color, var(--accent));
 		transform: translateY(-4px);
 		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+	}
+
+	.card-check {
+		position: absolute;
+		top: 22px;
+		right: 22px;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: var(--green);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #0a0a0f;
+		font-size: 14px;
+		font-weight: 700;
 	}
 
 	.card-header {
@@ -138,22 +210,6 @@
 		font-size: 11px;
 		color: var(--sub);
 		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.card-check {
-		position: absolute;
-		top: 22px;
-		right: 22px;
-		width: 26px;
-		height: 26px;
-		border-radius: 50%;
-		background: var(--green);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #0a0a0f;
-		font-size: 14px;
-		font-weight: 700;
 	}
 
 	.card-desc {
@@ -233,10 +289,7 @@
 		box-shadow: 0 8px 25px var(--card-color, var(--accent));
 	}
 
-	.btn-copy.copied {
-		background: var(--green);
-		color: #0a0a0f;
-	}
+	.btn-copy.copied { background: var(--green); }
 
 	.btn-raw {
 		background: rgba(255, 255, 255, 0.05);
@@ -250,6 +303,224 @@
 		border-color: var(--accent);
 	}
 
+	/* GERADOR */
+	.grid-2col {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 24px;
+	}
+
+	@media (max-width: 900px) {
+		.grid-2col { grid-template-columns: 1fr; }
+	}
+
+	label {
+		display: block;
+		font-size: 11px;
+		color: var(--sub);
+		margin-bottom: 6px;
+		margin-top: 14px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	label:first-of-type { margin-top: 0; }
+
+	input[type="text"], input[type="number"], select {
+		width: 100%;
+		background: #0f0f16;
+		border: 1px solid var(--border);
+		color: var(--text);
+		padding: 12px 14px;
+		border-radius: 8px;
+		font-size: 13px;
+		font-family: 'JetBrains Mono', monospace;
+		transition: all 0.2s;
+		outline: none;
+	}
+
+	input:focus, select:focus {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px rgba(124, 158, 255, 0.15);
+	}
+
+	input::placeholder { color: #555566; }
+
+	.row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+
+	.btn-form {
+		width: 100%;
+		padding: 14px;
+		border: none;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		transition: all 0.2s;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-top: 18px;
+		font-family: 'Inter', sans-serif;
+		background: var(--green);
+		color: #0a0a0f;
+	}
+
+	.btn-form:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3); }
+
+	.info-aviso {
+		font-size: 11px;
+		color: var(--sub);
+		margin-top: 10px;
+		line-height: 1.7;
+		font-family: 'JetBrains Mono', monospace;
+	}
+
+	/* KEYS */
+	.stats-row {
+		display: flex;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.stat-box {
+		flex: 1;
+		background: #0f0f16;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		padding: 14px;
+		text-align: center;
+	}
+
+	.stat-box .num {
+		font-size: 24px;
+		font-weight: 800;
+		color: var(--green);
+		font-family: 'JetBrains Mono', monospace;
+	}
+
+	.stat-box .lbl {
+		font-size: 9px;
+		color: var(--sub);
+		text-transform: uppercase;
+		margin-top: 2px;
+		letter-spacing: 0.5px;
+	}
+
+	.lista-keys {
+		max-height: 500px;
+		overflow-y: auto;
+		padding-right: 6px;
+	}
+
+	.lista-keys::-webkit-scrollbar { width: 6px; }
+	.lista-keys::-webkit-scrollbar-track { background: #0f0f16; border-radius: 3px; }
+	.lista-keys::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+	.key-item {
+		background: #0f0f16;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		padding: 12px;
+		margin-bottom: 8px;
+		cursor: pointer;
+		transition: all 0.2s;
+		position: relative;
+	}
+
+	.key-item:hover {
+		border-color: var(--green);
+		background: #14141e;
+		transform: translateX(3px);
+	}
+
+	.key-item .key-code {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 12px;
+		color: var(--green);
+		font-weight: 600;
+		margin-bottom: 5px;
+		word-break: break-all;
+	}
+
+	.key-item .key-info {
+		font-size: 10px;
+		color: var(--sub);
+		margin-bottom: 3px;
+	}
+
+	.key-item .key-hwid {
+		font-size: 9px;
+		color: #64647a;
+		font-family: 'JetBrains Mono', monospace;
+		margin-top: 4px;
+		word-break: break-all;
+	}
+
+	.key-item .badge-nivel {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		font-size: 9px;
+		padding: 3px 8px;
+		border-radius: 4px;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.badge-admin { background: var(--yellow); color: #0a0a0f; }
+	.badge-vip { background: var(--purple); color: #fff; }
+	.badge-normal { background: var(--green); color: #0a0a0f; }
+
+	.empty {
+		text-align: center;
+		padding: 40px 20px;
+		color: #555566;
+		font-size: 12px;
+	}
+
+	.btn-toolbar {
+		padding: 10px 16px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		color: var(--text);
+		font-family: 'Inter', sans-serif;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.15s;
+		margin-bottom: 14px;
+		margin-right: 8px;
+	}
+
+	.btn-toolbar:hover {
+		background: var(--card-hover);
+		border-color: var(--accent);
+	}
+
+	.btn-toolbar.danger { border-color: var(--red); color: var(--red); }
+	.btn-toolbar.danger:hover { background: rgba(248, 113, 113, 0.1); }
+
+	.code-preview-keys {
+		background: #08080c;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		padding: 16px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 11.5px;
+		color: var(--sub);
+		line-height: 1.6;
+		min-height: 220px;
+		white-space: pre;
+		overflow-x: auto;
+	}
+
+	/* TOAST */
 	.toast {
 		position: fixed;
 		bottom: 30px;
@@ -277,11 +548,14 @@
 		font-size: 12px;
 	}
 
+	footer b { color: var(--accent); }
+
 	@media (max-width: 700px) {
 		body { padding: 24px 14px; }
 		.logo { font-size: 34px; }
 		.grid { grid-template-columns: 1fr; gap: 16px; }
 		.card { padding: 22px; }
+		.tab { font-size: 11px; padding: 10px 12px; }
 		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
 	}
 </style>
@@ -292,14 +566,145 @@
 
 	<header>
 		<h1 class="logo">⚡ SAILENT HUB</h1>
-		<p class="subtitle">Painel privado de scripts</p>
+		<p class="subtitle">Painel completo de scripts + gerador de keys</p>
 		<div class="lock-badge">🔒 Acesso restrito</div>
 	</header>
 
-	<div class="grid" id="grid"></div>
+	<!-- TABS -->
+	<div class="tabs">
+		<button class="tab active" data-tab="scripts">
+			🎮 Scripts <span class="badge" id="tabCountScripts">4</span>
+		</button>
+		<button class="tab" data-tab="gerador">🔑 Gerador</button>
+		<button class="tab" data-tab="keys">
+			📋 Keys <span class="badge" id="tabCountKeys">0</span>
+		</button>
+	</div>
+
+	<!-- PANEL SCRIPTS -->
+	<div class="panel active" id="panel-scripts">
+		<div class="grid" id="gridScripts"></div>
+	</div>
+
+	<!-- PANEL GERADOR -->
+	<div class="panel" id="panel-gerador">
+		<div class="grid-2col">
+			<div class="card" style="--card-color: var(--green);">
+				<div class="card-header">
+					<div class="card-icon">✨</div>
+					<div class="card-title-wrap">
+						<div class="card-title">Gerar Nova Key</div>
+						<div class="card-file">Preencha e clique em gerar</div>
+					</div>
+				</div>
+
+				<label>Nome do Cliente</label>
+				<input type="text" id="nome" placeholder="Ex: João Silva">
+
+				<div class="row">
+					<div>
+						<label>Nível</label>
+						<select id="nivel">
+							<option value="normal">Normal</option>
+							<option value="vip">VIP</option>
+							<option value="admin">Admin</option>
+						</select>
+					</div>
+					<div>
+						<label>Duração (dias)</label>
+						<input type="number" id="duracao" placeholder="30" value="30" min="0">
+					</div>
+				</div>
+
+				<label>HWID (opcional — vazio = qualquer device)</label>
+				<input type="text" id="hwid" placeholder="Cole o HWID do cliente...">
+
+				<label>Máximo de usos (-1 = ilimitado)</label>
+				<input type="number" id="usos" value="-1" min="-1">
+
+				<div class="info-aviso">
+					💡 <b>Dias = 0</b> → key nunca expira<br>
+					💡 <b>HWID vazio</b> → funciona em qualquer dispositivo
+				</div>
+
+				<button class="btn-form" onclick="gerarKey()">✨ Gerar Key</button>
+			</div>
+
+			<div class="card" style="--card-color: var(--purple);">
+				<div class="card-header">
+					<div class="card-icon">👁️</div>
+					<div class="card-title-wrap">
+						<div class="card-title">Preview em Tempo Real</div>
+						<div class="card-file">Como vai ficar no keys.json</div>
+					</div>
+				</div>
+
+				<div class="code-preview-keys" id="previewKey">
+Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- PANEL KEYS -->
+	<div class="panel" id="panel-keys">
+		<div class="grid-2col">
+			<div class="card" style="--card-color: var(--accent);">
+				<div class="card-header">
+					<div class="card-icon">📊</div>
+					<div class="card-title-wrap">
+						<div class="card-title">Estatísticas</div>
+						<div class="card-file">Resumo das keys geradas</div>
+					</div>
+				</div>
+
+				<div class="stats-row">
+					<div class="stat-box">
+						<div class="num" id="statTotal">0</div>
+						<div class="lbl">Total</div>
+					</div>
+					<div class="stat-box">
+						<div class="num" id="statAdmin" style="color: var(--yellow);">0</div>
+						<div class="lbl">Admin</div>
+					</div>
+					<div class="stat-box">
+						<div class="num" id="statVip" style="color: var(--purple);">0</div>
+						<div class="lbl">VIP</div>
+					</div>
+					<div class="stat-box">
+						<div class="num" id="statNormal" style="color: var(--green);">0</div>
+						<div class="lbl">Normal</div>
+					</div>
+				</div>
+
+				<div class="info-aviso">
+					💡 <b>Clique em uma key</b> na lista pra copiar ela individualmente.<br>
+					💡 <b>Copiar JSON</b> gera o conteúdo completo pra colar no keys.json do GitHub.
+				</div>
+			</div>
+
+			<div class="card" style="--card-color: var(--green);">
+				<div class="card-header">
+					<div class="card-icon">🔑</div>
+					<div class="card-title-wrap">
+						<div class="card-title">Keys Geradas</div>
+						<div class="card-file">Clique em uma pra copiar</div>
+					</div>
+				</div>
+
+				<button class="btn-toolbar" onclick="copiarJSON()">📋 Copiar JSON</button>
+				<button class="btn-toolbar" onclick="baixarJSON()">💾 Baixar</button>
+				<button class="btn-toolbar danger" onclick="limparTudo()">🗑️ Limpar</button>
+
+				<div class="lista-keys" id="listaKeys">
+					<div class="empty">Nenhuma key gerada ainda...<br>Vai na aba <b>🔑 Gerador</b> e cria uma!</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<footer>
-		Painel <b style="color: var(--accent)">Sailent</b> • Scripts privados
+		Painel <b>Sailent</b> • Scripts + Keys em 1 lugar • Uso pessoal
 	</footer>
 
 </div>
@@ -335,7 +740,7 @@ const SCRIPTS = [
 		icon: "🍕",
 		name: "Sailent Auto Pizza v6.1b",
 		file: "pizza.lua",
-		desc: "Pega o pedido e entrega automaticamente. Modo Seguro (andar rápido) por padrão com anti-kick e anti-dano de queda. Voo aéreo opcional com aviso de risco. Velocidade única (a pé + voo), espera entre entregas e anti-sit.",
+		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro (andar rápido) por padrão com anti-kick e anti-dano de queda. Voo aéreo opcional com aviso. Velocidade única (a pé + voo), espera entre entregas e anti-sit.",
 		color: "#fbbf24",
 		tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
 	},
@@ -344,7 +749,7 @@ const SCRIPTS = [
 		icon: "⚡",
 		name: "Sailent Auto Eletricista v3.2",
 		file: "eletricista.lua",
-		desc: "Pega a escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode ativo + velocidade única + anti-sit + noclip.",
+		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode ativo + velocidade única + anti-sit + noclip.",
 		color: "#f87171",
 		tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
 	}
@@ -358,7 +763,24 @@ function buildLoadstring(file) {
 	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
 
-const grid = document.getElementById("grid");
+function escapeHtml(t) {
+	const d = document.createElement("div");
+	d.textContent = t;
+	return d.innerHTML;
+}
+
+/* TABS */
+document.querySelectorAll(".tab").forEach(tab => {
+	tab.addEventListener("click", () => {
+		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+		document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+		tab.classList.add("active");
+		document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+	});
+});
+
+/* SCRIPTS */
+const grid = document.getElementById("gridScripts");
 
 SCRIPTS.forEach(s => {
 	const card = document.createElement("div");
@@ -373,22 +795,22 @@ SCRIPTS.forEach(s => {
 		<div class="card-header">
 			<div class="card-icon">${s.icon}</div>
 			<div class="card-title-wrap">
-				<div class="card-title">${s.name}</div>
-				<div class="card-file">${s.file}</div>
+				<div class="card-title">${escapeHtml(s.name)}</div>
+				<div class="card-file">${escapeHtml(s.file)}</div>
 			</div>
 		</div>
-		<div class="card-desc">${s.desc}</div>
+		<div class="card-desc">${escapeHtml(s.desc)}</div>
 		<div class="tags">
-			${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}
+			${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
 		</div>
 		<div class="code-preview">
-			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${url}"</span>))()
+			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 		</div>
 		<div class="actions">
 			<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">
 				📋 Copiar Loadstring
 			</button>
-			<button class="btn btn-raw" data-open="${url}">
+			<button class="btn btn-raw" data-open="${escapeHtml(url)}">
 				🔗 Raw
 			</button>
 		</div>
@@ -397,6 +819,9 @@ SCRIPTS.forEach(s => {
 	grid.appendChild(card);
 });
 
+document.getElementById("tabCountScripts").textContent = SCRIPTS.length;
+
+/* TOAST */
 const toast = document.getElementById("toast");
 let toastTimer;
 
@@ -404,7 +829,7 @@ function showToast(txt, isError = false) {
 	toast.textContent = txt;
 	toast.className = "toast show" + (isError ? " error" : "");
 	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.className = "toast", 2200);
+	toastTimer = setTimeout(() => toast.className = "toast", 2400);
 }
 
 async function copyText(text) {
@@ -445,6 +870,186 @@ document.addEventListener("click", async (e) => {
 	const openBtn = e.target.closest("[data-open]");
 	if (openBtn) window.open(openBtn.dataset.open, "_blank");
 });
+
+/* KEYS */
+async function sha256(msg) {
+	const enc = new TextEncoder();
+	const data = enc.encode(msg);
+	const hash = await crypto.subtle.digest("SHA-256", data);
+	return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function gerarKeyAleatoria() {
+	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+	const bloco = () => {
+		let s = "";
+		for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+		return s;
+	};
+	return `SAILENT-${bloco()}-${bloco()}-${bloco()}`;
+}
+
+let keys = [];
+
+async function gerarKey() {
+	const nome = document.getElementById("nome").value.trim() || "Cliente";
+	const nivel = document.getElementById("nivel").value;
+	const duracao = parseInt(document.getElementById("duracao").value) || 0;
+	const hwid = document.getElementById("hwid").value.trim() || null;
+	const usos = parseInt(document.getElementById("usos").value) || -1;
+
+	const key = gerarKeyAleatoria();
+	const hash = await sha256(key);
+	const agora = Math.floor(Date.now() / 1000);
+	const expira = duracao === 0 ? 99999999999 : agora + (duracao * 86400);
+
+	keys.push({
+		key, hash, nome, nivel,
+		criada: agora, expira, hwid,
+		max_usos: usos, usos: 0
+	});
+
+	document.getElementById("nome").value = "";
+	document.getElementById("hwid").value = "";
+	document.getElementById("duracao").value = "30";
+	document.getElementById("usos").value = "-1";
+
+	renderizarKeys();
+	renderPreview(key, hash, nome, nivel, expira, hwid, usos);
+	showToast("✅ Key gerada!");
+}
+
+function renderPreview(key, hash, nome, nivel, expira, hwid, usos) {
+	const preview = document.getElementById("previewKey");
+	preview.innerHTML = `<span style="color: var(--sub);">// Key gerada</span>
+<span style="color: var(--green);">${key}</span>
+
+<span style="color: var(--sub);">// Hash SHA-256</span>
+<span style="color: var(--purple);">${hash}</span>
+
+<span style="color: var(--sub);">// JSON entry</span>
+<span style="color: var(--accent);">"${hash}"</span>: {
+  "nome": "${escapeHtml(nome)}",
+  "nivel": "${nivel}",
+  "expira": ${expira},${hwid ? `\n  "hwid": "${escapeHtml(hwid)}",` : ""}
+  "status": "ativa",
+  "max_usos": ${usos},
+  "usos": 0
+}`;
+}
+
+function renderizarKeys() {
+	const lista = document.getElementById("listaKeys");
+
+	document.getElementById("statTotal").textContent = keys.length;
+	document.getElementById("statAdmin").textContent = keys.filter(k => k.nivel === "admin").length;
+	document.getElementById("statVip").textContent = keys.filter(k => k.nivel === "vip").length;
+	document.getElementById("statNormal").textContent = keys.filter(k => k.nivel === "normal").length;
+	document.getElementById("tabCountKeys").textContent = keys.length;
+
+	if (keys.length === 0) {
+		lista.innerHTML = '<div class="empty">Nenhuma key gerada ainda...<br>Vai na aba <b>🔑 Gerador</b> e cria uma!</div>';
+		return;
+	}
+
+	lista.innerHTML = "";
+	[...keys].reverse().forEach(k => {
+		const item = document.createElement("div");
+		item.className = "key-item";
+
+		const dias = k.expira >= 99999999999
+			? "∞"
+			: Math.max(0, Math.floor((k.expira - Math.floor(Date.now() / 1000)) / 86400)) + "d";
+
+		item.innerHTML = `
+			<div class="badge-nivel badge-${k.nivel}">${k.nivel}</div>
+			<div class="key-code">${escapeHtml(k.key)}</div>
+			<div class="key-info">👤 ${escapeHtml(k.nome)} • ⏰ ${dias} • 🔁 ${k.max_usos === -1 ? "∞" : k.max_usos}</div>
+			${k.hwid ? `<div class="key-hwid">🔒 HWID: ${escapeHtml(k.hwid.substring(0, 28))}...</div>` : ""}
+		`;
+
+		item.onclick = () => {
+			copyText(k.key).then(ok => {
+				if (ok) showToast("📋 Key copiada!");
+			});
+		};
+
+		lista.appendChild(item);
+	});
+}
+
+function gerarJSON() {
+	const obj = {
+		versao: "2.0",
+		ultima_atualizacao: Math.floor(Date.now() / 1000),
+		keys: {}
+	};
+
+	keys.forEach(k => {
+		const entry = {
+			nome: k.nome,
+			nivel: k.nivel,
+			criada: k.criada,
+			expira: k.expira,
+			status: "ativa",
+			max_usos: k.max_usos,
+			usos: k.usos
+		};
+		if (k.hwid) entry.hwid = k.hwid;
+		obj.keys[k.hash] = entry;
+	});
+
+	return JSON.stringify(obj, null, 2);
+}
+
+function copiarJSON() {
+	if (keys.length === 0) { showToast("⚠️ Nenhuma key gerada ainda!", true); return; }
+	const json = gerarJSON();
+	copyText(json).then(ok => {
+		if (ok) showToast("✅ JSON copiado! Cola no keys.json");
+	});
+}
+
+function baixarJSON() {
+	if (keys.length === 0) { showToast("⚠️ Nenhuma key gerada ainda!", true); return; }
+	const json = gerarJSON();
+	const blob = new Blob([json], { type: "application/json" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "keys.json";
+	a.click();
+	URL.revokeObjectURL(url);
+	showToast("💾 keys.json baixado!");
+}
+
+function limparTudo() {
+	if (keys.length === 0) return;
+	if (!confirm("Apagar TODAS as keys?")) return;
+	keys = [];
+	renderizarKeys();
+	document.getElementById("previewKey").innerHTML = 'Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...';
+	showToast("🗑️ Lista limpa");
+}
+
+function salvarLocal() {
+	try { localStorage.setItem("sailent_keys", JSON.stringify(keys)); } catch (e) {}
+}
+
+function carregarLocal() {
+	try {
+		const dados = localStorage.getItem("sailent_keys");
+		if (dados) {
+			keys = JSON.parse(dados);
+			renderizarKeys();
+		}
+	} catch (e) {}
+}
+
+const _origRender = renderizarKeys;
+renderizarKeys = function() { _origRender(); salvarLocal(); };
+
+carregarLocal();
 </script>
 
 </body>
