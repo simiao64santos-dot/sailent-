@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ SAILENT HUB</title>
+<title>⚡ SAILENT — Painel Completo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -12,68 +12,103 @@
 
 	:root {
 		--bg: #0a0a0f;
+		--bg2: #0d0d14;
 		--card: #12121a;
 		--card-hover: #1a1a26;
 		--border: #1f1f2e;
 		--accent: #7c9eff;
+		--accent-glow: rgba(124, 158, 255, 0.15);
 		--text: #f0f0f5;
 		--sub: #8a8a9e;
 		--green: #4ade80;
 		--yellow: #fbbf24;
 		--purple: #a78bfa;
 		--red: #f87171;
+		--pink: #f472b6;
 	}
 
 	body {
-		font-family: 'Inter', sans-serif;
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 		background: var(--bg);
 		color: var(--text);
 		min-height: 100vh;
-		padding: 40px 24px;
+		padding: 30px 20px;
 		background-image:
-			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.08) 0%, transparent 40%),
-			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08) 0%, transparent 40%);
+			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.10) 0%, transparent 40%),
+			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.10) 0%, transparent 40%);
 		background-attachment: fixed;
 	}
 
-	.container { max-width: 1200px; margin: 0 auto; }
+	.container { max-width: 1180px; margin: 0 auto; }
 
+	/* ═══ Header ═══ */
 	header {
 		text-align: center;
-		margin-bottom: 40px;
+		margin-bottom: 28px;
 	}
 
 	.logo {
-		font-size: 48px;
+		font-size: 44px;
 		font-weight: 800;
 		letter-spacing: -2px;
-		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%);
+		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 50%, #f472b6 100%);
+		background-size: 200% 200%;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
-		margin-bottom: 10px;
+		margin-bottom: 8px;
+		animation: gradShift 6s ease-in-out infinite;
+	}
+
+	@keyframes gradShift {
+		0%, 100% { background-position: 0% 50%; }
+		50% { background-position: 100% 50%; }
 	}
 
 	.subtitle {
-		font-size: 15px;
+		font-size: 14px;
 		color: var(--sub);
-		margin-bottom: 18px;
+		font-weight: 500;
+		margin-bottom: 16px;
 	}
 
-	.lock-badge {
+	.top-badges {
+		display: flex;
+		gap: 8px;
+		justify-content: center;
+		flex-wrap: wrap;
+		margin-bottom: 20px;
+	}
+
+	.badge-top {
 		display: inline-flex;
 		align-items: center;
-		gap: 8px;
-		padding: 8px 16px;
+		gap: 6px;
+		padding: 5px 13px;
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: 999px;
-		font-size: 12px;
+		font-size: 11px;
 		color: var(--sub);
+		font-family: 'JetBrains Mono', monospace;
 		font-weight: 600;
 	}
 
-	/* TABS */
+	.badge-top .dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--green);
+		box-shadow: 0 0 8px var(--green);
+		animation: pulse 2s infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.4; }
+	}
+
+	/* ═══ Tabs ═══ */
 	.tabs {
 		display: flex;
 		gap: 4px;
@@ -81,10 +116,8 @@
 		border: 1px solid var(--border);
 		border-radius: 14px;
 		padding: 5px;
-		margin-bottom: 30px;
-		max-width: 720px;
-		margin-left: auto;
-		margin-right: auto;
+		margin-bottom: 24px;
+		overflow-x: auto;
 	}
 
 	.tab {
@@ -99,6 +132,7 @@
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s;
+		white-space: nowrap;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -113,7 +147,7 @@
 		box-shadow: 0 0 0 1px rgba(124, 158, 255, 0.3) inset;
 	}
 
-	.tab .badge {
+	.tab .tab-badge {
 		background: var(--accent);
 		color: #0a0a0f;
 		font-size: 10px;
@@ -122,6 +156,7 @@
 		font-family: 'JetBrains Mono', monospace;
 	}
 
+	/* ═══ Painéis ═══ */
 	.panel { display: none; }
 	.panel.active { display: block; animation: fadeIn 0.3s ease; }
 
@@ -130,19 +165,76 @@
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* GRID SCRIPTS */
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-		gap: 24px;
+	/* ═══ Toolbar ═══ */
+	.toolbar {
+		display: flex;
+		gap: 10px;
+		margin-bottom: 20px;
+		flex-wrap: wrap;
+		align-items: center;
 	}
 
+	.search {
+		flex: 1;
+		min-width: 220px;
+		padding: 12px 16px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		color: var(--text);
+		font-family: 'Inter', sans-serif;
+		font-size: 13px;
+		outline: none;
+		transition: all 0.2s;
+	}
+
+	.search::placeholder { color: var(--sub); }
+	.search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+	.toolbar-btn {
+		padding: 12px 18px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		color: var(--text);
+		font-family: 'Inter', sans-serif;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.15s;
+		white-space: nowrap;
+	}
+
+	.toolbar-btn:hover {
+		background: var(--card-hover);
+		border-color: var(--accent);
+		transform: translateY(-1px);
+	}
+
+	/* ═══ Grids ═══ */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+		gap: 20px;
+	}
+
+	.grid-2col {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 20px;
+	}
+
+	@media (max-width: 900px) {
+		.grid-2col { grid-template-columns: 1fr; }
+	}
+
+	/* ═══ Card ═══ */
 	.card {
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: 16px;
-		padding: 28px;
-		transition: all 0.25s;
+		padding: 24px;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		position: relative;
 		overflow: hidden;
 	}
@@ -153,42 +245,29 @@
 		top: 0; left: 0; right: 0;
 		height: 3px;
 		background: var(--card-color, var(--accent));
+		opacity: 0.9;
 	}
 
 	.card:hover {
 		background: var(--card-hover);
 		border-color: var(--card-color, var(--accent));
 		transform: translateY(-4px);
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-	}
-
-	.card-check {
-		position: absolute;
-		top: 22px;
-		right: 22px;
-		width: 26px;
-		height: 26px;
-		border-radius: 50%;
-		background: var(--green);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #0a0a0f;
-		font-size: 14px;
-		font-weight: 700;
+		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--card-color, var(--accent));
 	}
 
 	.card-header {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: 14px;
-		margin-bottom: 18px;
+		margin-bottom: 14px;
+		position: relative;
+		z-index: 1;
 	}
 
 	.card-icon {
-		font-size: 32px;
-		width: 56px;
-		height: 56px;
+		font-size: 26px;
+		width: 54px;
+		height: 54px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -201,35 +280,62 @@
 	.card-title-wrap { flex: 1; min-width: 0; }
 
 	.card-title {
-		font-size: 17px;
+		font-size: 16px;
 		font-weight: 700;
-		margin-bottom: 4px;
+		letter-spacing: -0.3px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
-	.card-file {
-		font-size: 11px;
+	.card-sub {
+		font-size: 10px;
 		color: var(--sub);
 		font-family: 'JetBrains Mono', monospace;
+		margin-top: 3px;
 	}
 
+	.card-status {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 10px;
+		font-family: 'JetBrains Mono', monospace;
+		font-weight: 600;
+	}
+
+	.status-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--yellow);
+		box-shadow: 0 0 6px var(--yellow);
+	}
+
+	.card-status.ok .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+	.card-status.ok { color: var(--green); }
+	.card-status.err { color: var(--red); }
+	.card-status.err .status-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+	.card-status.checking { color: var(--yellow); }
+
 	.card-desc {
-		font-size: 13.5px;
+		font-size: 13px;
 		color: var(--sub);
-		line-height: 1.65;
-		margin-bottom: 18px;
+		line-height: 1.6;
+		margin-bottom: 16px;
 	}
 
 	.tags {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 6px;
-		margin-bottom: 18px;
+		margin-bottom: 16px;
 	}
 
 	.tag {
-		font-size: 10.5px;
+		font-size: 10px;
 		font-weight: 600;
-		padding: 5px 11px;
+		padding: 3px 9px;
 		border-radius: 6px;
 		background: rgba(124, 158, 255, 0.1);
 		color: var(--accent);
@@ -241,79 +347,77 @@
 		background: #08080c;
 		border: 1px solid var(--border);
 		border-radius: 10px;
-		padding: 14px 16px;
-		margin-bottom: 18px;
+		padding: 12px 14px;
+		margin-bottom: 16px;
 		font-family: 'JetBrains Mono', monospace;
-		font-size: 11px;
+		font-size: 10.5px;
 		color: var(--sub);
 		word-break: break-all;
 		line-height: 1.5;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 
-	.code-preview .cmd { color: var(--purple); }
+	.code-preview .cmd { color: var(--purple); font-weight: 600; }
 	.code-preview .arg { color: var(--green); }
 	.code-preview .url { color: var(--accent); }
 
 	.actions {
 		display: flex;
-		gap: 10px;
-	}
-
-	.btn {
-		padding: 13px 18px;
-		border: none;
-		border-radius: 10px;
-		font-family: 'Inter', sans-serif;
-		font-size: 13px;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.15s;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		gap: 8px;
 	}
 
-	.btn-copy {
+	.btn {
 		flex: 1;
+		padding: 11px 14px;
+		border: none;
+		border-radius: 10px;
+		font-family: 'Inter', sans-serif;
+		font-size: 12px;
+		font-weight: 700;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+	}
+
+	.btn-primary {
 		background: var(--card-color, var(--accent));
 		color: #0a0a0f;
 	}
 
-	.btn-copy:hover {
+	.btn-primary:hover {
 		filter: brightness(1.15);
 		transform: translateY(-1px);
-		box-shadow: 0 8px 25px var(--card-color, var(--accent));
+		box-shadow: 0 6px 20px var(--card-color, var(--accent));
 	}
 
-	.btn-copy.copied { background: var(--green); }
-
-	.btn-raw {
+	.btn-secondary {
 		background: rgba(255, 255, 255, 0.05);
 		color: var(--text);
 		border: 1px solid var(--border);
-		padding: 13px 22px;
+		flex: 0 0 auto;
 	}
 
-	.btn-raw:hover {
-		background: rgba(255, 255, 255, 0.1);
-		border-color: var(--accent);
+	.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+
+	.btn-copied {
+		background: var(--green) !important;
+		color: #0a0a0f !important;
 	}
 
-	/* GERADOR */
-	.grid-2col {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 24px;
+	.card-stats {
+		display: flex;
+		justify-content: space-between;
+		font-size: 10px;
+		color: var(--sub);
+		font-family: 'JetBrains Mono', monospace;
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px dashed var(--border);
 	}
 
-	@media (max-width: 900px) {
-		.grid-2col { grid-template-columns: 1fr; }
-	}
-
+	/* ═══ Form (Keys) ═══ */
 	label {
 		display: block;
 		font-size: 11px;
@@ -332,7 +436,7 @@
 		background: #0f0f16;
 		border: 1px solid var(--border);
 		color: var(--text);
-		padding: 12px 14px;
+		padding: 11px 14px;
 		border-radius: 8px;
 		font-size: 13px;
 		font-family: 'JetBrains Mono', monospace;
@@ -342,7 +446,7 @@
 
 	input:focus, select:focus {
 		border-color: var(--accent);
-		box-shadow: 0 0 0 3px rgba(124, 158, 255, 0.15);
+		box-shadow: 0 0 0 3px var(--accent-glow);
 	}
 
 	input::placeholder { color: #555566; }
@@ -355,7 +459,7 @@
 
 	.btn-form {
 		width: 100%;
-		padding: 14px;
+		padding: 13px;
 		border: none;
 		border-radius: 10px;
 		font-size: 13px;
@@ -366,51 +470,29 @@
 		letter-spacing: 0.5px;
 		margin-top: 18px;
 		font-family: 'Inter', sans-serif;
-		background: var(--green);
-		color: #0a0a0f;
 	}
 
-	.btn-form:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3); }
+	.btn-form-primary { background: var(--green); color: #0a0a0f; }
+	.btn-form-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3); }
+
+	.btn-form-blue { background: var(--accent); color: #0a0a0f; margin-top: 8px; }
+	.btn-form-blue:hover { filter: brightness(1.15); }
+
+	.btn-form-red { background: var(--red); color: #fff; margin-top: 8px; }
+	.btn-form-red:hover { filter: brightness(1.15); }
+
+	.btn-form-gold { background: var(--yellow); color: #0a0a0f; margin-top: 8px; }
+	.btn-form-gold:hover { filter: brightness(1.15); }
 
 	.info-aviso {
-		font-size: 11px;
+		font-size: 10.5px;
 		color: var(--sub);
 		margin-top: 10px;
-		line-height: 1.7;
+		line-height: 1.6;
 		font-family: 'JetBrains Mono', monospace;
 	}
 
-	/* KEYS */
-	.stats-row {
-		display: flex;
-		gap: 12px;
-		margin-bottom: 16px;
-	}
-
-	.stat-box {
-		flex: 1;
-		background: #0f0f16;
-		border: 1px solid var(--border);
-		border-radius: 10px;
-		padding: 14px;
-		text-align: center;
-	}
-
-	.stat-box .num {
-		font-size: 24px;
-		font-weight: 800;
-		color: var(--green);
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.stat-box .lbl {
-		font-size: 9px;
-		color: var(--sub);
-		text-transform: uppercase;
-		margin-top: 2px;
-		letter-spacing: 0.5px;
-	}
-
+	/* ═══ Lista de keys ═══ */
 	.lista-keys {
 		max-height: 500px;
 		overflow-y: auto;
@@ -461,7 +543,7 @@
 		word-break: break-all;
 	}
 
-	.key-item .badge-nivel {
+	.key-item .badge {
 		position: absolute;
 		top: 10px;
 		right: 10px;
@@ -483,44 +565,49 @@
 		font-size: 12px;
 	}
 
-	.btn-toolbar {
-		padding: 10px 16px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 10px;
-		color: var(--text);
-		font-family: 'Inter', sans-serif;
-		font-size: 12px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.15s;
-		margin-bottom: 14px;
-		margin-right: 8px;
+	.stats-row {
+		display: flex;
+		gap: 12px;
+		margin-bottom: 16px;
 	}
 
-	.btn-toolbar:hover {
-		background: var(--card-hover);
-		border-color: var(--accent);
-	}
-
-	.btn-toolbar.danger { border-color: var(--red); color: var(--red); }
-	.btn-toolbar.danger:hover { background: rgba(248, 113, 113, 0.1); }
-
-	.code-preview-keys {
-		background: #08080c;
+	.stat-box {
+		flex: 1;
+		background: #0f0f16;
 		border: 1px solid var(--border);
 		border-radius: 10px;
-		padding: 16px;
+		padding: 12px;
+		text-align: center;
+	}
+
+	.stat-box .num {
+		font-size: 22px;
+		font-weight: 800;
+		color: var(--green);
 		font-family: 'JetBrains Mono', monospace;
-		font-size: 11.5px;
-		color: var(--sub);
-		line-height: 1.6;
-		min-height: 220px;
-		white-space: pre;
-		overflow-x: auto;
 	}
 
-	/* TOAST */
+	.stat-box .lbl {
+		font-size: 9px;
+		color: var(--sub);
+		text-transform: uppercase;
+		margin-top: 2px;
+		letter-spacing: 0.5px;
+	}
+
+	/* ═══ Footer ═══ */
+	footer {
+		text-align: center;
+		margin-top: 50px;
+		padding-top: 25px;
+		border-top: 1px solid var(--border);
+		color: var(--sub);
+		font-size: 12px;
+	}
+
+	footer .highlight { color: var(--accent); font-weight: 600; }
+
+	/* ═══ Toast ═══ */
 	.toast {
 		position: fixed;
 		bottom: 30px;
@@ -539,24 +626,30 @@
 	}
 
 	.toast.show { transform: translateY(0); opacity: 1; }
-	.toast.error { background: var(--red); }
+	.toast.error { background: var(--red); box-shadow: 0 10px 40px rgba(248, 113, 113, 0.4); }
 
-	footer {
-		text-align: center;
-		margin-top: 60px;
-		color: var(--sub);
-		font-size: 12px;
+	.skeleton {
+		background: linear-gradient(90deg, var(--card) 0%, var(--card-hover) 50%, var(--card) 100%);
+		background-size: 200% 100%;
+		animation: skeleton 1.5s infinite;
+		border-radius: 16px;
+		height: 320px;
 	}
 
-	footer b { color: var(--accent); }
+	@keyframes skeleton {
+		0% { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
+	}
 
-	@media (max-width: 700px) {
-		body { padding: 24px 14px; }
-		.logo { font-size: 34px; }
-		.grid { grid-template-columns: 1fr; gap: 16px; }
-		.card { padding: 22px; }
+	@media (max-width: 600px) {
+		body { padding: 20px 12px; }
+		.logo { font-size: 30px; letter-spacing: -1px; }
+		.grid { grid-template-columns: 1fr; gap: 14px; }
+		.card { padding: 18px; }
+		.search { min-width: 100%; }
+		.toolbar-btn { flex: 1; }
+		.toast { left: 12px; right: 12px; bottom: 12px; text-align: center; }
 		.tab { font-size: 11px; padding: 10px 12px; }
-		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
 	}
 </style>
 </head>
@@ -565,36 +658,54 @@
 <div class="container">
 
 	<header>
-		<h1 class="logo">⚡ SAILENT HUB</h1>
-		<p class="subtitle">Painel completo de scripts + gerador de keys</p>
-		<div class="lock-badge">🔒 Acesso restrito</div>
+		<h1 class="logo">⚡ SAILENT</h1>
+		<p class="subtitle">Painel completo — Scripts + Gerador de Keys</p>
+		<div class="top-badges">
+			<span class="badge-top"><span class="dot"></span> ONLINE</span>
+			<span class="badge-top">🔒 ACESSO RESTRITO</span>
+			<span class="badge-top" id="lastUpdate">📅 —</span>
+		</div>
 	</header>
 
-	<!-- TABS -->
+	<!-- ═══ TABS ═══ -->
 	<div class="tabs">
 		<button class="tab active" data-tab="scripts">
-			🎮 Scripts <span class="badge" id="tabCountScripts">4</span>
+			🎮 Scripts <span class="tab-badge" id="tabCountScripts">4</span>
 		</button>
-		<button class="tab" data-tab="gerador">🔑 Gerador</button>
+		<button class="tab" data-tab="gerador">
+			🔑 Gerador
+		</button>
 		<button class="tab" data-tab="keys">
-			📋 Keys <span class="badge" id="tabCountKeys">0</span>
+			📋 Keys <span class="tab-badge" id="tabCountKeys">0</span>
 		</button>
 	</div>
 
-	<!-- PANEL SCRIPTS -->
+	<!-- ═══════════ PAINEL: SCRIPTS ═══════════ -->
 	<div class="panel active" id="panel-scripts">
-		<div class="grid" id="gridScripts"></div>
+		<div class="toolbar">
+			<input type="text" class="search" id="searchScripts" placeholder="🔍 Buscar script...">
+			<button class="toolbar-btn" id="btnRefreshAll">🔄 Atualizar</button>
+			<button class="toolbar-btn" id="btnCopyAll">📋 Copiar todos</button>
+		</div>
+
+		<div class="grid" id="gridScripts">
+			<div class="skeleton"></div>
+			<div class="skeleton"></div>
+			<div class="skeleton"></div>
+			<div class="skeleton"></div>
+		</div>
 	</div>
 
-	<!-- PANEL GERADOR -->
+	<!-- ═══════════ PAINEL: GERADOR ═══════════ -->
 	<div class="panel" id="panel-gerador">
 		<div class="grid-2col">
+			<!-- Formulário -->
 			<div class="card" style="--card-color: var(--green);">
 				<div class="card-header">
 					<div class="card-icon">✨</div>
-					<div class="card-title-wrap">
+					<div>
 						<div class="card-title">Gerar Nova Key</div>
-						<div class="card-file">Preencha e clique em gerar</div>
+						<div class="card-sub">Preencha e clique em gerar</div>
 					</div>
 				</div>
 
@@ -616,7 +727,7 @@
 					</div>
 				</div>
 
-				<label>HWID (opcional — vazio = qualquer device)</label>
+				<label>HWID (opcional — vazio = qualquer dispositivo)</label>
 				<input type="text" id="hwid" placeholder="Cole o HWID do cliente...">
 
 				<label>Máximo de usos (-1 = ilimitado)</label>
@@ -627,34 +738,42 @@
 					💡 <b>HWID vazio</b> → funciona em qualquer dispositivo
 				</div>
 
-				<button class="btn-form" onclick="gerarKey()">✨ Gerar Key</button>
+				<button class="btn-form btn-form-primary" onclick="gerarKey()">✨ Gerar Key</button>
 			</div>
 
+			<!-- Preview -->
 			<div class="card" style="--card-color: var(--purple);">
 				<div class="card-header">
 					<div class="card-icon">👁️</div>
-					<div class="card-title-wrap">
+					<div>
 						<div class="card-title">Preview em Tempo Real</div>
-						<div class="card-file">Como vai ficar no keys.json</div>
+						<div class="card-sub">Como vai ficar no keys.json</div>
 					</div>
 				</div>
 
-				<div class="code-preview-keys" id="previewKey">
-Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
+				<div class="code-preview" id="previewKey" style="font-size: 12px; min-height: 220px; white-space: pre; overflow-x: auto;">
+					Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- PANEL KEYS -->
+	<!-- ═══════════ PAINEL: KEYS ═══════════ -->
 	<div class="panel" id="panel-keys">
+		<div class="toolbar">
+			<input type="text" class="search" id="searchKeys" placeholder="🔍 Buscar por nome, key ou hash...">
+			<button class="toolbar-btn" onclick="copiarJSON()">📋 Copiar JSON</button>
+			<button class="toolbar-btn" onclick="baixarJSON()">💾 Baixar</button>
+			<button class="toolbar-btn" onclick="limparTudo()" style="border-color: var(--red); color: var(--red);">🗑️ Limpar</button>
+		</div>
+
 		<div class="grid-2col">
 			<div class="card" style="--card-color: var(--accent);">
 				<div class="card-header">
 					<div class="card-icon">📊</div>
-					<div class="card-title-wrap">
+					<div>
 						<div class="card-title">Estatísticas</div>
-						<div class="card-file">Resumo das keys geradas</div>
+						<div class="card-sub">Resumo das keys</div>
 					</div>
 				</div>
 
@@ -679,22 +798,18 @@ Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
 
 				<div class="info-aviso">
 					💡 <b>Clique em uma key</b> na lista pra copiar ela individualmente.<br>
-					💡 <b>Copiar JSON</b> gera o conteúdo completo pra colar no keys.json do GitHub.
+					💡 <b>Copiar JSON</b> gera o conteúdo completo pra colar no <code>keys.json</code> do GitHub.
 				</div>
 			</div>
 
 			<div class="card" style="--card-color: var(--green);">
 				<div class="card-header">
 					<div class="card-icon">🔑</div>
-					<div class="card-title-wrap">
+					<div>
 						<div class="card-title">Keys Geradas</div>
-						<div class="card-file">Clique em uma pra copiar</div>
+						<div class="card-sub">Clique em uma pra copiar</div>
 					</div>
 				</div>
-
-				<button class="btn-toolbar" onclick="copiarJSON()">📋 Copiar JSON</button>
-				<button class="btn-toolbar" onclick="baixarJSON()">💾 Baixar</button>
-				<button class="btn-toolbar danger" onclick="limparTudo()">🗑️ Limpar</button>
 
 				<div class="lista-keys" id="listaKeys">
 					<div class="empty">Nenhuma key gerada ainda...<br>Vai na aba <b>🔑 Gerador</b> e cria uma!</div>
@@ -704,7 +819,7 @@ Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
 	</div>
 
 	<footer>
-		Painel <b>Sailent</b> • Scripts + Keys em 1 lugar • Uso pessoal
+		Painel <span class="highlight">Sailent</span> • Scripts + Keys em 1 lugar • Uso pessoal
 	</footer>
 
 </div>
@@ -712,6 +827,9 @@ Aperte <b style="color: var(--green)">Gerar Key</b> pra ver o preview aqui...
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
+// ⚙️ CONFIGURAÇÃO — EDITE AQUI
+// ═══════════════════════════════════════════════════════════
 const USER = "simiao64santos-dot";
 const REPO = "sailent-";
 const BRANCH = "main";
@@ -738,23 +856,26 @@ const SCRIPTS = [
 	{
 		id: "pizza",
 		icon: "🍕",
-		name: "Sailent Auto Pizza v6.1b",
+		name: "Sailent Auto Pizza",
 		file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro (andar rápido) por padrão com anti-kick e anti-dano de queda. Voo aéreo opcional com aviso. Velocidade única (a pé + voo), espera entre entregas e anti-sit.",
+		desc: "Pega o pedido, voa em altura segura e entrega no cliente automaticamente. Clique automático e proteção anti-água.",
 		color: "#fbbf24",
-		tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
+		tags: ["Fly seguro", "Auto-clique", "Anti-água", "Auto-entrega"]
 	},
 	{
 		id: "eletricista",
 		icon: "⚡",
-		name: "Sailent Auto Eletricista v3.2",
+		name: "Sailent Auto Eletricista",
 		file: "eletricista.lua",
-		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode ativo + velocidade única + anti-sit + noclip.",
+		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos.",
 		color: "#f87171",
-		tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
+		tags: ["TP topo", "Part suporte", "Marca postes"]
 	}
 ];
 
+// ═══════════════════════════════════════════════════════════
+// 🔧 HELPERS
+// ═══════════════════════════════════════════════════════════
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`;
 }
@@ -763,13 +884,43 @@ function buildLoadstring(file) {
 	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
 
+function getCopyCount(id) {
+	return parseInt(localStorage.getItem(`sailent_copies_${id}`) || "0");
+}
+
+function incCopyCount(id) {
+	const n = getCopyCount(id) + 1;
+	localStorage.setItem(`sailent_copies_${id}`, n);
+	return n;
+}
+
+async function fetchScriptInfo(file) {
+	try {
+		const url = buildURL(file) + "?t=" + Date.now();
+		const res = await fetch(url, { method: "GET", cache: "no-store" });
+		if (!res.ok) return { ok: false, error: res.status };
+		const text = await res.text();
+		const versionMatch = text.match(/v(\d+\.\d+(\.\d+)?)/);
+		return {
+			ok: true,
+			size: text.length,
+			version: versionMatch ? "v" + versionMatch[1] : null,
+			lines: text.split("\n").length
+		};
+	} catch (e) {
+		return { ok: false, error: e.message };
+	}
+}
+
 function escapeHtml(t) {
 	const d = document.createElement("div");
 	d.textContent = t;
 	return d.innerHTML;
 }
 
-/* TABS */
+// ═══════════════════════════════════════════════════════════
+// 🎨 TABS
+// ═══════════════════════════════════════════════════════════
 document.querySelectorAll(".tab").forEach(tab => {
 	tab.addEventListener("click", () => {
 		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -779,24 +930,35 @@ document.querySelectorAll(".tab").forEach(tab => {
 	});
 });
 
-/* SCRIPTS */
-const grid = document.getElementById("gridScripts");
+// ═══════════════════════════════════════════════════════════
+// 🎮 SCRIPTS
+// ═══════════════════════════════════════════════════════════
+const gridScripts = document.getElementById("gridScripts");
+const searchScripts = document.getElementById("searchScripts");
+let renderedCards = [];
 
-SCRIPTS.forEach(s => {
+function renderCard(s) {
 	const card = document.createElement("div");
 	card.className = "card";
 	card.style.setProperty("--card-color", s.color);
+	card.dataset.id = s.id;
+	card.dataset.name = s.name.toLowerCase();
+	card.dataset.tags = s.tags.join(" ").toLowerCase();
 
 	const url = buildURL(s.file);
 	const load = buildLoadstring(s.file);
+	const copies = getCopyCount(s.id);
 
 	card.innerHTML = `
-		<div class="card-check">✓</div>
 		<div class="card-header">
 			<div class="card-icon">${s.icon}</div>
 			<div class="card-title-wrap">
 				<div class="card-title">${escapeHtml(s.name)}</div>
-				<div class="card-file">${escapeHtml(s.file)}</div>
+				<div class="card-sub">${escapeHtml(s.file)}</div>
+			</div>
+			<div class="card-status checking" data-status>
+				<span class="status-dot"></span>
+				<span data-status-text>...</span>
 			</div>
 		</div>
 		<div class="card-desc">${escapeHtml(s.desc)}</div>
@@ -807,71 +969,81 @@ SCRIPTS.forEach(s => {
 			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 		</div>
 		<div class="actions">
-			<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">
+			<button class="btn btn-primary" data-copy="${encodeURIComponent(load)}" data-id="${s.id}">
 				📋 Copiar Loadstring
 			</button>
-			<button class="btn btn-raw" data-open="${escapeHtml(url)}">
-				🔗 Raw
+			<button class="btn btn-secondary" data-open="${escapeHtml(url)}" title="Abrir raw no GitHub">
+				🔗
 			</button>
+		</div>
+		<div class="card-stats">
+			<span data-version>📦 —</span>
+			<span data-lines>📄 —</span>
+			<span data-copies>📋 ${copies}×</span>
 		</div>
 	`;
 
-	grid.appendChild(card);
-});
-
-document.getElementById("tabCountScripts").textContent = SCRIPTS.length;
-
-/* TOAST */
-const toast = document.getElementById("toast");
-let toastTimer;
-
-function showToast(txt, isError = false) {
-	toast.textContent = txt;
-	toast.className = "toast show" + (isError ? " error" : "");
-	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.className = "toast", 2400);
+	return card;
 }
 
-async function copyText(text) {
-	try {
-		await navigator.clipboard.writeText(text);
-		return true;
-	} catch (e) {
-		const ta = document.createElement("textarea");
-		ta.value = text;
-		ta.style.position = "fixed";
-		ta.style.opacity = "0";
-		document.body.appendChild(ta);
-		ta.select();
-		const ok = document.execCommand("copy");
-		document.body.removeChild(ta);
-		return ok;
-	}
+function renderScripts() {
+	gridScripts.innerHTML = "";
+	renderedCards = [];
+	SCRIPTS.forEach(s => {
+		const card = renderCard(s);
+		gridScripts.appendChild(card);
+		renderedCards.push(card);
+	});
+	document.getElementById("tabCountScripts").textContent = SCRIPTS.length;
 }
 
-document.addEventListener("click", async (e) => {
-	const copyBtn = e.target.closest("[data-copy]");
-	if (copyBtn) {
-		const text = decodeURIComponent(copyBtn.dataset.copy);
-		const ok = await copyText(text);
-		if (ok) {
-			copyBtn.classList.add("copied");
-			const original = copyBtn.innerHTML;
-			copyBtn.innerHTML = "✅ Copiado!";
-			showToast("✅ Loadstring copiado!");
-			setTimeout(() => {
-				copyBtn.classList.remove("copied");
-				copyBtn.innerHTML = original;
-			}, 1800);
+async function checkAllScripts() {
+	let okCount = 0;
+	for (const s of SCRIPTS) {
+		const card = renderedCards.find(c => c.dataset.id === s.id);
+		if (!card) continue;
+
+		const statusEl = card.querySelector("[data-status]");
+		const statusText = card.querySelector("[data-status-text]");
+		const versionEl = card.querySelector("[data-version]");
+		const linesEl = card.querySelector("[data-lines]");
+
+		statusEl.className = "card-status checking";
+		statusText.textContent = "...";
+
+		const info = await fetchScriptInfo(s.file);
+
+		if (info.ok) {
+			okCount++;
+			statusEl.className = "card-status ok";
+			statusText.textContent = "OK";
+			if (info.version) versionEl.textContent = "📦 " + info.version;
+			else versionEl.textContent = "📦 ok";
+			linesEl.textContent = "📄 " + info.lines;
+		} else {
+			statusEl.className = "card-status err";
+			statusText.textContent = "ERRO";
+			versionEl.textContent = "📦 não achou";
+			linesEl.textContent = "📄 —";
 		}
-		return;
 	}
 
-	const openBtn = e.target.closest("[data-open]");
-	if (openBtn) window.open(openBtn.dataset.open, "_blank");
+	const now = new Date();
+	const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+	document.getElementById("lastUpdate").textContent = `📅 ${okCount}/${SCRIPTS.length} OK às ${timeStr}`;
+}
+
+searchScripts.addEventListener("input", () => {
+	const q = searchScripts.value.trim().toLowerCase();
+	renderedCards.forEach(card => {
+		const match = !q || card.dataset.name.includes(q) || card.dataset.tags.includes(q);
+		card.style.display = match ? "" : "none";
+	});
 });
 
-/* KEYS */
+// ═══════════════════════════════════════════════════════════
+// 🔑 GERADOR DE KEYS
+// ═══════════════════════════════════════════════════════════
 async function sha256(msg) {
 	const enc = new TextEncoder();
 	const data = enc.encode(msg);
@@ -917,11 +1089,13 @@ async function gerarKey() {
 	renderizarKeys();
 	renderPreview(key, hash, nome, nivel, expira, hwid, usos);
 	showToast("✅ Key gerada!");
+	incCopyCount("key-gen");
 }
 
 function renderPreview(key, hash, nome, nivel, expira, hwid, usos) {
 	const preview = document.getElementById("previewKey");
-	preview.innerHTML = `<span style="color: var(--sub);">// Key gerada</span>
+	preview.innerHTML = `
+<span style="color: var(--sub);">// Key gerada</span>
 <span style="color: var(--green);">${key}</span>
 
 <span style="color: var(--sub);">// Hash SHA-256</span>
@@ -935,7 +1109,8 @@ function renderPreview(key, hash, nome, nivel, expira, hwid, usos) {
   "status": "ativa",
   "max_usos": ${usos},
   "usos": 0
-}`;
+}
+	`.trim();
 }
 
 function renderizarKeys() {
@@ -952,8 +1127,16 @@ function renderizarKeys() {
 		return;
 	}
 
+	const q = (document.getElementById("searchKeys").value || "").trim().toLowerCase();
+	const filtradas = keys.filter(k => !q || k.key.toLowerCase().includes(q) || k.hash.toLowerCase().includes(q) || k.nome.toLowerCase().includes(q));
+
+	if (filtradas.length === 0) {
+		lista.innerHTML = '<div class="empty">Nada encontrado com essa busca.</div>';
+		return;
+	}
+
 	lista.innerHTML = "";
-	[...keys].reverse().forEach(k => {
+	[...filtradas].reverse().forEach(k => {
 		const item = document.createElement("div");
 		item.className = "key-item";
 
@@ -962,21 +1145,31 @@ function renderizarKeys() {
 			: Math.max(0, Math.floor((k.expira - Math.floor(Date.now() / 1000)) / 86400)) + "d";
 
 		item.innerHTML = `
-			<div class="badge-nivel badge-${k.nivel}">${k.nivel}</div>
+			<div class="badge badge-${k.nivel}">${k.nivel}</div>
 			<div class="key-code">${escapeHtml(k.key)}</div>
 			<div class="key-info">👤 ${escapeHtml(k.nome)} • ⏰ ${dias} • 🔁 ${k.max_usos === -1 ? "∞" : k.max_usos}</div>
 			${k.hwid ? `<div class="key-hwid">🔒 HWID: ${escapeHtml(k.hwid.substring(0, 28))}...</div>` : ""}
 		`;
 
 		item.onclick = () => {
-			copyText(k.key).then(ok => {
-				if (ok) showToast("📋 Key copiada!");
+			navigator.clipboard.writeText(k.key).then(() => {
+				showToast("📋 Key copiada!");
+			}).catch(() => {
+				const ta = document.createElement("textarea");
+				ta.value = k.key;
+				document.body.appendChild(ta);
+				ta.select();
+				document.execCommand("copy");
+				document.body.removeChild(ta);
+				showToast("📋 Key copiada!");
 			});
 		};
 
 		lista.appendChild(item);
 	});
 }
+
+document.getElementById("searchKeys").addEventListener("input", renderizarKeys);
 
 function gerarJSON() {
 	const obj = {
@@ -1005,8 +1198,16 @@ function gerarJSON() {
 function copiarJSON() {
 	if (keys.length === 0) { showToast("⚠️ Nenhuma key gerada ainda!", true); return; }
 	const json = gerarJSON();
-	copyText(json).then(ok => {
-		if (ok) showToast("✅ JSON copiado! Cola no keys.json");
+	navigator.clipboard.writeText(json).then(() => {
+		showToast("✅ JSON copiado! Cola no keys.json do GitHub");
+	}).catch(() => {
+		const ta = document.createElement("textarea");
+		ta.value = json;
+		document.body.appendChild(ta);
+		ta.select();
+		document.execCommand("copy");
+		document.body.removeChild(ta);
+		showToast("✅ JSON copiado!");
 	});
 }
 
@@ -1032,6 +1233,78 @@ function limparTudo() {
 	showToast("🗑️ Lista limpa");
 }
 
+// ═══════════════════════════════════════════════════════════
+// 📋 AÇÕES GERAIS
+// ═══════════════════════════════════════════════════════════
+const toast = document.getElementById("toast");
+let toastTimer;
+
+function showToast(txt, isError = false) {
+	toast.textContent = txt;
+	toast.className = "toast show" + (isError ? " error" : "");
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => toast.className = "toast", 2500);
+}
+
+async function copyText(text) {
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch (e) {
+		const ta = document.createElement("textarea");
+		ta.value = text;
+		ta.style.position = "fixed";
+		ta.style.opacity = "0";
+		document.body.appendChild(ta);
+		ta.select();
+		const ok = document.execCommand("copy");
+		document.body.removeChild(ta);
+		return ok;
+	}
+}
+
+document.addEventListener("click", async (e) => {
+	const copyBtn = e.target.closest("[data-copy]");
+	if (copyBtn) {
+		const text = decodeURIComponent(copyBtn.dataset.copy);
+		const id = copyBtn.dataset.id;
+		const ok = await copyText(text);
+		if (ok) {
+			incCopyCount(id);
+			const card = copyBtn.closest(".card");
+			const copiesEl = card.querySelector("[data-copies]");
+			if (copiesEl) copiesEl.textContent = `📋 ${getCopyCount(id)}×`;
+
+			copyBtn.classList.add("btn-copied");
+			copyBtn.innerHTML = "✅ Copiado!";
+			showToast("✅ Loadstring copiado!");
+			setTimeout(() => {
+				copyBtn.classList.remove("btn-copied");
+				copyBtn.innerHTML = "📋 Copiar Loadstring";
+			}, 1800);
+		}
+		return;
+	}
+
+	const openBtn = e.target.closest("[data-open]");
+	if (openBtn) window.open(openBtn.dataset.open, "_blank");
+});
+
+document.getElementById("btnRefreshAll").addEventListener("click", () => {
+	showToast("🔄 Verificando scripts...");
+	checkAllScripts();
+});
+
+document.getElementById("btnCopyAll").addEventListener("click", async () => {
+	const all = SCRIPTS.map(s => `-- ${s.name}\n${buildLoadstring(s.file)}`).join("\n\n");
+	const ok = await copyText(all);
+	if (ok) showToast("✅ Todos os loadstrings copiados!");
+	else showToast("❌ Falha ao copiar", true);
+});
+
+// ═══════════════════════════════════════════════════════════
+// 💾 SALVAR / CARREGAR
+// ═══════════════════════════════════════════════════════════
 function salvarLocal() {
 	try { localStorage.setItem("sailent_keys", JSON.stringify(keys)); } catch (e) {}
 }
@@ -1049,6 +1322,11 @@ function carregarLocal() {
 const _origRender = renderizarKeys;
 renderizarKeys = function() { _origRender(); salvarLocal(); };
 
+// ═══════════════════════════════════════════════════════════
+// 🚀 INICIALIZA
+// ═══════════════════════════════════════════════════════════
+renderScripts();
+checkAllScripts();
 carregarLocal();
 </script>
 
