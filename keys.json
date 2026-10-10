@@ -1,24 +1,12 @@
-{
-  "versao": "2.0",
-  "ultima_atualizacao": 1791324831,
-  "keys": {
-    "5436a603d9f53f0c257b6dee7f54a907300c6ea16206685f268c483efac18dc3": {
-      "nome": "DONOS",
-      "nivel": "admin",
-      "criada": 1791324789,
-      "expira": 99999999999,
-      "status": "ativa",
-      "max_usos": -1,
-      "usos": 0
-    },
-    "873f95cb9d29ccc91e7cffe4016a22af452134629e52dab3806f5df5c8ee70c5": {
-      "nome": "satff",
-      "nivel": "admin",
-      "criada": 1791324819,
-      "expira": 1791411219,
-      "status": "ativa",
-      "max_usos": -1,
-      "usos": 0
-    }
-  }
+"e3b4b799283d1d470efd4c6d45ac36235822e8c00e69aed507862443542b65a2": {
+  "nome": "becks/dev",
+  "nivel": "owner",
+  "status": "ativa",
+  "expira": 8.64e+28,
+  "hwid": "",
+  "bindMode": "free",
+  "boundTo": "",
+  "boundAt": 0,
+  "max_usos": -1,
+  "usos": 0
 }
