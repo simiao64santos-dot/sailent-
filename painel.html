@@ -9,425 +9,862 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 	* { margin: 0; padding: 0; box-sizing: border-box; }
-
 	:root {
-		--bg: #0a0a0f;
-		--card: #12121a;
-		--card-hover: #1a1a26;
-		--border: #1f1f2e;
-		--accent: #7c9eff;
-		--text: #f0f0f5;
-		--sub: #8a8a9e;
-		--green: #4ade80;
-		--yellow: #fbbf24;
-		--purple: #a78bfa;
-		--red: #f87171;
+		--bg: #0a0a0f; --card: #12121a; --card-hover: #1a1a26; --border: #1f1f2e;
+		--accent: #7c9eff; --text: #f0f0f5; --sub: #8a8a9e;
+		--green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa;
+		--red: #f87171; --pink: #ec4899; --cyan: #22d3ee;
 	}
-
 	body {
-		font-family: 'Inter', sans-serif;
-		background: var(--bg);
-		color: var(--text);
-		min-height: 100vh;
-		padding: 40px 24px;
+		font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+		min-height: 100vh; padding: 40px 24px;
 		background-image:
 			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.08) 0%, transparent 40%),
 			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08) 0%, transparent 40%);
 		background-attachment: fixed;
 	}
-
-	.container { max-width: 1200px; margin: 0 auto; }
-
-	header {
-		text-align: center;
-		margin-bottom: 50px;
-	}
-
+	.container { max-width: 1300px; margin: 0 auto; }
+	header { text-align: center; margin-bottom: 30px; }
 	.logo {
-		font-size: 48px;
-		font-weight: 800;
-		letter-spacing: -2px;
+		font-size: 48px; font-weight: 800; letter-spacing: -2px;
 		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		margin-bottom: 10px;
+		-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+		background-clip: text; margin-bottom: 10px;
 	}
-
-	.subtitle {
-		font-size: 15px;
-		color: var(--sub);
-		margin-bottom: 18px;
-	}
-
+	.subtitle { font-size: 15px; color: var(--sub); margin-bottom: 18px; }
 	.lock-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		padding: 8px 16px;
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 999px;
-		font-size: 12px;
-		color: var(--sub);
-		font-weight: 600;
+		display: inline-flex; align-items: center; gap: 8px;
+		padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
+		border-radius: 999px; font-size: 12px; color: var(--sub); font-weight: 600;
 	}
-
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-		gap: 24px;
-		max-width: 1100px;
-		margin: 0 auto;
-	}
-
-	.card {
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: 16px;
-		padding: 28px;
-		transition: all 0.25s;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.card::before {
-		content: '';
-		position: absolute;
-		top: 0; left: 0; right: 0;
-		height: 3px;
-		background: var(--card-color, var(--accent));
-	}
-
-	.card:hover {
-		background: var(--card-hover);
-		border-color: var(--card-color, var(--accent));
-		transform: translateY(-4px);
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-	}
-
-	.card-check {
-		position: absolute;
-		top: 22px;
-		right: 22px;
-		width: 26px;
-		height: 26px;
-		border-radius: 50%;
-		background: var(--green);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #0a0a0f;
-		font-size: 14px;
-		font-weight: 700;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: flex-start;
-		gap: 14px;
-		margin-bottom: 18px;
-	}
-
-	.card-icon {
-		font-size: 32px;
-		width: 56px;
-		height: 56px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(255, 255, 255, 0.03);
-		border-radius: 14px;
-		border: 1px solid var(--border);
-		flex-shrink: 0;
-	}
-
-	.card-title-wrap { flex: 1; min-width: 0; }
-
-	.card-title {
-		font-size: 17px;
-		font-weight: 700;
-		margin-bottom: 4px;
-	}
-
-	.card-file {
-		font-size: 11px;
-		color: var(--sub);
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.card-desc {
-		font-size: 13.5px;
-		color: var(--sub);
-		line-height: 1.65;
-		margin-bottom: 18px;
-	}
-
-	.tags {
-		display: flex;
+	.tabs {
+		display: flex; justify-content: center; gap: 8px; margin-bottom: 30px;
+		padding: 6px; background: var(--card); border: 1px solid var(--border);
+		border-radius: 14px; width: fit-content; margin-left: auto; margin-right: auto;
 		flex-wrap: wrap;
-		gap: 6px;
-		margin-bottom: 18px;
 	}
-
-	.tag {
-		font-size: 10.5px;
-		font-weight: 600;
-		padding: 5px 11px;
-		border-radius: 6px;
-		background: rgba(124, 158, 255, 0.1);
-		color: var(--accent);
-		font-family: 'JetBrains Mono', monospace;
-		border: 1px solid rgba(124, 158, 255, 0.2);
+	.tab {
+		padding: 10px 20px; background: transparent; border: none; border-radius: 10px;
+		color: var(--sub); font-family: 'Inter', sans-serif; font-size: 13px;
+		font-weight: 700; cursor: pointer; transition: all 0.2s;
+		display: flex; align-items: center; gap: 8px;
 	}
-
-	.code-preview {
-		background: #08080c;
-		border: 1px solid var(--border);
-		border-radius: 10px;
-		padding: 14px 16px;
-		margin-bottom: 18px;
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 11px;
-		color: var(--sub);
-		word-break: break-all;
-		line-height: 1.5;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+	.tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+	.tab.active { background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%); color: #0a0a0f; }
+	.tab .badge {
+		background: var(--green); color: #0a0a0f; font-size: 10px;
+		font-weight: 800; padding: 2px 7px; border-radius: 999px;
+		min-width: 20px; text-align: center;
 	}
+	.tab.active .badge { background: #0a0a0f; color: var(--green); }
+	.panel { display: none; }
+	.panel.active { display: block; }
 
+	.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; max-width: 1100px; margin: 0 auto; }
+	.card {
+		background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+		padding: 28px; transition: all 0.25s; position: relative; overflow: hidden;
+	}
+	.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--card-color, var(--accent)); }
+	.card:hover { background: var(--card-hover); border-color: var(--card-color, var(--accent)); transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
+	.card-check { position: absolute; top: 22px; right: 22px; width: 26px; height: 26px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; color: #0a0a0f; font-size: 14px; font-weight: 700; }
+	.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+	.card-icon { font-size: 32px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.03); border-radius: 14px; border: 1px solid var(--border); flex-shrink: 0; }
+	.card-title-wrap { flex: 1; min-width: 0; }
+	.card-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+	.card-file { font-size: 11px; color: var(--sub); font-family: 'JetBrains Mono', monospace; }
+	.card-desc { font-size: 13.5px; color: var(--sub); line-height: 1.65; margin-bottom: 18px; }
+	.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+	.tag { font-size: 10.5px; font-weight: 600; padding: 5px 11px; border-radius: 6px; background: rgba(124, 158, 255, 0.1); color: var(--accent); font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(124, 158, 255, 0.2); }
+	.code-preview { background: #08080c; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--sub); word-break: break-all; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.code-preview .cmd { color: var(--purple); }
 	.code-preview .arg { color: var(--green); }
 	.code-preview .url { color: var(--accent); }
-
-	.actions {
-		display: flex;
-		gap: 10px;
-	}
-
-	.btn {
-		padding: 13px 18px;
-		border: none;
-		border-radius: 10px;
-		font-family: 'Inter', sans-serif;
-		font-size: 13px;
-		font-weight: 700;
-		cursor: pointer;
-		transition: all 0.15s;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-	}
-
-	.btn-copy {
-		flex: 1;
-		background: var(--card-color, var(--accent));
-		color: #0a0a0f;
-	}
-
-	.btn-copy:hover {
-		filter: brightness(1.15);
-		transform: translateY(-1px);
-		box-shadow: 0 8px 25px var(--card-color, var(--accent));
-	}
-
+	.actions { display: flex; gap: 10px; }
+	.btn { padding: 13px 18px; border: none; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+	.btn-copy { flex: 1; background: var(--card-color, var(--accent)); color: #0a0a0f; }
+	.btn-copy:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 8px 25px var(--card-color, var(--accent)); }
 	.btn-copy.copied { background: var(--green); }
+	.btn-raw { background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border); padding: 13px 22px; }
+	.btn-raw:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
 
-	.btn-raw {
-		background: rgba(255, 255, 255, 0.05);
-		color: var(--text);
-		border: 1px solid var(--border);
-		padding: 13px 22px;
-	}
+	.admin-wrap { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+	.admin-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; position: relative; overflow: hidden; }
+	.admin-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--admin-color, var(--accent)); }
+	.admin-card.full { grid-column: 1 / -1; }
+	.admin-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+	.admin-icon { font-size: 24px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border); }
+	.admin-title { font-size: 16px; font-weight: 700; }
+	.admin-sub { font-size: 11px; color: var(--sub); margin-top: 2px; }
+	.form-group { margin-bottom: 16px; }
+	.form-label { display: block; font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+	.form-input, .form-select { width: 100%; padding: 12px 14px; background: #0a0a0f; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: all 0.15s; outline: none; }
+	.form-input:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 158, 255, 0.15); }
+	.form-select { font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; }
+	.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+	.form-hint { font-size: 10px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
+	.btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%); border: none; border-radius: 10px; color: #0a0a0f; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; margin-top: 6px; }
+	.btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124, 158, 255, 0.3); }
+	.output-box { margin-top: 18px; background: #08080c; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text); line-height: 1.6; max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; display: none; }
+	.output-box.show { display: block; }
+	.output-label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 18px; margin-bottom: 8px; }
+	.output-actions { display: flex; gap: 8px; }
+	.mini-btn { padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--sub); font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+	.mini-btn:hover { background: rgba(124, 158, 255, 0.15); color: var(--accent); border-color: var(--accent); }
+	.mini-btn.danger:hover { background: rgba(248, 113, 113, 0.15); color: var(--red); border-color: var(--red); }
+	.key-preview { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+	.key-line { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #0a0a0f; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; }
+	.key-line-label { color: var(--sub); font-weight: 600; }
+	.key-line-value { color: var(--text); font-family: 'JetBrains Mono', monospace; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.divider { height: 1px; background: var(--border); margin: 22px 0; }
 
-	.btn-raw:hover {
-		background: rgba(255, 255, 255, 0.1);
-		border-color: var(--accent);
-	}
+	.live-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+	.stat-box { background: #0a0a0f; border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+	.stat-value { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+	.stat-value.green { background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+	.stat-value.red { background: linear-gradient(135deg, #f87171 0%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+	.stat-label { font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
 
-	.toast {
-		position: fixed;
-		bottom: 30px;
-		right: 30px;
-		background: var(--green);
-		color: #0a0a0f;
-		padding: 14px 22px;
-		border-radius: 12px;
-		font-weight: 700;
-		font-size: 13px;
-		box-shadow: 0 10px 40px rgba(74, 222, 128, 0.4);
-		transform: translateY(120px);
-		opacity: 0;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		z-index: 1000;
-	}
+	.users-table { width: 100%; background: #08080c; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+	.users-header { display: grid; grid-template-columns: 40px 1.5fr 1fr 1fr 1fr 1fr 90px; gap: 10px; padding: 14px 18px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+	.user-row { display: grid; grid-template-columns: 40px 1.5fr 1fr 1fr 1fr 1fr 90px; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; transition: background 0.15s; }
+	.user-row:last-child { border-bottom: none; }
+	.user-row:hover { background: rgba(255,255,255,0.02); }
+	.user-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #0a0a0f; }
+	.user-name { font-weight: 700; color: var(--text); }
+	.user-sub { font-size: 10px; color: var(--sub); font-family: 'JetBrains Mono', monospace; }
+	.user-script { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); font-weight: 600; }
+	.user-level { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; text-align: center; width: fit-content; }
+	.level-normal { background: rgba(138, 138, 158, 0.15); color: var(--sub); }
+	.level-vip { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+	.level-admin { background: rgba(124, 158, 255, 0.15); color: var(--accent); }
+	.level-owner { background: rgba(236, 72, 153, 0.15); color: var(--pink); }
+	.user-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green); font-weight: 600; }
+	.kick-btn, .ban-btn { padding: 6px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid; }
+	.kick-btn { background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3); color: var(--red); }
+	.kick-btn:hover { background: var(--red); color: #0a0a0f; }
+	.ban-btn { background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.3); color: var(--pink); }
+	.ban-btn:hover { background: var(--pink); color: #0a0a0f; }
+	.actions-cell { display: flex; gap: 6px; }
+	.empty-state { padding: 40px; text-align: center; color: var(--sub); font-size: 13px; }
+	.empty-state-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+	.live-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); font-size: 10px; font-weight: 800; color: var(--green); text-transform: uppercase; margin-left: 10px; }
+	.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+	@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
 
+	/* KEYS LIST */
+	.keys-list { background: #08080c; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 24px; }
+	.keys-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.3fr 90px 100px; gap: 10px; padding: 14px 18px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+	.key-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.3fr 90px 100px; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+	.key-row:last-child { border-bottom: none; }
+	.key-row:hover { background: rgba(255,255,255,0.02); }
+	.key-hash { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--sub); }
+	.key-hwid { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--cyan); }
+	.key-hwid.bound { color: var(--green); }
+	.key-hwid.free { color: var(--yellow); }
+	.key-level { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; text-align: center; width: fit-content; }
+	.key-reset-btn { padding: 6px 10px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: var(--yellow); font-size: 10px; font-weight: 700; cursor: pointer; }
+	.key-reset-btn:hover { background: var(--yellow); color: #0a0a0f; }
+	.key-del-btn { padding: 6px 10px; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 8px; color: var(--red); font-size: 10px; font-weight: 700; cursor: pointer; }
+	.key-del-btn:hover { background: var(--red); color: #0a0a0f; }
+	.key-actions { display: flex; gap: 6px; }
+	.bind-info { font-size: 10px; color: var(--sub); }
+
+	.chart-wrap { background: #08080c; border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+	.chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding: 0 4px; }
+	.chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; cursor: pointer; }
+	.chart-bar { width: 100%; min-height: 3px; background: linear-gradient(180deg, #7c9eff 0%, #a78bfa 100%); border-radius: 4px 4px 0 0; transition: all 0.3s; position: relative; }
+	.chart-bar:hover { filter: brightness(1.3); }
+	.chart-bar-value { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #0a0a0f; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+	.chart-bar-col:hover .chart-bar-value { opacity: 1; }
+	.chart-label { font-size: 9px; color: var(--sub); font-weight: 600; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
+	.chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+	.chart-legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--sub); font-weight: 600; }
+	.chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%); }
+
+	.history-list { background: #08080c; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+	.history-row { display: grid; grid-template-columns: 40px 1.3fr 1fr 80px 100px; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+	.history-row:last-child { border-bottom: none; }
+	.history-row:hover { background: rgba(255,255,255,0.02); }
+	.history-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+	.history-icon.login { background: rgba(74, 222, 128, 0.15); }
+	.history-icon.logout { background: rgba(248, 113, 113, 0.15); }
+	.history-icon.kick { background: rgba(251, 191, 36, 0.15); }
+	.history-icon.ban { background: rgba(236, 72, 153, 0.15); }
+	.history-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--sub); }
+
+	.ban-list { background: #08080c; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+	.ban-row { display: grid; grid-template-columns: 1.5fr 2fr 1fr 80px; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+	.ban-row:last-child { border-bottom: none; }
+	.ban-row:hover { background: rgba(255,255,255,0.02); }
+	.ban-hwid { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--pink); }
+	.ban-unban { padding: 6px 12px; background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 8px; color: var(--green); font-size: 10px; font-weight: 700; cursor: pointer; }
+	.ban-unban:hover { background: var(--green); color: #0a0a0f; }
+
+	.toast { position: fixed; bottom: 30px; right: 30px; background: var(--green); color: #0a0a0f; padding: 14px 22px; border-radius: 12px; font-weight: 700; font-size: 13px; box-shadow: 0 10px 40px rgba(74, 222, 128, 0.4); transform: translateY(120px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; }
 	.toast.show { transform: translateY(0); opacity: 1; }
-	.toast.error { background: var(--red); }
-
-	footer {
-		text-align: center;
-		margin-top: 60px;
-		color: var(--sub);
-		font-size: 12px;
-	}
-
+	.toast.error { background: var(--red); box-shadow: 0 10px 40px rgba(248, 113, 113, 0.4); }
+	footer { text-align: center; margin-top: 60px; color: var(--sub); font-size: 12px; }
 	footer b { color: var(--accent); }
 
+	@media (max-width: 1000px) {
+		.admin-wrap { grid-template-columns: 1fr; }
+		.live-stats { grid-template-columns: repeat(2, 1fr); }
+		.users-header, .user-row { grid-template-columns: 32px 1.5fr 1fr 70px; }
+		.users-header > :nth-child(n+5):not(:last-child),
+		.user-row > :nth-child(n+5):not(:last-child) { display: none; }
+		.keys-header, .key-row { grid-template-columns: 1fr 1fr 90px; }
+		.keys-header > :nth-child(n+3):not(:last-child),
+		.key-row > :nth-child(n+3):not(:last-child) { display: none; }
+		.history-row { grid-template-columns: 32px 1fr 80px; }
+		.history-row > :nth-child(n+4):not(:last-child) { display: none; }
+		.ban-row { grid-template-columns: 1fr 80px; }
+		.ban-row > :nth-child(n+2):not(:last-child) { display: none; }
+	}
 	@media (max-width: 700px) {
 		body { padding: 24px 14px; }
 		.logo { font-size: 34px; }
 		.grid { grid-template-columns: 1fr; gap: 16px; }
 		.card { padding: 22px; }
-		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
+		.form-row { grid-template-columns: 1fr; }
 	}
 </style>
 </head>
 <body>
 
 <div class="container">
-
 	<header>
 		<h1 class="logo">⚡ SAILENT HUB</h1>
 		<p class="subtitle">Painel privado de scripts</p>
 		<div class="lock-badge">🔒 Acesso restrito</div>
 	</header>
 
-	<div class="grid" id="grid"></div>
+	<div class="tabs">
+		<button class="tab active" data-tab="scripts">📦 Scripts</button>
+		<button class="tab" data-tab="live">🟢 Ao Vivo <span class="badge" id="live-count-badge">0</span></button>
+		<button class="tab" data-tab="keys">🔐 Keys <span class="badge" id="keys-count-badge" style="background: var(--accent);">0</span></button>
+		<button class="tab" data-tab="history">📊 Histórico</button>
+		<button class="tab" data-tab="bans">🚫 Banidos <span class="badge" id="ban-count-badge" style="background: var(--red);">0</span></button>
+		<button class="tab" data-tab="admin">🔑 Gerar</button>
+	</div>
 
-	<footer>
-		Painel <b>Sailent</b> • Scripts privados
-	</footer>
+	<div class="panel active" id="panel-scripts"><div class="grid" id="grid"></div></div>
 
+	<div class="panel" id="panel-live">
+		<div class="admin-card full" style="--admin-color: var(--green);">
+			<div class="admin-header">
+				<div class="admin-icon">🟢</div>
+				<div>
+					<div class="admin-title">Usuários Online Agora <span class="live-indicator"><span class="live-dot"></span> LIVE</span></div>
+					<div class="admin-sub">Atualiza em tempo real via Firebase</div>
+				</div>
+			</div>
+			<div class="live-stats">
+				<div class="stat-box"><div class="stat-value green" id="stat-online">0</div><div class="stat-label">Online Agora</div></div>
+				<div class="stat-box"><div class="stat-value" id="stat-total-uses">0</div><div class="stat-label">Sessões</div></div>
+				<div class="stat-box"><div class="stat-value" id="stat-scripts">0</div><div class="stat-label">Scripts em Uso</div></div>
+				<div class="stat-box"><div class="stat-value" id="stat-keys">0</div><div class="stat-label">Keys Únicas</div></div>
+			</div>
+			<div class="users-table">
+				<div class="users-header">
+					<div></div><div>Jogador</div><div>Script</div><div>Nível</div>
+					<div>Tempo Online</div><div>Servidor</div><div>Ações</div>
+				</div>
+				<div id="users-body"><div class="empty-state"><div class="empty-state-icon">👻</div>Nenhum usuário online no momento...</div></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel" id="panel-keys">
+		<div class="admin-card full" style="--admin-color: var(--accent);">
+			<div class="admin-header">
+				<div class="admin-icon">🔐</div>
+				<div>
+					<div class="admin-title">Keys Cadastradas</div>
+					<div class="admin-sub">Cada key trava no HWID do primeiro uso — não pode ser compartilhada</div>
+				</div>
+			</div>
+			<div class="keys-list" id="keys-list">
+				<div class="empty-state"><div class="empty-state-icon">🔑</div>Nenhuma key cadastrada ainda...</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel" id="panel-history">
+		<div class="admin-card full" style="--admin-color: var(--purple);">
+			<div class="admin-header">
+				<div class="admin-icon">📊</div>
+				<div>
+					<div class="admin-title">Histórico de Acesso</div>
+					<div class="admin-sub">Últimas 200 entradas/saídas</div>
+				</div>
+			</div>
+			<div class="chart-wrap">
+				<div class="chart-title">
+					<span>Uso por hora (últimas 24h)</span>
+					<div class="chart-legend"><span class="chart-legend-dot"></span> Entradas</div>
+				</div>
+				<div class="chart-bars" id="chart-bars"></div>
+			</div>
+			<div class="history-list" id="history-list">
+				<div class="empty-state"><div class="empty-state-icon">📭</div>Nenhum evento registrado ainda...</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel" id="panel-bans">
+		<div class="admin-card full" style="--admin-color: var(--pink);">
+			<div class="admin-header">
+				<div class="admin-icon">🚫</div>
+				<div>
+					<div class="admin-title">Lista de Banidos (HWID)</div>
+					<div class="admin-sub">Usuários banidos não conseguem usar scripts mesmo trocando de key</div>
+				</div>
+			</div>
+			<div class="form-row" style="grid-template-columns: 2fr 1.5fr 1fr auto; margin-bottom: 22px;">
+				<div class="form-group" style="margin: 0;"><label class="form-label">HWID</label><input type="text" class="form-input" id="ban-hwid-input" placeholder="Cole o HWID"></div>
+				<div class="form-group" style="margin: 0;"><label class="form-label">Motivo</label><input type="text" class="form-input" id="ban-reason-input" placeholder="Ex: Compartilhou key"></div>
+				<div class="form-group" style="margin: 0;"><label class="form-label">Nome</label><input type="text" class="form-input" id="ban-name-input" placeholder="Nome do user"></div>
+				<button class="btn-primary" style="margin: 0; align-self: flex-end; width: auto; padding: 12px 20px; background: linear-gradient(135deg, #ec4899 0%, #f87171 100%);" onclick="adicionarBan()">🚫 Banir</button>
+			</div>
+			<div class="ban-list" id="ban-list"><div class="empty-state"><div class="empty-state-icon">✨</div>Ninguém banido ainda...</div></div>
+		</div>
+	</div>
+
+	<div class="panel" id="panel-admin">
+		<div class="admin-wrap">
+			<div class="admin-card" style="--admin-color: var(--green);">
+				<div class="admin-header">
+					<div class="admin-icon">🔑</div>
+					<div>
+						<div class="admin-title">Gerar Key Única</div>
+						<div class="admin-sub">Trava automaticamente no HWID no primeiro uso</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">Nome do Cliente</label>
+					<input type="text" class="form-input" id="key-name" placeholder="Ex: JoaoSilva">
+				</div>
+				<div class="form-group">
+					<label class="form-label">Key (texto cru)</label>
+					<input type="text" class="form-input" id="key-value" placeholder="SAILENT-XXXX-XXXX-XXXX">
+					<div class="form-hint">🎲 <button class="mini-btn" onclick="gerarKeyAleatoria()">Gerar aleatória</button></div>
+				</div>
+				<div class="form-row">
+					<div class="form-group">
+						<label class="form-label">Nível</label>
+						<select class="form-select" id="key-level">
+							<option value="normal">Normal</option>
+							<option value="vip">VIP</option>
+							<option value="admin">Admin</option>
+							<option value="owner">Owner</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label class="form-label">Dias de validade</label>
+						<input type="number" class="form-input" id="key-days" value="30" min="0">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">🔒 Modo de Trava</label>
+					<select class="form-select" id="key-bind-mode">
+						<option value="auto">AUTO (trava no 1º uso) — recomendado</option>
+						<option value="fixed">FIXO (você digita o HWID agora)</option>
+						<option value="free">LIVRE (qualquer device, não recomendado)</option>
+					</select>
+				</div>
+				<div class="form-group" id="hwid-fixed-group" style="display: none;">
+					<label class="form-label">HWID do Cliente</label>
+					<input type="text" class="form-input" id="key-hwid" placeholder="Cole o HWID aqui">
+				</div>
+				<button class="btn-primary" onclick="generateKey()">⚡ Gerar Key</button>
+				<div id="key-result" style="display: none;">
+					<div class="divider"></div>
+					<div class="key-preview">
+						<div class="key-line"><span class="key-line-label">KEY:</span><span class="key-line-value" id="key-display-value">-</span></div>
+						<div class="key-line"><span class="key-line-label">HASH:</span><span class="key-line-value" id="key-display-hash">-</span></div>
+						<div class="key-line"><span class="key-line-label">EXPIRA:</span><span class="key-line-value" id="key-display-expira">-</span></div>
+						<div class="key-line"><span class="key-line-label">TRAVA:</span><span class="key-line-value" id="key-display-bind">-</span></div>
+					</div>
+					<div class="output-label">
+						<span>📋 Entrada JSON (keys.json)</span>
+						<div class="output-actions"><button class="mini-btn" onclick="copyOutput('key-output')">📋 Copiar</button></div>
+					</div>
+					<div class="output-box show" id="key-output"></div>
+				</div>
+			</div>
+
+			<div class="admin-card" style="--admin-color: var(--cyan);">
+				<div class="admin-header">
+					<div class="admin-icon">🔥</div>
+					<div>
+						<div class="admin-title">Firebase Config</div>
+						<div class="admin-sub">Cole sua URL do Realtime Database</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">Firebase URL</label>
+					<input type="text" class="form-input" id="fb-url" placeholder="https://seu-projeto-default-rtdb.firebaseio.com/">
+					<div class="form-hint">Termina com <b>/</b>. Salvo no navegador.</div>
+				</div>
+				<button class="btn-primary" onclick="salvarFirebase()" style="background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);">💾 Salvar e Conectar</button>
+				<div class="divider"></div>
+				<div class="admin-title" style="font-size: 13px; margin-bottom: 12px;">📡 Status</div>
+				<div class="key-preview">
+					<div class="key-line"><span class="key-line-label">Conexão:</span><span class="key-line-value" id="fb-status" style="color: var(--red);">❌ Não conectado</span></div>
+					<div class="key-line"><span class="key-line-label">Última sync:</span><span class="key-line-value" id="fb-last-sync">-</span></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<footer>Painel <b>Sailent</b> • Scripts privados • por becks & kevim</footer>
 </div>
 
 <div class="toast" id="toast">✅ Copiado!</div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, remove, set, get, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
 const USER = "simiao64santos-dot";
 const REPO = "sailent-";
 const BRANCH = "main";
 
 const SCRIPTS = [
-	{
-		id: "gari",
-		icon: "🗑️",
-		name: "Sailent Auto Gari v7.0",
-		file: "main.lua",
-		desc: "Coleta e entrega lixo automaticamente. Noclip embutido + God Mode. Interface nova + velocidade única (a pé e voo) controlada por 1 slider. Modo A Pé ou Voar.",
-		color: "#4ade80",
-		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"]
-	},
-	{
-		id: "prisao",
-		icon: "🔓",
-		name: "Sailent Auto Prisão v3.1",
-		file: "prisao.lua",
-		desc: "Varre o perímetro completo e entrega caixas. Reduz a pena sem esforço. Interface nova + velocidade única (a pé e voo) controlada por 1 slider.",
-		color: "#a78bfa",
-		tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Anti-AFK"]
-	},
-	{
-		id: "pizza",
-		icon: "🍕",
-		name: "Sailent Auto Pizza v6.1b",
-		file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro (andar rápido) por padrão com anti-kick e anti-dano de queda. Voo aéreo opcional com aviso. Velocidade única (a pé + voo), espera entre entregas e anti-sit.",
-		color: "#fbbf24",
-		tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
-	},
-	{
-		id: "eletricista",
-		icon: "⚡",
-		name: "Sailent Auto Eletricista v3.2",
-		file: "eletricista.lua",
-		desc: "Pega escada no carro, teleporta pro topo do poste e conserta. Marca postes já feitos. God Mode ativo + velocidade única + anti-sit + noclip.",
-		color: "#f87171",
-		tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
-	}
+	{ id: "gari", icon: "🗑️", name: "Sailent Auto Gari v7.0", file: "main.lua", desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo) em 1 slider.", color: "#4ade80", tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"] },
+	{ id: "prisao", icon: "🔓", name: "Sailent Auto Prisão v3.1", file: "prisao.lua", desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Velocidade única (a pé e voo).", color: "#a78bfa", tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Anti-AFK"] },
+	{ id: "pizza", icon: "🍕", name: "Sailent Auto Pizza v6.1b", file: "pizza.lua", desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda. Voo opcional.", color: "#fbbf24", tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"] },
+	{ id: "eletricista", icon: "⚡", name: "Sailent Auto Eletricista v3.2", file: "eletricista.lua", desc: "Pega escada, teleporta pro topo do poste e conserta. Marca postes feitos. God Mode + anti-sit + noclip.", color: "#f87171", tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"] }
 ];
 
-function buildURL(file) {
-	return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`;
+function buildURL(file) { return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`; }
+function buildLoadstring(file) { return `loadstring(game:HttpGet("${buildURL(file)}"))()`; }
+function escapeHtml(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+async function sha256(message) {
+	const buf = new TextEncoder().encode(message);
+	const hash = await crypto.subtle.digest('SHA-256', buf);
+	return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function buildLoadstring(file) {
-	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
-}
-
-function escapeHtml(t) {
-	const d = document.createElement("div");
-	d.textContent = t;
-	return d.innerHTML;
-}
-
-const grid = document.getElementById("grid");
-
-SCRIPTS.forEach(s => {
-	const card = document.createElement("div");
-	card.className = "card";
-	card.style.setProperty("--card-color", s.color);
-
-	const url = buildURL(s.file);
-	const load = buildLoadstring(s.file);
-
-	card.innerHTML = `
-		<div class="card-check">✓</div>
-		<div class="card-header">
-			<div class="card-icon">${s.icon}</div>
-			<div class="card-title-wrap">
-				<div class="card-title">${escapeHtml(s.name)}</div>
-				<div class="card-file">${escapeHtml(s.file)}</div>
+function buildScriptCards() {
+	const grid = document.getElementById("grid");
+	grid.innerHTML = "";
+	SCRIPTS.forEach(s => {
+		const card = document.createElement("div");
+		card.className = "card";
+		card.style.setProperty("--card-color", s.color);
+		const url = buildURL(s.file);
+		const load = buildLoadstring(s.file);
+		card.innerHTML = `
+			<div class="card-check">✓</div>
+			<div class="card-header">
+				<div class="card-icon">${s.icon}</div>
+				<div class="card-title-wrap"><div class="card-title">${escapeHtml(s.name)}</div><div class="card-file">${escapeHtml(s.file)}</div></div>
 			</div>
-		</div>
-		<div class="card-desc">${escapeHtml(s.desc)}</div>
-		<div class="tags">
-			${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
-		</div>
-		<div class="code-preview">
-			<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
-		</div>
-		<div class="actions">
-			<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">
-				📋 Copiar Loadstring
-			</button>
-			<button class="btn btn-raw" data-open="${escapeHtml(url)}">
-				🔗 Raw
-			</button>
-		</div>
-	`;
-
-	grid.appendChild(card);
-});
+			<div class="card-desc">${escapeHtml(s.desc)}</div>
+			<div class="tags">${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+			<div class="code-preview"><span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()</div>
+			<div class="actions">
+				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Loadstring</button>
+				<button class="btn btn-raw" data-open="${escapeHtml(url)}">🔗 Raw</button>
+			</div>
+		`;
+		grid.appendChild(card);
+	});
+}
+buildScriptCards();
 
 const toast = document.getElementById("toast");
 let toastTimer;
-
 function showToast(txt, isError = false) {
 	toast.textContent = txt;
 	toast.className = "toast show" + (isError ? " error" : "");
 	clearTimeout(toastTimer);
 	toastTimer = setTimeout(() => toast.className = "toast", 2200);
 }
-
 async function copyText(text) {
-	try {
-		await navigator.clipboard.writeText(text);
-		return true;
-	} catch (e) {
+	try { await navigator.clipboard.writeText(text); return true; }
+	catch (e) {
 		const ta = document.createElement("textarea");
-		ta.value = text;
-		ta.style.position = "fixed";
-		ta.style.opacity = "0";
-		document.body.appendChild(ta);
-		ta.select();
+		ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+		document.body.appendChild(ta); ta.select();
 		const ok = document.execCommand("copy");
-		document.body.removeChild(ta);
-		return ok;
+		document.body.removeChild(ta); return ok;
 	}
 }
+function copyOutput(id) {
+	const el = document.getElementById(id);
+	if (!el) return;
+	copyText(el.textContent).then(ok => { if (ok) showToast("✅ Copiado!"); });
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+	tab.addEventListener("click", () => {
+		document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+		document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+		tab.classList.add("active");
+		document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+	});
+});
+
+function gerarKeyAleatoria() {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	const seg = () => Array.from({length: 4}, () => chars[Math.floor(Math.random()*chars.length)]).join("");
+	document.getElementById("key-value").value = `SAILENT-${seg()}-${seg()}-${seg()}`;
+}
+
+let fbApp = null, fbDB = null;
+let unsubOnline = null, unsubHistory = null, unsubBans = null, unsubKeys = null;
+let fbURL = localStorage.getItem("sailent_fb_url") || "";
+document.getElementById("fb-url").value = fbURL;
+
+// Bind mode change
+document.getElementById("key-bind-mode").addEventListener("change", function() {
+	document.getElementById("hwid-fixed-group").style.display = this.value === "fixed" ? "block" : "none";
+});
+
+async function generateKey() {
+	const name = document.getElementById("key-name").value.trim();
+	const value = document.getElementById("key-value").value.trim();
+	const level = document.getElementById("key-level").value;
+	const days = parseInt(document.getElementById("key-days").value) || 30;
+	const bindMode = document.getElementById("key-bind-mode").value;
+	const hwidFixed = document.getElementById("key-hwid").value.trim();
+
+	if (!name) { showToast("⚠️ Preencha o nome!", true); return; }
+	if (!value) { showToast("⚠️ Preencha a key!", true); return; }
+	if (bindMode === "fixed" && !hwidFixed) { showToast("⚠️ Digite o HWID!", true); return; }
+
+	const hash = await sha256(value);
+	const expira = days === 0 ? 99999999999 : Math.floor(Date.now() / 1000) + (days * 86400);
+
+	const entry = {
+		nome: name,
+		nivel: level,
+		status: "ativa",
+		expira: expira,
+		hwid: bindMode === "fixed" ? hwidFixed : "",
+		bindMode: bindMode, // auto | fixed | free
+		boundTo: bindMode === "fixed" ? name : "",
+		boundAt: bindMode === "fixed" ? Math.floor(Date.now()/1000) : 0,
+		max_usos: -1,
+		usos: 0
+	};
+
+	document.getElementById("key-display-value").textContent = value;
+	document.getElementById("key-display-hash").textContent = hash;
+	document.getElementById("key-display-expira").textContent = days === 0 ? "NUNCA" : new Date(expira * 1000).toLocaleString('pt-BR');
+	const bindLabels = { auto: "🔒 Auto (1º uso)", fixed: "🔐 Fixo agora", free: "🌐 Livre" };
+	document.getElementById("key-display-bind").textContent = bindLabels[bindMode];
+	document.getElementById("key-output").textContent = `"${hash}": ${JSON.stringify(entry, null, 2)}`;
+	document.getElementById("key-result").style.display = "block";
+
+	if (fbDB) {
+		try {
+			await set(ref(fbDB, "keys/" + hash), entry);
+			showToast("🔑 Key salva no Firebase!");
+		} catch (err) { showToast("⚠️ Erro: " + err.message, true); }
+	} else {
+		showToast("🔑 Key gerada! (configure Firebase)");
+	}
+}
+window.generateKey = generateKey;
+window.gerarKeyAleatoria = gerarKeyAleatoria;
+window.copyOutput = copyOutput;
+
+function salvarFirebase() {
+	const url = document.getElementById("fb-url").value.trim();
+	if (!url) { showToast("⚠️ Cole a URL!", true); return; }
+	localStorage.setItem("sailent_fb_url", url);
+	fbURL = url;
+	conectarFirebase();
+}
+window.salvarFirebase = salvarFirebase;
+
+async function conectarFirebase() {
+	if (!fbURL) return;
+	try {
+		const dbURL = fbURL.replace(/\/$/, "");
+		const projectId = new URL(dbURL).hostname.split(".")[0].replace(/-default-rtdb$/, "");
+		fbApp = initializeApp({ databaseURL: dbURL, projectId: projectId });
+		fbDB = getDatabase(fbApp);
+		await get(ref(fbDB, ".info/connected"));
+		document.getElementById("fb-status").textContent = "✅ Conectado";
+		document.getElementById("fb-status").style.color = "var(--green)";
+
+		if (unsubOnline) unsubOnline();
+		unsubOnline = onValue(ref(fbDB, "online"), (snap) => {
+			renderUsers(snap.val() || {});
+			document.getElementById("fb-last-sync").textContent = new Date().toLocaleTimeString('pt-BR');
+		});
+		if (unsubHistory) unsubHistory();
+		unsubHistory = onValue(query(ref(fbDB, "history"), limitToLast(200)), (snap) => {
+			renderHistory(snap.val() || {});
+		});
+		if (unsubBans) unsubBans();
+		unsubBans = onValue(ref(fbDB, "bans"), (snap) => {
+			renderBans(snap.val() || {});
+		});
+		if (unsubKeys) unsubKeys();
+		unsubKeys = onValue(ref(fbDB, "keys"), (snap) => {
+			renderKeys(snap.val() || {});
+		});
+		showToast("🔥 Firebase conectado!");
+	} catch (err) {
+		document.getElementById("fb-status").textContent = "❌ Erro: " + err.message;
+		document.getElementById("fb-status").style.color = "var(--red)";
+		showToast("❌ Erro Firebase", true);
+	}
+}
+if (fbURL) conectarFirebase();
+
+// ===== RENDER USERS =====
+function renderUsers(data) {
+	const now = Math.floor(Date.now() / 1000);
+	const users = Object.entries(data).map(([uid, u]) => ({ ...u, _uid: uid }))
+		.filter(u => u.lastPing && (now - u.lastPing) < 90)
+		.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+
+	document.getElementById("stat-online").textContent = users.length;
+	document.getElementById("live-count-badge").textContent = users.length;
+	document.getElementById("stat-total-uses").textContent = users.length;
+	document.getElementById("stat-scripts").textContent = new Set(users.map(u => u.script).filter(Boolean)).size;
+	document.getElementById("stat-keys").textContent = new Set(users.map(u => u.keyHash).filter(Boolean)).size;
+
+	const body = document.getElementById("users-body");
+	if (users.length === 0) {
+		body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👻</div>Nenhum usuário online...</div>`;
+		return;
+	}
+	body.innerHTML = users.map(u => {
+		const initial = (u.name || "?")[0].toUpperCase();
+		const hue = (u.name || "").split("").reduce((a,c) => a + c.charCodeAt(0), 0) % 360;
+		const bgColor = `hsl(${hue}, 70%, 60%)`;
+		const time = formatTime(now - (u.startedAt || now));
+		const level = u.nivel || "normal";
+		const server = u.placeId ? `#${String(u.placeId).substring(0, 6)}` : "-";
+		return `
+			<div class="user-row">
+				<div class="user-avatar" style="background: ${bgColor};">${escapeHtml(initial)}</div>
+				<div><div class="user-name">${escapeHtml(u.name || "?")}</div><div class="user-sub">ID: ${escapeHtml(String(u.userId || "?"))}</div></div>
+				<div class="user-script">${escapeHtml(u.script || "-")}</div>
+				<div class="user-level level-${escapeHtml(level)}">${escapeHtml(level)}</div>
+				<div class="user-time">${time}</div>
+				<div class="user-sub">${escapeHtml(server)}</div>
+				<div class="actions-cell">
+					<button class="kick-btn" onclick="kickUser('${u._uid}')" title="Kick">🚫</button>
+					<button class="ban-btn" onclick="banUser('${u._uid}')" title="Ban">⛔</button>
+				</div>
+			</div>
+		`;
+	}).join("");
+}
+
+function formatTime(secs) {
+	secs = Math.max(0, Math.floor(secs));
+	const h = Math.floor(secs / 3600);
+	const m = Math.floor((secs % 3600) / 60);
+	const s = secs % 60;
+	if (h > 0) return `${h}h ${m}m`;
+	if (m > 0) return `${m}m ${s}s`;
+	return `${s}s`;
+}
+
+window.kickUser = async function(uid) {
+	if (!fbDB) return;
+	if (!confirm("Kickar esse usuário?")) return;
+	try {
+		await set(ref(fbDB, "online/" + uid + "/kick"), true);
+		await push(ref(fbDB, "history"), { name: uid, script: "-", event: "kick", timestamp: Math.floor(Date.now()/1000) });
+		showToast("🚫 Kick enviado!");
+	} catch (err) { showToast("❌ " + err.message, true); }
+};
+
+window.banUser = async function(uid) {
+	if (!fbDB) return;
+	const snap = await get(ref(fbDB, "online/" + uid));
+	const u = snap.val();
+	if (!u) return;
+	if (!confirm(`Banir ${u.name}? HWID ${(u.hwid || "").substring(0,12)}...`)) return;
+	try {
+		await set(ref(fbDB, "bans/" + u.hwid), {
+			name: u.name, userId: u.userId, reason: "Banido pelo admin",
+			bannedAt: Math.floor(Date.now() / 1000)
+		});
+		await set(ref(fbDB, "online/" + uid + "/kick"), true);
+		await push(ref(fbDB, "history"), { name: u.name, script: u.script || "-", event: "ban", timestamp: Math.floor(Date.now()/1000) });
+		showToast("⛔ Banido!");
+	} catch (err) { showToast("❌ " + err.message, true); }
+};
+
+// ===== RENDER KEYS =====
+function renderKeys(data) {
+	const entries = Object.entries(data).map(([hash, k]) => ({ ...k, hash }));
+	document.getElementById("keys-count-badge").textContent = entries.length;
+
+	const list = document.getElementById("keys-list");
+	if (entries.length === 0) {
+		list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔑</div>Nenhuma key cadastrada ainda...</div>`;
+		return;
+	}
+
+	list.innerHTML = `
+		<div class="keys-header">
+			<div>Nome / Nível</div>
+			<div>Status</div>
+			<div>Modo</div>
+			<div>HWID Vinculado</div>
+			<div>Expira</div>
+			<div>Ações</div>
+		</div>
+		${entries.map(k => {
+			const isBound = k.hwid && k.hwid !== "";
+			const hwidShort = isBound ? k.hwid.substring(0, 16) + "..." : "— não vinculado —";
+			const hwidClass = isBound ? "bound" : "free";
+			const expiraDate = k.expira && k.expira < 99999999999 ? new Date(k.expira * 1000).toLocaleDateString('pt-BR') : "Nunca";
+			const modeLabel = { auto: "🔒 Auto", fixed: "🔐 Fixo", free: "🌐 Livre" }[k.bindMode || "free"];
+			const boundInfo = isBound && k.boundTo ? `<div class="bind-info">por ${escapeHtml(k.boundTo)}</div>` : "";
+			return `
+				<div class="key-row">
+					<div>
+						<div class="user-name">${escapeHtml(k.nome || "?")}</div>
+						<div class="user-level level-${escapeHtml(k.nivel || "normal")}" style="margin-top: 4px;">${escapeHtml(k.nivel || "normal")}</div>
+					</div>
+					<div>
+						<span style="color: ${k.status === "ativa" ? "var(--green)" : "var(--red)"}; font-weight: 700; font-size: 11px;">
+							${k.status === "ativa" ? "● Ativa" : "● " + (k.status || "?")}
+						</span>
+						<div class="key-hash">${escapeHtml(k.hash.substring(0, 16))}...</div>
+					</div>
+					<div class="user-sub">${modeLabel}</div>
+					<div>
+						<div class="key-hwid ${hwidClass}">${escapeHtml(hwidShort)}</div>
+						${boundInfo}
+					</div>
+					<div class="user-sub">${expiraDate}</div>
+					<div class="key-actions">
+						${isBound ? `<button class="key-reset-btn" onclick="resetHwid('${k.hash}')" title="Desvincular HWID">🔄</button>` : ""}
+						<button class="key-del-btn" onclick="deleteKey('${k.hash}')" title="Excluir key">🗑️</button>
+					</div>
+				</div>
+			`;
+		}).join("")}
+	`;
+}
+
+window.resetHwid = async function(hash) {
+	if (!fbDB) return;
+	if (!confirm("Desvincular HWID dessa key? A próxima pessoa que usar vai travar no HWID dela.")) return;
+	try {
+		const snap = await get(ref(fbDB, "keys/" + hash));
+		const k = snap.val();
+		if (!k) return;
+		await set(ref(fbDB, "keys/" + hash), { ...k, hwid: "", boundTo: "", boundAt: 0 });
+		showToast("🔄 HWID resetado!");
+	} catch (err) { showToast("❌ " + err.message, true); }
+};
+
+window.deleteKey = async function(hash) {
+	if (!fbDB) return;
+	if (!confirm("Excluir essa key? Quem estiver usando vai ser desconectado.")) return;
+	try {
+		await remove(ref(fbDB, "keys/" + hash));
+		showToast("🗑️ Key excluída!");
+	} catch (err) { showToast("❌ " + err.message, true); }
+};
+
+// ===== HISTÓRICO =====
+function renderHistory(data) {
+	const events = Object.entries(data).map(([k, v]) => ({ ...v, _id: k })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+	const list = document.getElementById("history-list");
+	if (events.length === 0) {
+		list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div>Nenhum evento...</div>`;
+	} else {
+		list.innerHTML = events.slice(0, 100).map(e => {
+			const date = e.timestamp ? new Date(e.timestamp * 1000) : new Date();
+			const timeStr = date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+			const icons = { login: "🟢", logout: "🔴", kick: "🚫", ban: "⛔" };
+			const icon = icons[e.event] || "📌";
+			return `
+				<div class="history-row">
+					<div class="history-icon ${e.event}">${icon}</div>
+					<div><div class="user-name">${escapeHtml(e.name || "?")}</div><div class="user-sub">${escapeHtml(e.event || "?")}</div></div>
+					<div class="user-script">${escapeHtml(e.script || "-")}</div>
+					<div class="user-time">${escapeHtml(e.nivel || "-")}</div>
+					<div class="history-time">${timeStr}</div>
+				</div>
+			`;
+		}).join("");
+	}
+	renderChart(events);
+}
+
+function renderChart(events) {
+	const now = new Date();
+	const hours = [];
+	for (let i = 23; i >= 0; i--) {
+		const d = new Date(now.getTime() - i * 3600 * 1000);
+		hours.push({ label: String(d.getHours()).padStart(2, '0') + 'h', count: 0 });
+	}
+	events.forEach(e => {
+		if (!e.timestamp || e.event !== "login") return;
+		const diffHours = Math.floor((now - new Date(e.timestamp * 1000)) / (3600 * 1000));
+		if (diffHours < 24 && diffHours >= 0) {
+			const idx = 23 - diffHours;
+			if (hours[idx]) hours[idx].count++;
+		}
+	});
+	const max = Math.max(...hours.map(h => h.count), 1);
+	document.getElementById("chart-bars").innerHTML = hours.map(h => {
+		const pct = (h.count / max) * 100;
+		return `<div class="chart-bar-col"><div class="chart-bar" style="height: ${Math.max(pct, 2)}%;"><div class="chart-bar-value">${h.count}</div></div><div class="chart-label">${h.label}</div></div>`;
+	}).join("");
+}
+
+// ===== BANS =====
+function renderBans(data) {
+	const bans = Object.entries(data).map(([hwid, b]) => ({ ...b, hwid })).sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0));
+	document.getElementById("ban-count-badge").textContent = bans.length;
+	const list = document.getElementById("ban-list");
+	if (bans.length === 0) {
+		list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✨</div>Ninguém banido ainda...</div>`;
+		return;
+	}
+	list.innerHTML = bans.map(b => {
+		const date = b.bannedAt ? new Date(b.bannedAt * 1000).toLocaleDateString('pt-BR') : "-";
+		return `
+			<div class="ban-row">
+				<div><div class="user-name">${escapeHtml(b.name || "?")}</div><div class="ban-hwid">${escapeHtml(b.hwid.substring(0, 24))}...</div></div>
+				<div class="user-sub">${escapeHtml(b.reason || "Sem motivo")}</div>
+				<div class="history-time">${date}</div>
+				<button class="ban-unban" onclick="removerBan('${escapeHtml(b.hwid)}')">✅ Unban</button>
+			</div>
+		`;
+	}).join("");
+}
+
+window.removerBan = async function(hwid) {
+	if (!fbDB) return;
+	if (!confirm("Remover ban?")) return;
+	try { await remove(ref(fbDB, "bans/" + hwid)); showToast("✅ Unban!"); }
+	catch (err) { showToast("❌ " + err.message, true); }
+};
+
+window.adicionarBan = async function() {
+	if (!fbDB) { showToast("⚠️ Configure Firebase!", true); return; }
+	const hwid = document.getElementById("ban-hwid-input").value.trim();
+	const reason = document.getElementById("ban-reason-input").value.trim() || "Banido pelo admin";
+	const name = document.getElementById("ban-name-input").value.trim() || "Desconhecido";
+	if (!hwid) { showToast("⚠️ Digite o HWID!", true); return; }
+	try {
+		await set(ref(fbDB, "bans/" + hwid), { name, reason, bannedAt: Math.floor(Date.now() / 1000) });
+		document.getElementById("ban-hwid-input").value = "";
+		document.getElementById("ban-reason-input").value = "";
+		document.getElementById("ban-name-input").value = "";
+		showToast("⛔ Banido!");
+	} catch (err) { showToast("❌ " + err.message, true); }
+};
 
 document.addEventListener("click", async (e) => {
 	const copyBtn = e.target.closest("[data-copy]");
@@ -438,15 +875,11 @@ document.addEventListener("click", async (e) => {
 			copyBtn.classList.add("copied");
 			const original = copyBtn.innerHTML;
 			copyBtn.innerHTML = "✅ Copiado!";
-			showToast("✅ Loadstring copiado!");
-			setTimeout(() => {
-				copyBtn.classList.remove("copied");
-				copyBtn.innerHTML = original;
-			}, 1800);
+			showToast("✅ Copiado!");
+			setTimeout(() => { copyBtn.classList.remove("copied"); copyBtn.innerHTML = original; }, 1800);
 		}
 		return;
 	}
-
 	const openBtn = e.target.closest("[data-open]");
 	if (openBtn) window.open(openBtn.dataset.open, "_blank");
 });
