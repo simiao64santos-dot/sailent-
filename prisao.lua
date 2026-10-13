@@ -1,26 +1,28 @@
--- ============================================================
--- SAILENT AUTO PRISÃO v3.1 — UI Pizza + Velocidade Única (LIMPO)
--- Auth: portão opcional via auth.lua (NÃO bloqueia se offline)
--- ============================================================
-
--- ===== AUTH (opcional, não mata a UI se falhar) =====
-local AUTH_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"
-do
+-- ===== AUTH (opcional — nunca mata o script) =====
+local _AUTH = { ok = false, nome = "Cliente", nivel = "normal" }
+pcall(function()
 	local ok, res = pcall(function()
-		return loadstring(game:HttpGet(AUTH_URL .. "?t=" .. os.time()))()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"))()
 	end)
 	if ok and type(res) == "table" then
-		_G.SailentNome  = res.nome  or "Cliente"
-		_G.SailentNivel = res.nivel or "normal"
-	elseif ok and res == false then
-		warn("[Prisao] auth.lua retornou false — usando login local")
+		_AUTH.ok = true
+		_AUTH.nome = res.nome or "Cliente"
+		_AUTH.nivel = res.nivel or "normal"
+		_G.SailentNome = _AUTH.nome
+		_G.SailentNivel = _AUTH.nivel
+		print("[Prisao] ✅ auth.lua ok: " .. _AUTH.nome)
+	elseif ok and res == true then
+		_AUTH.ok = true
+		print("[Prisao] ✅ auth.lua ok")
 	else
-		warn("[Prisao] auth.lua não carregou — usando login local")
+		warn("[Prisao] ⚠️ auth.lua indisponível — seguindo normalmente")
 	end
-	_G.SailentNome  = _G.SailentNome  or "Cliente"
-	_G.SailentNivel = _G.SailentNivel or "normal"
-end
+end)
 -- ===== FIM AUTH =====
+
+-- ============================================================
+-- SAILENT AUTO PRISÃO v3.1 — UI Pizza + Velocidade Única (LIMPO)
+-- ============================================================
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -57,7 +59,6 @@ local function Tween(o,p,t) if not o or not o.Parent then return end; local tw =
 local function Log(m) print("[Prisao] "..tostring(m)) end
 local function GetHttp() return (syn and syn.request) or (http and http.request) or http_request or request end
 
--- SHA256
 local function Sha256(msg)
 	local K = {0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}
 	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
@@ -136,7 +137,6 @@ local function VKey(k)
 	return true, entry
 end
 
--- Toast
 local SGT = Instance.new("ScreenGui")
 SGT.Name = "SailentToast"; SGT.ResetOnSpawn = false; SGT.DisplayOrder = 999; SGT.Parent = CoreGui
 local TC = Instance.new("Frame")
@@ -166,7 +166,6 @@ local function Notif(txt, cor, dur)
 	end)
 end
 
--- Login
 local function LoginUI(cb)
 	local SG = Instance.new("ScreenGui")
 	SG.Name = "SailentKeyUI"; SG.ResetOnSpawn = false; SG.IgnoreGuiInset = true; SG.Parent = CoreGui
@@ -281,11 +280,9 @@ local function LoginUI(cb)
 	end)
 end
 
--- Helpers
 local function HRP() local c = lp.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function HUM() local c = lp.Character; return c and c:FindFirstChild("Humanoid") end
 
--- Noclip
 local ncConn = nil
 local function AtivarNoclip()
 	if ncConn then pcall(function() ncConn:Disconnect() end) end
@@ -300,7 +297,6 @@ local function DesativarNoclip()
 	if ncConn then pcall(function() ncConn:Disconnect() end); ncConn = nil end
 end
 
--- Anti-AFK
 local afkConn = nil
 local function SetAFK(on)
 	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
@@ -311,7 +307,6 @@ local function SetAFK(on)
 	end
 end
 
--- Config
 local CONFIG_FILE = "sailent_prisao_cfg.txt"
 local CFG = {
 	vel = 100,
@@ -346,7 +341,6 @@ local function Salvar()
 	pcall(function() if writefile then writefile(CONFIG_FILE, s) end end)
 end
 
--- Achar objetos
 local varridos = {}
 
 local function AcharLocalVarrer()
@@ -425,7 +419,6 @@ local function EquiparVassoura()
 	end
 end
 
--- Movimento
 local function Andar(posAlvo, timeout, dist)
 	if not posAlvo then return false end
 	local hrp = HRP(); local hum = HUM()
@@ -494,12 +487,10 @@ local function IrPara(pos, timeout)
 	if CFG.modoVoo then return Voar(pos, timeout) else return Andar(pos, timeout) end
 end
 
--- Stats
 local Stats = { varridos = 0, caixas = 0, entregues = 0, inicio = tick() }
 local function FmtT(s) s = math.floor(s); return string.format("%02d:%02d:%02d", math.floor(s/3600), math.floor(s%3600/60), s%60) end
 local function Resumo() local d = tick() - Stats.inicio; return string.format("⏱ %s  🧹 %d  📦 %d", FmtT(d), Stats.varridos, Stats.entregues) end
 
--- Travar câmera
 local _camConn = nil
 local function TravarCam(pos)
 	if not CFG.travarCam then return end
@@ -525,9 +516,6 @@ local function DestravarCam()
 	end
 end
 
--- ═══════════════════════════════════════════════════════════
--- UI
--- ═══════════════════════════════════════════════════════════
 local function Iniciar()
 	for _, n in ipairs({"SailentKeyUI","SailentPrisao","SailentFloatBtn"}) do
 		local o = CoreGui:FindFirstChild(n); if o then pcall(function() o:Destroy() end) end
@@ -1073,9 +1061,18 @@ local function Iniciar()
 	Log("🔓 Auto Prisão v"..KEY_CONFIG.VERSAO)
 end
 
--- ===== INÍCIO (SEMPRE mostra a UI) =====
 Log("🔐 Verificando key...")
 task.spawn(function()
+	-- Se o auth.lua aprovou, entra direto
+	if _AUTH.ok then
+		KS.valida = true
+		KS.nome = _AUTH.nome
+		KS.nivel = _AUTH.nivel
+		Log("✅ Auth ok — iniciando (".._AUTH.nome..")")
+		Iniciar()
+		return
+	end
+	-- Senão, tenta key salva, depois login normal
 	local k = CKey()
 	if k and k ~= "" then
 		local ok = VKey(k)
