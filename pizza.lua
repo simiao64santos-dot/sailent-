@@ -40,6 +40,97 @@ local _ultimoVoo = 0
 
 local VER = "6.1b"
 
+-- ===== KEY SYSTEM (compartilhado com Gari/Prisão/Eletricista/VIP) =====
+local KEY_CONFIG = {
+	URL_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json",
+	ARQUIVO_CACHE = "sailent_gari_key.txt",
+	VERSAO = "6.1b",
+}
+
+local function GetHttp() return (syn and syn.request) or (http and http.request) or http_request or request end
+
+local function Sha256(msg)
+	local K = {0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}
+	local H = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19}
+	local function ror(x,n) return bit32.bor(bit32.rshift(x,n), bit32.lshift(x,32-n)) end
+	local bitLen = #msg * 8
+	msg = msg.."\128"
+	while (#msg % 64) ~= 56 do msg = msg.."\0" end
+	local hi = math.floor(bitLen/4294967296); local lo = bitLen % 4294967296
+	local function u32be(n) return string.char(bit32.band(bit32.rshift(n,24),255),bit32.band(bit32.rshift(n,16),255),bit32.band(bit32.rshift(n,8),255),bit32.band(n,255)) end
+	msg = msg..u32be(hi)..u32be(lo)
+	for ch = 1, #msg, 64 do
+		local w = {}
+		for i = 0, 15 do
+			local a,b,c,d = msg:byte(ch+i*4, ch+i*4+3)
+			w[i] = bit32.bor(bit32.lshift(a,24),bit32.lshift(b,16),bit32.lshift(c,8),d)
+		end
+		for i = 16, 63 do
+			local s0 = bit32.bxor(ror(w[i-15],7),ror(w[i-15],18),bit32.rshift(w[i-15],3))
+			local s1 = bit32.bxor(ror(w[i-2],17),ror(w[i-2],19),bit32.rshift(w[i-2],10))
+			w[i] = (w[i-16]+s0+w[i-7]+s1) % 4294967296
+		end
+		local a,b,c,d,e,f,g,h = table.unpack(H)
+		for i = 0, 63 do
+			local S1 = bit32.bxor(ror(e,6),ror(e,11),ror(e,25))
+			local ch2 = bit32.bxor(bit32.band(e,f),bit32.band(bit32.bnot(e),g))
+			local t1 = (h+S1+ch2+K[i+1]+w[i]) % 4294967296
+			local S0 = bit32.bxor(ror(a,2),ror(a,13),ror(a,22))
+			local mj = bit32.bxor(bit32.band(a,b),bit32.band(a,c),bit32.band(b,c))
+			local t2 = (S0+mj) % 4294967296
+			h,g,f,e,d,c,b,a = g,f,e,(d+t1)%4294967296,c,b,a,(t1+t2)%4294967296
+		end
+		H[1]=(H[1]+a)%4294967296; H[2]=(H[2]+b)%4294967296; H[3]=(H[3]+c)%4294967296; H[4]=(H[4]+d)%4294967296
+		H[5]=(H[5]+e)%4294967296; H[6]=(H[6]+f)%4294967296; H[7]=(H[7]+g)%4294967296; H[8]=(H[8]+h)%4294967296
+	end
+	local out = {}
+	for i = 1, 8 do out[#out+1] = string.format("%08x", H[i]) end
+	return table.concat(out)
+end
+
+local function GetHWID()
+	local h = ""
+	pcall(function() h = game:GetService("RbxAnalyticsService"):GetClientId() end)
+	if h == "" then pcall(function() h = gethwid and gethwid() or "" end) end
+	if h == "" then h = "UNK-"..tostring(lp.UserId) end
+	return h
+end
+
+local KS = { valida = false, nivel = "normal", nome = "Cliente", key = "" }
+local function CKey() local k = nil; pcall(function() if isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) and readfile then k = readfile(KEY_CONFIG.ARQUIVO_CACHE) end end); return k end
+local function LKey() pcall(function() if delfile and isfile and isfile(KEY_CONFIG.ARQUIVO_CACHE) then delfile(KEY_CONFIG.ARQUIVO_CACHE) end end) end
+
+local function VKey(k)
+	if not k or k == "" then return false, "Cole uma key!" end
+	k = k:gsub("%s+","")
+	local httpFn = GetHttp()
+	if not httpFn then return false, "Sem HTTP!" end
+	local ok, resp = pcall(function() return httpFn({Url=KEY_CONFIG.URL_KEYS.."?t="..tick(), Method="GET"}) end)
+	if not ok or not resp then return false, "Erro rede" end
+	local body = resp.Body or resp.body
+	if not body or body == "" then return false, "keys vazio" end
+	local ok2, dados = pcall(function() return HttpService:JSONDecode(body) end)
+	if not ok2 or not dados then return false, "JSON erro" end
+	local hash = Sha256(k)
+	local entry = dados.keys and dados.keys[hash]
+	if not entry then return false, "❌ Key inválida" end
+	local agora = os.time()
+	if entry.expira and entry.expira < agora and entry.expira < 99999999999 then return false, "⏰ Expirada" end
+	if entry.status and entry.status ~= "ativa" then return false, "🚫 Desativada" end
+	if entry.max_usos and entry.max_usos ~= -1 then
+		if entry.usos and entry.usos >= entry.max_usos then return false, "🔁 Limite de usos" end
+	end
+	local hw = GetHWID()
+	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= hw then return false, "🔒 Outro device" end
+	KS.valida = true
+	KS.nivel = entry.nivel or "normal"
+	KS.nome = entry.nome or "Cliente"
+	KS.key = k
+	pcall(function() if writefile then writefile(KEY_CONFIG.ARQUIVO_CACHE, k) end end)
+	return true, entry
+end
+-- ===== FIM KEY SYSTEM =====
+
 local CFG = {
 	vel = 80,
 	vooAtivo = false,
@@ -577,6 +668,122 @@ local function DestravarCam()
 	end
 end
 
+-- ===== LOGIN UI (por key) =====
+local function LoginUIKey(cb)
+	local SG = Instance.new("ScreenGui")
+	SG.Name = "SailentKeyUI"; SG.ResetOnSpawn = false; SG.IgnoreGuiInset = true; SG.DisplayOrder = 999; SG.Parent = CoreGui
+
+	local BG = Instance.new("Frame")
+	BG.Size = UDim2.new(1,0,1,0); BG.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	BG.BackgroundTransparency = 0.5; BG.BorderSizePixel = 0; BG.Parent = SG
+
+	local Box = Instance.new("Frame")
+	Box.Size = UDim2.new(0,380,0,360); Box.Position = UDim2.new(0.5,-190,0.5,-180)
+	Box.BackgroundColor3 = C.BG2; Box.BorderSizePixel = 0; Box.Parent = SG
+	local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0,18); bc.Parent = Box
+	local bs = Instance.new("UIStroke"); bs.Color = C.Accent; bs.Thickness = 1.5; bs.Transparency = 0.4; bs.Parent = Box
+
+	local top = Instance.new("Frame")
+	top.Size = UDim2.new(1,0,0,4); top.BackgroundColor3 = C.Accent; top.BorderSizePixel = 0; top.Parent = Box
+	local tc = Instance.new("UICorner"); tc.CornerRadius = UDim.new(0,18); tc.Parent = top
+	local tg = Instance.new("UIGradient")
+	tg.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,C.Accent),ColorSequenceKeypoint.new(0.5,C.Purple),ColorSequenceKeypoint.new(1,C.Yellow)})
+	tg.Parent = top
+
+	local tit = Instance.new("TextLabel")
+	tit.Text = "🍕 SAILENT PIZZA"; tit.Font = Enum.Font.GothamBold; tit.TextSize = 20
+	tit.TextColor3 = C.Text; tit.BackgroundTransparency = 1
+	tit.Position = UDim2.new(0,0,0,20); tit.Size = UDim2.new(1,0,0,26); tit.Parent = Box
+
+	local sub = Instance.new("TextLabel")
+	sub.Text = "Cole sua key"; sub.Font = Enum.Font.Gotham; sub.TextSize = 12
+	sub.TextColor3 = C.Sub; sub.BackgroundTransparency = 1
+	sub.Position = UDim2.new(0,0,0,48); sub.Size = UDim2.new(1,0,0,18); sub.Parent = Box
+
+	local hp = Instance.new("Frame")
+	hp.Size = UDim2.new(0,280,0,22); hp.Position = UDim2.new(0.5,-140,0,74)
+	hp.BackgroundColor3 = C.Card; hp.BorderSizePixel = 0; hp.Parent = Box
+	local hpc = Instance.new("UICorner"); hpc.CornerRadius = UDim.new(1,0); hpc.Parent = hp
+
+	local hw = Instance.new("TextLabel")
+	hw.Text = "🔒 "..GetHWID():sub(1,22).."..."; hw.Font = Enum.Font.Code; hw.TextSize = 10
+	hw.TextColor3 = C.Sub; hw.BackgroundTransparency = 1
+	hw.Size = UDim2.new(1,0,1,0); hw.Parent = hp
+
+	local inp = Instance.new("TextBox")
+	inp.PlaceholderText = "SAILENT-XXXX-XXXX-XXXX"; inp.Font = Enum.Font.Code
+	inp.TextSize = 13; inp.TextColor3 = C.Text; inp.PlaceholderColor3 = Color3.fromRGB(90,90,110)
+	inp.BackgroundColor3 = C.Card; inp.BorderSizePixel = 0; inp.ClearTextOnFocus = false
+	inp.Text = ""; inp.Position = UDim2.new(0,28,0,110); inp.Size = UDim2.new(1,-56,0,44); inp.Parent = Box
+	local ic = Instance.new("UICorner"); ic.CornerRadius = UDim.new(0,10); ic.Parent = inp
+	local is = Instance.new("UIStroke"); is.Color = C.Border; is.Thickness = 1; is.Parent = inp
+
+	local st = Instance.new("TextLabel")
+	st.Text = ""; st.Font = Enum.Font.GothamBold; st.TextSize = 11
+	st.TextColor3 = C.Red; st.BackgroundTransparency = 1
+	st.Position = UDim2.new(0,28,0,162); st.Size = UDim2.new(1,-56,0,32)
+	st.TextWrapped = true; st.TextYAlignment = Enum.TextYAlignment.Top; st.Parent = Box
+
+	local btn = Instance.new("TextButton")
+	btn.Text = "VALIDAR"; btn.Font = Enum.Font.GothamBold; btn.TextSize = 14
+	btn.TextColor3 = Color3.fromRGB(255,255,255); btn.BackgroundColor3 = C.Accent
+	btn.BorderSizePixel = 0; btn.Position = UDim2.new(0,28,0,210)
+	btn.Size = UDim2.new(1,-56,0,48); btn.AutoButtonColor = false; btn.Parent = Box
+	local bbc = Instance.new("UICorner"); bbc.CornerRadius = UDim.new(0,10); bbc.Parent = btn
+	local bg2 = Instance.new("UIGradient")
+	bg2.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,C.Accent),ColorSequenceKeypoint.new(1,C.Purple)})
+	bg2.Parent = btn
+
+	local lim = Instance.new("TextButton")
+	lim.Text = "🗑️ Limpar key"; lim.Font = Enum.Font.Gotham; lim.TextSize = 10
+	lim.TextColor3 = C.Sub; lim.BackgroundTransparency = 1
+	lim.Position = UDim2.new(0,28,0,275); lim.Size = UDim2.new(1,-56,0,18); lim.Parent = Box
+
+	local ver = Instance.new("TextLabel")
+	ver.Text = "v"..KEY_CONFIG.VERSAO; ver.Font = Enum.Font.Code; ver.TextSize = 9
+	ver.TextColor3 = C.Sub; ver.BackgroundTransparency = 1
+	ver.Position = UDim2.new(0,0,0,332); ver.Size = UDim2.new(1,0,0,14); ver.Parent = Box
+
+	local function ok()
+		st.Text = "✅ Bem-vindo, "..KS.nome.."!"; st.TextColor3 = C.Green
+		btn.Text = "SUCESSO!"
+		Tween(btn, {BackgroundColor3 = C.Green}, 0.2)
+		task.wait(0.4); pcall(function() SG:Destroy() end)
+		task.wait(0.1); cb()
+	end
+
+	task.spawn(function()
+		task.wait(0.2)
+		local k = CKey()
+		if k and k ~= "" then
+			inp.Text = k; st.Text = "🔄 Verificando..."; st.TextColor3 = C.Yellow
+			local okV, res = VKey(k)
+			if okV then ok() else
+				st.Text = "❌ "..tostring(res); st.TextColor3 = C.Red; LKey()
+			end
+		end
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		local k = inp.Text:gsub("%s+","")
+		if k == "" then st.Text = "⚠️ Cole uma key"; st.TextColor3 = C.Yellow; return end
+		st.Text = "🔄 Validando..."; st.TextColor3 = C.Yellow
+		btn.Text = "AGUARDE..."
+		task.spawn(function()
+			local okV, res = VKey(k)
+			if okV then ok() else
+				st.Text = "❌ "..tostring(res); st.TextColor3 = C.Red
+				btn.Text = "VALIDAR"; btn.BackgroundColor3 = C.Accent
+			end
+		end)
+	end)
+
+	lim.MouseButton1Click:Connect(function()
+		LKey(); inp.Text = ""; st.Text = "🗑️ Removida"; st.TextColor3 = C.Sub
+	end)
+end
+
+-- ===== UI PRINCIPAL =====
 local function Iniciar()
 	for _, n in ipairs({"SailentPizza","SailentFloatBtn"}) do
 		local o = CoreGui:FindFirstChild(n); if o then pcall(function() o:Destroy() end) end
@@ -1152,4 +1359,36 @@ local function Iniciar()
 	Log("🍕 Auto Pizza v"..VER.." pronto! "..(_G.SailentNome or "Cliente"))
 end
 
-Iniciar()
+-- ===== STARTUP (auth → key salva → UI key) =====
+Log("🔐 Verificando autenticação...")
+task.spawn(function()
+	-- 1) auth.lua aprovou? entra direto
+	if _AUTH.ok then
+		KS.valida = true
+		KS.nome = _AUTH.nome
+		KS.nivel = _AUTH.nivel
+		_G.SailentNome = _AUTH.nome
+		_G.SailentNivel = _AUTH.nivel
+		Log("✅ Auth ok — iniciando (".._AUTH.nome..")")
+		Iniciar()
+		return
+	end
+	-- 2) Key salva no cache
+	local k = CKey()
+	if k and k ~= "" then
+		local ok = VKey(k)
+		if ok then
+			_G.SailentNome = KS.nome
+			_G.SailentNivel = KS.nivel
+			Log("✅ Key salva válida! Iniciando...")
+			Iniciar()
+			return
+		end
+	end
+	-- 3) UI de key
+	LoginUIKey(function()
+		_G.SailentNome = KS.nome
+		_G.SailentNivel = KS.nivel
+		Iniciar()
+	end)
+end)
