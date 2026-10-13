@@ -1,8 +1,26 @@
 -- ============================================================
 -- SAILENT AUTO PRISÃO v3.1 — UI Pizza + Velocidade Única (LIMPO)
--- Removido: webhook, perfis, FPS boost, server hop, reconnect,
--- hotkeys editáveis, som, tempo prisão. Só o essencial.
+-- Auth: portão opcional via auth.lua (NÃO bloqueia se offline)
 -- ============================================================
+
+-- ===== AUTH (opcional, não mata a UI se falhar) =====
+local AUTH_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"
+do
+	local ok, res = pcall(function()
+		return loadstring(game:HttpGet(AUTH_URL .. "?t=" .. os.time()))()
+	end)
+	if ok and type(res) == "table" then
+		_G.SailentNome  = res.nome  or "Cliente"
+		_G.SailentNivel = res.nivel or "normal"
+	elseif ok and res == false then
+		warn("[Prisao] auth.lua retornou false — usando login local")
+	else
+		warn("[Prisao] auth.lua não carregou — usando login local")
+	end
+	_G.SailentNome  = _G.SailentNome  or "Cliente"
+	_G.SailentNivel = _G.SailentNivel or "normal"
+end
+-- ===== FIM AUTH =====
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -112,7 +130,7 @@ local function VKey(k)
 	if entry.hwid and entry.hwid ~= "" and entry.hwid ~= hw then return false, "🔒 Outro device" end
 	KS.valida = true
 	KS.nivel = entry.nivel or "normal"
-	KS.nome = entry.nome or "Cliente"
+	KS.nome = entry.nome or _G.SailentNome or "Cliente"
 	KS.key = k
 	pcall(function() if writefile then writefile(KEY_CONFIG.ARQUIVO_CACHE, k) end end)
 	return true, entry
@@ -452,12 +470,10 @@ local function Voar(posAlvo, timeout)
 		if not h or not bv.Parent then break end
 		local diff = posAlvo - h.Position
 		if diff.Magnitude < 6 then bv.Velocity = Vector3.new(0,0,0); break end
-		-- usa velocidade única
 		bv.Velocity = diff.Unit * CFG.vel
 		task.wait(0.05)
 	end
 
-	-- Desce
 	local t2 = tick()
 	while tick() - t2 < 6 do
 		local h = HRP()
@@ -1057,6 +1073,7 @@ local function Iniciar()
 	Log("🔓 Auto Prisão v"..KEY_CONFIG.VERSAO)
 end
 
+-- ===== INÍCIO (SEMPRE mostra a UI) =====
 Log("🔐 Verificando key...")
 task.spawn(function()
 	local k = CKey()
