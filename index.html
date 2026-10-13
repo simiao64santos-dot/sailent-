@@ -3,130 +3,344 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="SAILENT HUB — Painel privado de scripts">
 <title>⚡ SAILENT HUB</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 	* { margin: 0; padding: 0; box-sizing: border-box; }
 	:root {
-		--bg: #0a0a0f; --card: #12121a; --card-hover: #1a1a26; --border: #1f1f2e;
-		--accent: #7c9eff; --text: #f0f0f5; --sub: #8a8a9e;
-		--green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa; --red: #f87171;
+		--bg: #08080d;
+		--bg-2: #0d0d15;
+		--card: #12121c;
+		--card-hover: #1a1a28;
+		--border: #1e1e2e;
+		--border-2: #2a2a3e;
+		--accent: #7c9eff;
+		--accent-dim: #5a7bdc;
+		--text: #f0f0f5;
+		--sub: #8a8a9e;
+		--sub-2: #5c5c72;
+		--green: #4ade80;
+		--yellow: #fbbf24;
+		--purple: #a78bfa;
+		--red: #f87171;
+		--shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+		--shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.4);
 	}
+	html { scroll-behavior: smooth; }
 	body {
-		font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
-		min-height: 100vh; padding: 40px 24px;
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		background: var(--bg);
+		color: var(--text);
+		min-height: 100vh;
+		padding: 48px 24px 80px;
+		-webkit-font-smoothing: antialiased;
 		background-image:
-			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.08) 0%, transparent 40%),
-			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08) 0%, transparent 40%);
+			radial-gradient(circle at 12% 8%, rgba(124, 158, 255, 0.10) 0%, transparent 45%),
+			radial-gradient(circle at 88% 92%, rgba(167, 139, 250, 0.10) 0%, transparent 45%),
+			radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.03) 0%, transparent 60%);
 		background-attachment: fixed;
 	}
-	.container { max-width: 1200px; margin: 0 auto; }
-	header { text-align: center; margin-bottom: 50px; }
+	.container { max-width: 1240px; margin: 0 auto; }
+
+	/* ===== HEADER ===== */
+	header { text-align: center; margin-bottom: 56px; position: relative; }
+	.logo-wrap { display: inline-block; position: relative; margin-bottom: 12px; }
 	.logo {
-		font-size: 48px; font-weight: 800; letter-spacing: -2px;
-		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%);
+		font-size: 58px; font-weight: 900; letter-spacing: -3px; line-height: 1;
+		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 50%, #fbbf24 100%);
 		-webkit-background-clip: text; -webkit-text-fill-color: transparent;
-		background-clip: text; margin-bottom: 10px;
+		background-clip: text;
+		background-size: 200% 200%;
+		animation: gradientShift 8s ease infinite;
 	}
-	.subtitle { font-size: 15px; color: var(--sub); margin-bottom: 18px; }
+	@keyframes gradientShift {
+		0%, 100% { background-position: 0% 50%; }
+		50% { background-position: 100% 50%; }
+	}
+	.subtitle { font-size: 15px; color: var(--sub); margin-bottom: 22px; font-weight: 500; }
 	.badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-	.lock-badge {
+	.badge {
 		display: inline-flex; align-items: center; gap: 8px;
-		padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
-		border-radius: 999px; font-size: 12px; color: var(--sub); font-weight: 600;
+		padding: 9px 18px; background: var(--card);
+		border: 1px solid var(--border); border-radius: 999px;
+		font-size: 12px; color: var(--sub); font-weight: 600;
+		transition: all 0.2s;
 	}
-	.lock-badge.auth { border-color: rgba(74, 222, 128, 0.35); color: var(--green); }
+	.badge:hover { border-color: var(--border-2); background: var(--card-hover); }
+	.badge.auth { border-color: rgba(74, 222, 128, 0.35); color: var(--green); }
+	.badge.key { border-color: rgba(251, 191, 36, 0.35); color: var(--yellow); }
+	.badge.pulse::before {
+		content: ''; width: 6px; height: 6px; border-radius: 50%;
+		background: var(--green); box-shadow: 0 0 8px var(--green);
+		animation: pulse 2s infinite;
+	}
+	@keyframes pulse {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.5; transform: scale(1.3); }
+	}
+
+	/* ===== TOOLBAR ===== */
+	.toolbar {
+		display: flex; gap: 12px; align-items: center;
+		max-width: 1100px; margin: 0 auto 28px;
+		padding: 14px 18px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		flex-wrap: wrap;
+	}
+	.search-wrap {
+		flex: 1; min-width: 220px; position: relative;
+	}
+	.search-wrap::before {
+		content: '🔍'; position: absolute; left: 14px; top: 50%;
+		transform: translateY(-50%); font-size: 13px; opacity: 0.5;
+		pointer-events: none;
+	}
+	.search {
+		width: 100%; padding: 11px 14px 11px 38px;
+		background: var(--bg-2); border: 1px solid var(--border);
+		border-radius: 10px; color: var(--text);
+		font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+		outline: none; transition: all 0.2s;
+	}
+	.search::placeholder { color: var(--sub-2); }
+	.search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 158, 255, 0.12); }
+	.filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+	.filter-btn {
+		padding: 9px 14px; background: var(--bg-2);
+		border: 1px solid var(--border); border-radius: 8px;
+		color: var(--sub); font-family: 'Inter', sans-serif;
+		font-size: 12px; font-weight: 600; cursor: pointer;
+		transition: all 0.15s;
+	}
+	.filter-btn:hover { background: var(--card-hover); color: var(--text); border-color: var(--border-2); }
+	.filter-btn.active {
+		background: rgba(124, 158, 255, 0.12);
+		color: var(--accent); border-color: rgba(124, 158, 255, 0.4);
+	}
+	.count-badge {
+		font-size: 11px; color: var(--sub-2); font-family: 'JetBrains Mono', monospace;
+		padding: 4px 8px; background: var(--bg-2); border-radius: 6px;
+		border: 1px solid var(--border);
+	}
+
+	/* ===== GRID ===== */
 	.grid {
-		display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-		gap: 24px; max-width: 1100px; margin: 0 auto;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+		gap: 22px;
+		max-width: 1100px;
+		margin: 0 auto;
 	}
 	.card {
-		background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-		padding: 28px; transition: all 0.25s; position: relative; overflow: hidden;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 18px;
+		padding: 26px;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
 	}
 	.card::before {
 		content: ''; position: absolute; top: 0; left: 0; right: 0;
 		height: 3px; background: var(--card-color, var(--accent));
+		opacity: 0.7;
+		transition: opacity 0.3s;
+	}
+	.card::after {
+		content: ''; position: absolute;
+		top: -60%; right: -30%;
+		width: 260px; height: 260px;
+		background: radial-gradient(circle, var(--card-color, var(--accent)) 0%, transparent 70%);
+		opacity: 0; filter: blur(60px);
+		transition: opacity 0.4s;
+		pointer-events: none;
 	}
 	.card:hover {
-		background: var(--card-hover); border-color: var(--card-color, var(--accent));
-		transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+		background: var(--card-hover);
+		border-color: var(--card-color, var(--accent));
+		transform: translateY(-5px);
+		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--card-color, var(--accent));
 	}
-	.card-check {
-		position: absolute; top: 22px; right: 22px; width: 26px; height: 26px;
-		border-radius: 50%; background: var(--green); display: flex;
-		align-items: center; justify-content: center; color: #0a0a0f;
-		font-size: 14px; font-weight: 700;
-	}
-	.card-check.vip {
-		background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-		box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
-	}
-	.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+	.card:hover::before { opacity: 1; }
+	.card:hover::after { opacity: 0.10; }
+	.card.hidden { display: none; }
+
+	.card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px; }
+	.card-header { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0; }
 	.card-icon {
-		font-size: 32px; width: 56px; height: 56px; display: flex;
+		font-size: 30px; width: 56px; height: 56px; display: flex;
 		align-items: center; justify-content: center;
-		background: rgba(255, 255, 255, 0.03); border-radius: 14px;
-		border: 1px solid var(--border); flex-shrink: 0;
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+		border-radius: 14px;
+		border: 1px solid var(--border);
+		flex-shrink: 0;
+		position: relative;
+		overflow: hidden;
 	}
-	.card-title-wrap { flex: 1; min-width: 0; }
-	.card-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-	.card-file { font-size: 11px; color: var(--sub); font-family: 'JetBrains Mono', monospace; }
-	.card-desc { font-size: 13.5px; color: var(--sub); line-height: 1.65; margin-bottom: 18px; }
+	.card-icon::before {
+		content: ''; position: absolute; inset: 0;
+		background: radial-gradient(circle at 30% 30%, var(--card-color, var(--accent)) 0%, transparent 70%);
+		opacity: 0.15;
+	}
+	.card-title-wrap { flex: 1; min-width: 0; padding-top: 2px; }
+	.card-title { font-size: 16px; font-weight: 700; margin-bottom: 5px; line-height: 1.3; }
+	.card-file {
+		font-size: 10.5px; color: var(--sub-2); font-family: 'JetBrains Mono', monospace;
+		padding: 3px 8px; background: var(--bg-2);
+		border-radius: 5px; display: inline-block;
+		border: 1px solid var(--border);
+	}
+	.card-badge {
+		font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+		padding: 5px 10px; border-radius: 6px;
+		background: var(--bg-2); color: var(--sub);
+		border: 1px solid var(--border);
+		white-space: nowrap;
+		text-transform: uppercase;
+	}
+	.card-badge.vip {
+		background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+		color: #0a0a0f;
+		border-color: #fbbf24;
+		box-shadow: 0 0 15px rgba(251, 191, 36, 0.35);
+	}
+	.card-badge.new {
+		background: rgba(74, 222, 128, 0.15); color: var(--green);
+		border-color: rgba(74, 222, 128, 0.4);
+	}
+
+	.card-desc {
+		font-size: 13px; color: var(--sub); line-height: 1.65;
+		margin-bottom: 18px; flex: 1;
+	}
 	.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
 	.tag {
-		font-size: 10.5px; font-weight: 600; padding: 5px 11px; border-radius: 6px;
-		background: rgba(124, 158, 255, 0.1); color: var(--accent);
-		font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(124, 158, 255, 0.2);
+		font-size: 10px; font-weight: 600;
+		padding: 5px 10px; border-radius: 6px;
+		background: rgba(124, 158, 255, 0.08);
+		color: var(--accent);
+		font-family: 'JetBrains Mono', monospace;
+		border: 1px solid rgba(124, 158, 255, 0.18);
+		transition: all 0.15s;
 	}
+	.tag:hover { background: rgba(124, 158, 255, 0.15); }
 	.tag.gold {
-		background: rgba(251, 191, 36, 0.1); color: var(--yellow);
+		background: rgba(251, 191, 36, 0.10); color: var(--yellow);
 		border-color: rgba(251, 191, 36, 0.3);
 	}
 	.tag.green {
-		background: rgba(74, 222, 128, 0.1); color: var(--green);
+		background: rgba(74, 222, 128, 0.10); color: var(--green);
 		border-color: rgba(74, 222, 128, 0.3);
 	}
+	.tag.purple {
+		background: rgba(167, 139, 250, 0.10); color: var(--purple);
+		border-color: rgba(167, 139, 250, 0.3);
+	}
+
 	.code-preview {
-		background: #08080c; border: 1px solid var(--border); border-radius: 10px;
-		padding: 14px 16px; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;
-		font-size: 11px; color: var(--sub); word-break: break-all; line-height: 1.5;
-		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+		background: #05050a;
+		border: 1px solid var(--border);
+		border-radius: 10px;
+		padding: 13px 15px;
+		margin-bottom: 16px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 10.5px;
+		color: var(--sub);
+		line-height: 1.55;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		position: relative;
+	}
+	.code-preview::before {
+		content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+		width: 2px; background: var(--card-color, var(--accent));
+		opacity: 0.6;
 	}
 	.code-preview .cmd { color: var(--purple); }
 	.code-preview .arg { color: var(--green); }
 	.code-preview .url { color: var(--accent); }
-	.actions { display: flex; gap: 10px; }
+
+	.actions { display: flex; gap: 8px; }
 	.btn {
-		padding: 13px 18px; border: none; border-radius: 10px;
-		font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
-		cursor: pointer; transition: all 0.15s;
-		display: flex; align-items: center; justify-content: center; gap: 8px;
+		padding: 12px 16px; border: none; border-radius: 10px;
+		font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
+		cursor: pointer; transition: all 0.18s;
+		display: flex; align-items: center; justify-content: center; gap: 7px;
+		user-select: none;
 	}
-	.btn-copy { flex: 1; background: var(--card-color, var(--accent)); color: #0a0a0f; }
-	.btn-copy:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 8px 25px var(--card-color, var(--accent)); }
-	.btn-copy.copied { background: var(--green); }
+	.btn:active { transform: scale(0.97); }
+	.btn-copy {
+		flex: 1;
+		background: var(--card-color, var(--accent));
+		color: #08080d;
+	}
+	.btn-copy:hover {
+		filter: brightness(1.15);
+		transform: translateY(-1px);
+		box-shadow: 0 10px 28px var(--card-color, var(--accent));
+	}
+	.btn-copy.copied { background: var(--green); color: #08080d; }
 	.btn-raw {
-		background: rgba(255, 255, 255, 0.05); color: var(--text);
-		border: 1px solid var(--border); padding: 13px 22px;
+		background: rgba(255, 255, 255, 0.04);
+		color: var(--text);
+		border: 1px solid var(--border);
+		padding: 12px 18px;
 	}
-	.btn-raw:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+	.btn-raw:hover { background: rgba(255, 255, 255, 0.09); border-color: var(--accent); }
+
+	/* ===== EMPTY STATE ===== */
+	.empty {
+		text-align: center; padding: 80px 24px;
+		color: var(--sub); font-size: 14px;
+		display: none;
+	}
+	.empty.show { display: block; }
+	.empty-icon { font-size: 48px; opacity: 0.3; margin-bottom: 12px; }
+
+	/* ===== TOAST ===== */
 	.toast {
 		position: fixed; bottom: 30px; right: 30px;
-		background: var(--green); color: #0a0a0f;
-		padding: 14px 22px; border-radius: 12px; font-weight: 700;
-		font-size: 13px; box-shadow: 0 10px 40px rgba(74, 222, 128, 0.4);
-		transform: translateY(120px); opacity: 0;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
+		background: var(--green); color: #08080d;
+		padding: 14px 22px; border-radius: 12px;
+		font-weight: 700; font-size: 13px;
+		box-shadow: 0 12px 42px rgba(74, 222, 128, 0.4);
+		transform: translateY(140px); opacity: 0;
+		transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 1000;
+		display: flex; align-items: center; gap: 10px;
+		pointer-events: none;
 	}
 	.toast.show { transform: translateY(0); opacity: 1; }
-	footer { text-align: center; margin-top: 60px; color: var(--sub); font-size: 12px; }
-	footer b { color: var(--accent); }
-	@media (max-width: 700px) {
-		body { padding: 24px 14px; }
-		.logo { font-size: 34px; }
+	.toast.error { background: var(--red); box-shadow: 0 12px 42px rgba(248, 113, 113, 0.4); }
+
+	/* ===== FOOTER ===== */
+	footer {
+		text-align: center; margin-top: 72px;
+		color: var(--sub-2); font-size: 12px;
+		line-height: 1.8;
+	}
+	footer b { color: var(--accent); font-weight: 700; }
+	footer .dot { opacity: 0.3; margin: 0 8px; }
+
+	/* ===== RESPONSIVE ===== */
+	@media (max-width: 760px) {
+		body { padding: 28px 14px 60px; }
+		.logo { font-size: 38px; letter-spacing: -2px; }
+		.subtitle { font-size: 13px; }
 		.grid { grid-template-columns: 1fr; gap: 16px; }
-		.card { padding: 22px; }
+		.card { padding: 20px; }
+		.toolbar { padding: 12px; }
+		.toast { left: 14px; right: 14px; bottom: 14px; justify-content: center; }
+		.actions { flex-direction: column; }
+		.btn-raw { width: 100%; }
 	}
 </style>
 </head>
@@ -134,100 +348,181 @@
 
 <div class="container">
 	<header>
-		<h1 class="logo">⚡ SAILENT HUB</h1>
-		<p class="subtitle">Painel privado de scripts</p>
+		<div class="logo-wrap">
+			<h1 class="logo">⚡ SAILENT HUB</h1>
+		</div>
+		<p class="subtitle">Painel privado de scripts • by becks &amp; kevim</p>
 		<div class="badges">
-			<span class="lock-badge">🔒 Acesso restrito</span>
-			<span class="lock-badge auth">🛡️ Auth via auth.lua + Key</span>
+			<span class="badge pulse">Sistema online</span>
+			<span class="badge auth">🛡️ Auth via auth.lua</span>
+			<span class="badge key">🔑 Key unificada</span>
 		</div>
 	</header>
+
+	<div class="toolbar">
+		<div class="search-wrap">
+			<input type="text" class="search" id="search" placeholder="Buscar script, tag ou função...">
+		</div>
+		<div class="filter-group" id="filters">
+			<button class="filter-btn active" data-filter="all">Todos</button>
+			<button class="filter-btn" data-filter="vip">👑 VIP</button>
+			<button class="filter-btn" data-filter="auto">🤖 Auto</button>
+		</div>
+		<span class="count-badge" id="count">5 scripts</span>
+	</div>
+
 	<div class="grid" id="grid"></div>
-	<footer>Painel <b>Sailent</b> • Scripts privados • por becks & kevim</footer>
+
+	<div class="empty" id="empty">
+		<div class="empty-icon">🔍</div>
+		<div>Nenhum script encontrado</div>
+	</div>
+
+	<footer>
+		Painel <b>Sailent</b> • Scripts privados
+		<span class="dot">•</span>
+		Auth + Key compartilhada
+		<span class="dot">•</span>
+		por becks &amp; kevim
+	</footer>
 </div>
 
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
-const USER = "simiao64santos-dot";
-const REPO = "sailent-";
-const BRANCH = "main";
+'use strict';
+
+const CONFIG = {
+	USER: "simiao64santos-dot",
+	REPO: "sailent-",
+	BRANCH: "main",
+};
 
 const SCRIPTS = [
 	{
 		id: "vip",
 		icon: "👑",
-		name: "Sailent Tix Money VIP v9.0",
+		name: "Sailent Tix Money VIP",
+		version: "v9.0",
 		file: "sailent.lua",
 		desc: "MENU COMPLETO VIP. Sistema de key com HWID bind, live tracking, kick e ban à distância. Inclui Auto Gari + Eletricista + Pizza + Prisão + Aimbot + Spectate + Save Config.",
 		color: "#fbbf24",
 		vip: true,
+		category: "vip",
 		tags: ["👑 VIP", "Key System", "Aimbot", "Auto Gari", "Eletricista", "Pizza", "Prisão"]
-	},
-	{
-		id: "gari",
-		icon: "🗑️",
-		name: "Sailent Auto Gari v7.0",
-		file: "main.lua",
-		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo). Auth via auth.lua com fallback para key.",
-		color: "#4ade80",
-		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Auth"]
-	},
-	{
-		id: "prisao",
-		icon: "🔓",
-		name: "Sailent Auto Prisão v3.1",
-		file: "prisao.lua",
-		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Auth via auth.lua + key system com SHA256 e HWID bind.",
-		color: "#a78bfa",
-		tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Auth"]
 	},
 	{
 		id: "pizza",
 		icon: "🍕",
-		name: "Sailent Auto Pizza v6.1b",
+		name: "Sailent Auto Pizza",
+		version: "v6.1b",
 		file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda. Auth via auth.lua com fallback para key.",
+		desc: "Pega pedido e entrega no cliente automaticamente. Modo Seguro com anti-kick, anti-queda e proteção contra água. Auth.lua + key compartilhada.",
 		color: "#fbbf24",
-		tags: ["Anti-kick", "Anti-queda", "Vel única", "Auth"]
+		vip: false,
+		category: "auto",
+		new: true,
+		tags: ["Anti-kick", "Anti-queda", "Vel única", "Auth", "Key"]
+	},
+	{
+		id: "prisao",
+		icon: "🔓",
+		name: "Sailent Auto Prisão",
+		version: "v3.1",
+		file: "prisao.lua",
+		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Auth.lua + key system compartilhada com SHA256 e HWID bind.",
+		color: "#a78bfa",
+		vip: false,
+		category: "auto",
+		new: true,
+		tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Auth", "Key"]
 	},
 	{
 		id: "eletricista",
 		icon: "⚡",
-		name: "Sailent Auto Eletricista v3.2",
+		name: "Sailent Auto Eletricista",
+		version: "v3.2",
 		file: "eletricista.lua",
-		desc: "Pega escada, teleporta pro topo do poste e conserta. God Mode + Anti-Sit. Auth via auth.lua com fallback para key system.",
+		desc: "Pega escada, teleporta pro topo do poste e conserta. God Mode + Anti-Sit. Auth.lua + key system compartilhada.",
 		color: "#f87171",
-		tags: ["TP topo", "God Mode", "Anti-Sit", "Auth"]
+		vip: false,
+		category: "auto",
+		new: true,
+		tags: ["TP topo", "God Mode", "Anti-Sit", "Auth", "Key"]
+	},
+	{
+		id: "gari",
+		icon: "🗑️",
+		name: "Sailent Auto Gari",
+		version: "v7.0",
+		file: "main.lua",
+		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo). Auth.lua + key compartilhada.",
+		color: "#4ade80",
+		vip: false,
+		category: "auto",
+		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Auth", "Key"]
 	}
 ];
 
-function buildURL(file) { return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`; }
-function buildLoadstring(file) { return `loadstring(game:HttpGet("${buildURL(file)}"))()`; }
-function escapeHtml(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+// ===== HELPERS =====
+function buildURL(file) {
+	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
+}
+function buildLoadstring(file) {
+	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
+}
+function escapeHtml(str) {
+	const div = document.createElement("div");
+	div.textContent = str;
+	return div.innerHTML;
+}
+function tagClass(tag, isVip) {
+	if (isVip) return "gold";
+	if (tag === "Auth") return "green";
+	if (tag === "Key") return "purple";
+	return "";
+}
 
-function buildScriptCards() {
+// ===== RENDER =====
+function renderCards() {
 	const grid = document.getElementById("grid");
 	grid.innerHTML = "";
+
 	SCRIPTS.forEach(s => {
 		const card = document.createElement("div");
 		card.className = "card";
+		card.dataset.id = s.id;
+		card.dataset.category = s.category || "auto";
+		card.dataset.search = [
+			s.name, s.file, s.desc, s.version,
+			...(s.tags || [])
+		].join(" ").toLowerCase();
 		card.style.setProperty("--card-color", s.color);
+
 		const url = buildURL(s.file);
 		const load = buildLoadstring(s.file);
+
+		const badgeHtml = s.vip
+			? '<span class="card-badge vip">👑 VIP</span>'
+			: (s.new ? '<span class="card-badge new">✦ Novo</span>' : '');
+
 		card.innerHTML = `
-			<div class="card-check ${s.vip ? 'vip' : ''}">${s.vip ? '👑' : '✓'}</div>
-			<div class="card-header">
-				<div class="card-icon">${s.icon}</div>
-				<div class="card-title-wrap">
-					<div class="card-title">${escapeHtml(s.name)}</div>
-					<div class="card-file">${escapeHtml(s.file)}</div>
+			<div class="card-top">
+				<div class="card-header">
+					<div class="card-icon">${s.icon}</div>
+					<div class="card-title-wrap">
+						<div class="card-title">${escapeHtml(s.name)} ${escapeHtml(s.version)}</div>
+						<div class="card-file">${escapeHtml(s.file)}</div>
+					</div>
 				</div>
+				${badgeHtml}
 			</div>
 			<div class="card-desc">${escapeHtml(s.desc)}</div>
-			<div class="tags">${s.tags.map(t => {
-				const cls = s.vip ? 'gold' : (t === 'Auth' ? 'green' : '');
-				return `<span class="tag ${cls}">${escapeHtml(t)}</span>`;
-			}).join("")}</div>
+			<div class="tags">
+				${(s.tags || []).map(t =>
+					`<span class="tag ${tagClass(t, s.vip)}">${escapeHtml(t)}</span>`
+				).join("")}
+			</div>
 			<div class="code-preview">
 				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 			</div>
@@ -236,46 +531,125 @@ function buildScriptCards() {
 				<button class="btn btn-raw" data-open="${escapeHtml(url)}">🔗 Raw</button>
 			</div>
 		`;
+
 		grid.appendChild(card);
 	});
-}
-buildScriptCards();
 
-const toast = document.getElementById("toast");
-let toastTimer;
-function showToast(txt) {
-	toast.textContent = txt;
-	toast.className = "toast show";
-	clearTimeout(toastTimer);
-	toastTimer = setTimeout(() => toast.className = "toast", 2200);
+	updateCount();
 }
+
+// ===== FILTROS + BUSCA =====
+let currentFilter = "all";
+let currentQuery = "";
+
+function applyFilters() {
+	const cards = document.querySelectorAll(".card");
+	let visible = 0;
+
+	cards.forEach(card => {
+		const cat = card.dataset.category;
+		const search = card.dataset.search || "";
+
+		const matchFilter = currentFilter === "all" || cat === currentFilter;
+		const matchQuery = !currentQuery || search.includes(currentQuery);
+
+		if (matchFilter && matchQuery) {
+			card.classList.remove("hidden");
+			visible++;
+		} else {
+			card.classList.add("hidden");
+		}
+	});
+
+	document.getElementById("empty").classList.toggle("show", visible === 0);
+	updateCount(visible);
+}
+
+function updateCount(visible) {
+	const total = SCRIPTS.length;
+	const el = document.getElementById("count");
+	if (visible === undefined) visible = total;
+	el.textContent = visible === total
+		? `${total} scripts`
+		: `${visible} de ${total}`;
+}
+
+// ===== TOAST =====
+const toastEl = document.getElementById("toast");
+let toastTimer;
+function showToast(msg, isError = false) {
+	toastEl.textContent = msg;
+	toastEl.className = "toast show" + (isError ? " error" : "");
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => {
+		toastEl.className = "toast" + (isError ? " error" : "");
+	}, 2200);
+}
+
+// ===== COPIAR =====
 async function copyText(text) {
-	try { await navigator.clipboard.writeText(text); return true; }
-	catch (e) {
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch (e) {
 		const ta = document.createElement("textarea");
-		ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-		document.body.appendChild(ta); ta.select();
-		const ok = document.execCommand("copy");
-		document.body.removeChild(ta); return ok;
+		ta.value = text;
+		ta.style.position = "fixed";
+		ta.style.opacity = "0";
+		document.body.appendChild(ta);
+		ta.focus();
+		ta.select();
+		let ok = false;
+		try { ok = document.execCommand("copy"); } catch (_) {}
+		document.body.removeChild(ta);
+		return ok;
 	}
 }
+
+// ===== EVENTS =====
 document.addEventListener("click", async (e) => {
 	const copyBtn = e.target.closest("[data-copy]");
 	if (copyBtn) {
 		const text = decodeURIComponent(copyBtn.dataset.copy);
 		const ok = await copyText(text);
 		if (ok) {
-			copyBtn.classList.add("copied");
 			const original = copyBtn.innerHTML;
+			copyBtn.classList.add("copied");
 			copyBtn.innerHTML = "✅ Copiado!";
 			showToast("✅ Loadstring copiado!");
-			setTimeout(() => { copyBtn.classList.remove("copied"); copyBtn.innerHTML = original; }, 1800);
+			setTimeout(() => {
+				copyBtn.classList.remove("copied");
+				copyBtn.innerHTML = original;
+			}, 1800);
+		} else {
+			showToast("❌ Falha ao copiar", true);
 		}
 		return;
 	}
+
 	const openBtn = e.target.closest("[data-open]");
-	if (openBtn) window.open(openBtn.dataset.open, "_blank");
+	if (openBtn) {
+		window.open(openBtn.dataset.open, "_blank", "noopener");
+		return;
+	}
+
+	const filterBtn = e.target.closest(".filter-btn");
+	if (filterBtn) {
+		document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+		filterBtn.classList.add("active");
+		currentFilter = filterBtn.dataset.filter;
+		applyFilters();
+	}
 });
+
+// ===== BUSCA =====
+document.getElementById("search").addEventListener("input", (e) => {
+	currentQuery = e.target.value.trim().toLowerCase();
+	applyFilters();
+});
+
+// ===== INIT =====
+renderCards();
 </script>
 
 </body>
