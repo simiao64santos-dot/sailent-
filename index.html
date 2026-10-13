@@ -29,11 +29,13 @@
 		background-clip: text; margin-bottom: 10px;
 	}
 	.subtitle { font-size: 15px; color: var(--sub); margin-bottom: 18px; }
+	.badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 	.lock-badge {
 		display: inline-flex; align-items: center; gap: 8px;
 		padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
 		border-radius: 999px; font-size: 12px; color: var(--sub); font-weight: 600;
 	}
+	.lock-badge.auth { border-color: rgba(74, 222, 128, 0.35); color: var(--green); }
 	.grid {
 		display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 		gap: 24px; max-width: 1100px; margin: 0 auto;
@@ -80,6 +82,10 @@
 	.tag.gold {
 		background: rgba(251, 191, 36, 0.1); color: var(--yellow);
 		border-color: rgba(251, 191, 36, 0.3);
+	}
+	.tag.green {
+		background: rgba(74, 222, 128, 0.1); color: var(--green);
+		border-color: rgba(74, 222, 128, 0.3);
 	}
 	.code-preview {
 		background: #08080c; border: 1px solid var(--border); border-radius: 10px;
@@ -130,7 +136,10 @@
 	<header>
 		<h1 class="logo">⚡ SAILENT HUB</h1>
 		<p class="subtitle">Painel privado de scripts</p>
-		<div class="lock-badge">🔒 Acesso restrito</div>
+		<div class="badges">
+			<span class="lock-badge">🔒 Acesso restrito</span>
+			<span class="lock-badge auth">🛡️ Auth via auth.lua + Key</span>
+		</div>
 	</header>
 	<div class="grid" id="grid"></div>
 	<footer>Painel <b>Sailent</b> • Scripts privados • por becks & kevim</footer>
@@ -159,36 +168,36 @@ const SCRIPTS = [
 		icon: "🗑️",
 		name: "Sailent Auto Gari v7.0",
 		file: "main.lua",
-		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo).",
+		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo). Auth via auth.lua com fallback para key.",
 		color: "#4ade80",
-		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar"]
+		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Auth"]
 	},
 	{
 		id: "prisao",
 		icon: "🔓",
 		name: "Sailent Auto Prisão v3.1",
 		file: "prisao.lua",
-		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço.",
+		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Auth via auth.lua + key system com SHA256 e HWID bind.",
 		color: "#a78bfa",
-		tags: ["Varredura", "Caixas", "Vel única", "Noclip"]
+		tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Auth"]
 	},
 	{
 		id: "pizza",
 		icon: "🍕",
 		name: "Sailent Auto Pizza v6.1b",
 		file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda.",
+		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda. Auth via auth.lua com fallback para key.",
 		color: "#fbbf24",
-		tags: ["Anti-kick", "Anti-queda", "Vel única"]
+		tags: ["Anti-kick", "Anti-queda", "Vel única", "Auth"]
 	},
 	{
 		id: "eletricista",
 		icon: "⚡",
 		name: "Sailent Auto Eletricista v3.2",
 		file: "eletricista.lua",
-		desc: "Pega escada, teleporta pro topo do poste e conserta.",
+		desc: "Pega escada, teleporta pro topo do poste e conserta. God Mode + Anti-Sit. Auth via auth.lua com fallback para key system.",
 		color: "#f87171",
-		tags: ["TP topo", "God Mode", "Anti-Sit"]
+		tags: ["TP topo", "God Mode", "Anti-Sit", "Auth"]
 	}
 ];
 
@@ -215,7 +224,10 @@ function buildScriptCards() {
 				</div>
 			</div>
 			<div class="card-desc">${escapeHtml(s.desc)}</div>
-			<div class="tags">${s.tags.map(t => `<span class="tag ${s.vip ? 'gold' : ''}">${escapeHtml(t)}</span>`).join("")}</div>
+			<div class="tags">${s.tags.map(t => {
+				const cls = s.vip ? 'gold' : (t === 'Auth' ? 'green' : '');
+				return `<span class="tag ${cls}">${escapeHtml(t)}</span>`;
+			}).join("")}</div>
 			<div class="code-preview">
 				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 			</div>
