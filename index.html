@@ -3,529 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ SAILENT ADMIN</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>⚡ SAILENT HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #0a0a0f; --card: #12121a; --border: #1f1f2e;
-  --accent: #7c9eff; --text: #f0f0f5; --sub: #8a8a9e;
-  --green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa;
-  --red: #f87171; --cyan: #22d3ee; --pink: #ec4899;
-}
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 30px 20px; }
-.container { max-width: 1300px; margin: 0 auto; }
-header { text-align: center; margin-bottom: 24px; }
-h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
-  background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
-.sub { font-size: 13px; color: var(--sub); }
-.tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 22px; padding: 5px;
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  width: fit-content; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
-.tab { padding: 10px 18px; background: transparent; border: none; border-radius: 8px;
-  color: var(--sub); font-family: 'Inter'; font-size: 12px; font-weight: 700;
-  cursor: pointer; transition: 0.2s; }
-.tab.active { background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%); color: #0a0a0f; }
-.panel { display: none; } .panel.active { display: block; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 22px; margin-bottom: 18px; position: relative; }
-.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--card-color, var(--accent)); border-radius: 14px 14px 0 0; }
-.card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.form-group { margin-bottom: 14px; }
-.form-label { display: block; font-size: 10px; font-weight: 700; color: var(--sub);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-.form-input, .form-select { width: 100%; padding: 11px 13px; background: #0a0a0f;
-  border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-  font-family: 'JetBrains Mono'; font-size: 12px; outline: none; transition: 0.15s; }
-.form-input:focus, .form-select:focus { border-color: var(--accent); }
-.form-select { font-family: 'Inter'; font-weight: 600; cursor: pointer; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-hint { font-size: 10px; color: var(--sub); margin-top: 5px; }
-.btn { padding: 12px 16px; background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
-  border: none; border-radius: 8px; color: #0a0a0f; font-family: 'Inter'; font-size: 12px;
-  font-weight: 800; cursor: pointer; transition: 0.15s; letter-spacing: 0.3px; width: 100%; }
-.btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-.btn.danger { background: linear-gradient(135deg, #f87171 0%, #ec4899 100%); color: #fff; }
-.btn.micro { padding: 5px 10px; font-size: 10px; width: auto; }
-.mini-btn { padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--sub); font-family: 'Inter'; font-size: 10px;
-  font-weight: 700; cursor: pointer; transition: 0.15s; }
-.mini-btn:hover { background: rgba(124,158,255,0.15); color: var(--accent); border-color: var(--accent); }
-.output-label { display: flex; justify-content: space-between; align-items: center;
-  font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase;
-  letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 6px; }
-.output-box { background: #08080c; border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text);
-  line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap;
-  word-break: break-all; }
-.user-row { display: grid; grid-template-columns: 36px 1.3fr 1fr 1fr 90px 90px 100px;
-  gap: 10px; padding: 12px 14px; background: #0a0a0f; border: 1px solid var(--border);
-  border-radius: 10px; margin-bottom: 6px; align-items: center; font-size: 11px; }
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex;
-  align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: #0a0a0f; }
-.user-name { font-weight: 700; color: var(--text); }
-.user-sub { font-size: 9px; color: var(--sub); font-family: 'JetBrains Mono'; }
-.user-script { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--cyan); font-weight: 600; }
-.user-time { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--green); font-weight: 700; }
-.user-badge { font-size: 9px; font-weight: 800; padding: 3px 7px; border-radius: 5px;
-  text-transform: uppercase; text-align: center; width: fit-content; }
-.badge-normal { background: rgba(138,138,158,0.15); color: var(--sub); }
-.badge-vip { background: rgba(251,191,36,0.15); color: var(--yellow); }
-.badge-admin { background: rgba(124,158,255,0.15); color: var(--accent); }
-.badge-owner { background: rgba(236,72,153,0.15); color: var(--pink); }
-.empty { padding: 30px; text-align: center; color: var(--sub); font-size: 12px; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
-.stat { background: #0a0a0f; border: 1px solid var(--border); border-radius: 10px;
-  padding: 16px; text-align: center; }
-.stat-num { font-size: 26px; font-weight: 800;
-  background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
-.stat-lbl { font-size: 9px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
-.toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #0a0a0f;
-  padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 12px;
-  box-shadow: 0 10px 30px rgba(74,222,128,0.4); transform: translateY(100px); opacity: 0;
-  transition: 0.3s; z-index: 1000; }
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.error { background: var(--red); }
-.status-bar { display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
-  border-radius: 999px; font-size: 11px; font-weight: 700; width: fit-content;
-  margin: 0 auto 20px; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-online { background: var(--green); animation: pulse 1.5s infinite; }
-.status-offline { background: var(--red); }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-@media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr); } }
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	:root {
+		--bg: #0a0a0f; --card: #12121a; --card-hover: #1a1a26; --border: #1f1f2e;
+		--accent: #7c9eff; --text: #f0f0f5; --sub: #8a8a9e;
+		--green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa;
+		--red: #f87171;
+	}
+	body {
+		font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+		min-height: 100vh; padding: 40px 24px;
+		background-image:
+			radial-gradient(circle at 15% 15%, rgba(124, 158, 255, 0.08) 0%, transparent 40%),
+			radial-gradient(circle at 85% 85%, rgba(167, 139, 250, 0.08) 0%, transparent 40%);
+		background-attachment: fixed;
+	}
+	.container { max-width: 1200px; margin: 0 auto; }
+	header { text-align: center; margin-bottom: 50px; }
+	.logo {
+		font-size: 48px; font-weight: 800; letter-spacing: -2px;
+		background: linear-gradient(135deg, #7c9eff 0%, #a78bfa 100%);
+		-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+		background-clip: text; margin-bottom: 10px;
+	}
+	.subtitle { font-size: 15px; color: var(--sub); margin-bottom: 18px; }
+	.lock-badge {
+		display: inline-flex; align-items: center; gap: 8px;
+		padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
+		border-radius: 999px; font-size: 12px; color: var(--sub); font-weight: 600;
+	}
+	.grid {
+		display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+		gap: 24px; max-width: 1100px; margin: 0 auto;
+	}
+	.card {
+		background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+		padding: 28px; transition: all 0.25s; position: relative; overflow: hidden;
+	}
+	.card::before {
+		content: ''; position: absolute; top: 0; left: 0; right: 0;
+		height: 3px; background: var(--card-color, var(--accent));
+	}
+	.card:hover {
+		background: var(--card-hover); border-color: var(--card-color, var(--accent));
+		transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+	}
+	.card-check {
+		position: absolute; top: 22px; right: 22px; width: 26px; height: 26px;
+		border-radius: 50%; background: var(--green); display: flex;
+		align-items: center; justify-content: center; color: #0a0a0f;
+		font-size: 14px; font-weight: 700;
+	}
+	.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+	.card-icon {
+		font-size: 32px; width: 56px; height: 56px; display: flex;
+		align-items: center; justify-content: center;
+		background: rgba(255, 255, 255, 0.03); border-radius: 14px;
+		border: 1px solid var(--border); flex-shrink: 0;
+	}
+	.card-title-wrap { flex: 1; min-width: 0; }
+	.card-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+	.card-file { font-size: 11px; color: var(--sub); font-family: 'JetBrains Mono', monospace; }
+	.card-desc { font-size: 13.5px; color: var(--sub); line-height: 1.65; margin-bottom: 18px; }
+	.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+	.tag {
+		font-size: 10.5px; font-weight: 600; padding: 5px 11px; border-radius: 6px;
+		background: rgba(124, 158, 255, 0.1); color: var(--accent);
+		font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(124, 158, 255, 0.2);
+	}
+	.code-preview {
+		background: #08080c; border: 1px solid var(--border); border-radius: 10px;
+		padding: 14px 16px; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;
+		font-size: 11px; color: var(--sub); word-break: break-all; line-height: 1.5;
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+	.code-preview .cmd { color: var(--purple); }
+	.code-preview .arg { color: var(--green); }
+	.code-preview .url { color: var(--accent); }
+	.actions { display: flex; gap: 10px; }
+	.btn {
+		padding: 13px 18px; border: none; border-radius: 10px;
+		font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+		cursor: pointer; transition: all 0.15s;
+		display: flex; align-items: center; justify-content: center; gap: 8px;
+	}
+	.btn-copy { flex: 1; background: var(--card-color, var(--accent)); color: #0a0a0f; }
+	.btn-copy:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 8px 25px var(--card-color, var(--accent)); }
+	.btn-copy.copied { background: var(--green); }
+	.btn-raw {
+		background: rgba(255, 255, 255, 0.05); color: var(--text);
+		border: 1px solid var(--border); padding: 13px 22px;
+	}
+	.btn-raw:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+	.toast {
+		position: fixed; bottom: 30px; right: 30px;
+		background: var(--green); color: #0a0a0f;
+		padding: 14px 22px; border-radius: 12px; font-weight: 700;
+		font-size: 13px; box-shadow: 0 10px 40px rgba(74, 222, 128, 0.4);
+		transform: translateY(120px); opacity: 0;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
+	}
+	.toast.show { transform: translateY(0); opacity: 1; }
+	.toast.error { background: var(--red); }
+	footer {
+		text-align: center; margin-top: 60px; color: var(--sub); font-size: 12px;
+	}
+	footer b { color: var(--accent); }
+	@media (max-width: 700px) {
+		body { padding: 24px 14px; }
+		.logo { font-size: 34px; }
+		.grid { grid-template-columns: 1fr; gap: 16px; }
+		.card { padding: 22px; }
+		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
+	}
 </style>
 </head>
 <body>
+
 <div class="container">
-  <header>
-    <h1>⚡ SAILENT ADMIN</h1>
-    <p class="sub">Painel de controle em tempo real</p>
-  </header>
 
-  <div class="status-bar">
-    <div class="status-dot status-offline" id="status-dot"></div>
-    <span id="status-text">Conectando...</span>
-  </div>
+	<header>
+		<h1 class="logo">⚡ SAILENT HUB</h1>
+		<p class="subtitle">Painel privado de scripts</p>
+		<div class="lock-badge">🔒 Acesso restrito</div>
+	</header>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="users">👥 Ao Vivo</button>
-    <button class="tab" data-tab="keys">🔑 Gerar Keys</button>
-    <button class="tab" data-tab="bans">🚫 Banidos</button>
-    <button class="tab" data-tab="history">📊 Histórico</button>
-  </div>
+	<div class="grid" id="grid"></div>
 
-  <div class="panel active" id="panel-users">
-    <div class="card" style="--card-color: var(--green);">
-      <div class="card-title">🟢 Usuários Online Agora <span id="live-badge" style="background:var(--green);color:#0a0a0f;padding:2px 8px;border-radius:6px;font-size:10px;margin-left:8px;">0</span></div>
-      <div class="stats">
-        <div class="stat"><div class="stat-num" id="st-online">0</div><div class="stat-lbl">Online</div></div>
-        <div class="stat"><div class="stat-num" id="st-scripts">0</div><div class="stat-lbl">Scripts</div></div>
-        <div class="stat"><div class="stat-num" id="st-keys">0</div><div class="stat-lbl">Keys únicas</div></div>
-        <div class="stat"><div class="stat-num" id="st-bans">0</div><div class="stat-lbl">Banidos</div></div>
-      </div>
-      <div id="users-list"><div class="empty">Aguardando conexão...</div></div>
-    </div>
-  </div>
+	<footer>
+		Painel <b>Sailent</b> • Scripts privados • por becks & kevim
+	</footer>
 
-  <div class="panel" id="panel-keys">
-    <div class="grid-2">
-      <div class="card" style="--card-color: var(--cyan);">
-        <div class="card-title">🔑 Gerar Key</div>
-        <div class="form-group"><label class="form-label">Nome do Cliente</label><input type="text" class="form-input" id="inp-nome" placeholder="Ex: Joao"></div>
-        <div class="form-group">
-          <label class="form-label">Key Crua</label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" class="form-input" id="inp-key" placeholder="SAILENT-XXXX-XXXX-XXXX" style="flex:1;">
-            <button class="mini-btn" onclick="gerarKey()">🎲</button>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nível</label>
-            <select class="form-select" id="inp-nivel">
-              <option value="normal">Normal</option>
-              <option value="vip">VIP</option>
-              <option value="admin">Admin</option>
-              <option value="owner" selected>Owner</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Dias</label>
-            <input type="number" class="form-input" id="inp-dias" value="0" min="0">
-            <div class="form-hint">0 = nunca expira</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Trava HWID</label>
-          <select class="form-select" id="inp-bind">
-            <option value="auto" selected>🔒 Auto (trava no 1º uso)</option>
-            <option value="free">🌐 Livre (qualquer device)</option>
-          </select>
-        </div>
-        <button class="btn" onclick="gerar()">⚡ Gerar Key</button>
-      </div>
-      <div class="card" style="--card-color: var(--purple);">
-        <div class="card-title">📋 Keys Geradas (Sessão)</div>
-        <div id="keys-list"><div class="empty">Nenhuma key gerada ainda</div></div>
-        <div class="output-label" style="margin-top:14px;">
-          <span>🌐 keys.json completo</span>
-          <button class="mini-btn" onclick="copiar('out-json')">📋 Copiar</button>
-        </div>
-        <div class="output-box" id="out-json" style="max-height:180px;">{"keys":{}}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-bans">
-    <div class="card" style="--card-color: var(--red);">
-      <div class="card-title">🚫 Banir HWID</div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">HWID</label><input type="text" class="form-input" id="ban-hwid" placeholder="Cole o HWID"></div>
-        <div class="form-group"><label class="form-label">Nome</label><input type="text" class="form-input" id="ban-nome" placeholder="Nome do user"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Motivo</label><input type="text" class="form-input" id="ban-motivo" placeholder="Ex: Compartilhou key"></div>
-      <button class="btn danger" onclick="adicionarBan()">🚫 Banir</button>
-    </div>
-    <div class="card" style="--card-color: var(--red);">
-      <div class="card-title">📋 Lista de Banidos</div>
-      <div id="bans-list"><div class="empty">Ninguém banido</div></div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-history">
-    <div class="card" style="--card-color: var(--purple);">
-      <div class="card-title">📊 Últimos Eventos</div>
-      <div id="history-list"><div class="empty">Nenhum evento ainda</div></div>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
-// ============================================
-// CONFIG FIREBASE
-// ============================================
-const FB = "https://sailent-c8150-default-rtdb.firebaseio.com";
-let onlineData = {}, bansData = {}, historyData = {};
+const USER = "simiao64santos-dot";
+const REPO = "sailent-";
+const BRANCH = "main";
 
-// ============================================
-// UTILS
-// ============================================
-async function sha256(m) {
-  const b = new TextEncoder().encode(m);
-  const h = await crypto.subtle.digest('SHA-256', b);
-  return Array.from(new Uint8Array(h)).map(x => x.toString(16).padStart(2, '0')).join('');
+const SCRIPTS = [
+	{
+		id: "gari", icon: "🗑️", name: "Sailent Auto Gari v9.0", file: "main.lua",
+		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo) em 1 slider.",
+		color: "#4ade80", tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"]
+	},
+	{
+		id: "prisao", icon: "🔓", name: "Sailent Auto Prisão v3.1", file: "prisao.lua",
+		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Velocidade única (a pé e voo).",
+		color: "#a78bfa", tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Anti-AFK"]
+	},
+	{
+		id: "pizza", icon: "🍕", name: "Sailent Auto Pizza v6.1b", file: "pizza.lua",
+		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda. Voo opcional.",
+		color: "#fbbf24", tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
+	},
+	{
+		id: "eletricista", icon: "⚡", name: "Sailent Auto Eletricista v3.2", file: "eletricista.lua",
+		desc: "Pega escada, teleporta pro topo do poste e conserta. Marca postes feitos. God Mode + anti-sit + noclip.",
+		color: "#f87171", tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
+	}
+];
+
+function buildURL(file) { return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`; }
+function buildLoadstring(file) { return `loadstring(game:HttpGet("${buildURL(file)}"))()`; }
+function escapeHtml(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+function buildScriptCards() {
+	const grid = document.getElementById("grid");
+	grid.innerHTML = "";
+	SCRIPTS.forEach(s => {
+		const card = document.createElement("div");
+		card.className = "card";
+		card.style.setProperty("--card-color", s.color);
+		const url = buildURL(s.file);
+		const load = buildLoadstring(s.file);
+		card.innerHTML = `
+			<div class="card-check">✓</div>
+			<div class="card-header">
+				<div class="card-icon">${s.icon}</div>
+				<div class="card-title-wrap">
+					<div class="card-title">${escapeHtml(s.name)}</div>
+					<div class="card-file">${escapeHtml(s.file)}</div>
+				</div>
+			</div>
+			<div class="card-desc">${escapeHtml(s.desc)}</div>
+			<div class="tags">${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+			<div class="code-preview">
+				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
+			</div>
+			<div class="actions">
+				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Loadstring</button>
+				<button class="btn btn-raw" data-open="${escapeHtml(url)}">🔗 Raw</button>
+			</div>
+		`;
+		grid.appendChild(card);
+	});
+}
+buildScriptCards();
+
+const toast = document.getElementById("toast");
+let toastTimer;
+function showToast(txt, isError = false) {
+	toast.textContent = txt;
+	toast.className = "toast show" + (isError ? " error" : "");
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => toast.className = "toast", 2200);
+}
+async function copyText(text) {
+	try { await navigator.clipboard.writeText(text); return true; }
+	catch (e) {
+		const ta = document.createElement("textarea");
+		ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+		document.body.appendChild(ta); ta.select();
+		const ok = document.execCommand("copy");
+		document.body.removeChild(ta); return ok;
+	}
 }
 
-function toast(t, e = false) {
-  const el = document.getElementById("toast");
-  el.textContent = t;
-  el.className = "toast show" + (e ? " error" : "");
-  clearTimeout(window._tt);
-  window._tt = setTimeout(() => el.className = "toast", 2000);
-}
-
-function esc(t) {
-  const d = document.createElement("div");
-  d.textContent = t;
-  return d.innerHTML;
-}
-
-window.copiar = (id) => {
-  const el = document.getElementById(id);
-  navigator.clipboard.writeText(el.textContent).then(() => toast("✅ Copiado!"));
-};
-
-// ============================================
-// FETCH FIREBASE (sem SDK)
-// ============================================
-async function fbGet(path) {
-  try {
-    const r = await fetch(FB + path + ".json?" + Date.now());
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
-  } catch (e) {
-    console.log("fbGet erro:", path, e.message);
-    return null;
-  }
-}
-
-async function fbPut(path, data) {
-  try {
-    const r = await fetch(FB + path + ".json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    return r.ok;
-  } catch (e) {
-    console.log("fbPut erro:", e.message);
-    return false;
-  }
-}
-
-async function fbDelete(path) {
-  try {
-    const r = await fetch(FB + path + ".json", { method: "DELETE" });
-    return r.ok;
-  } catch (e) {
-    return false;
-  }
-}
-
-// ============================================
-// POLLING (atualiza a cada 2 segundos)
-// ============================================
-async function atualizarTudo() {
-  const [online, bans, history] = await Promise.all([
-    fbGet("/online"),
-    fbGet("/bans"),
-    fbGet("/history")
-  ]);
-
-  // Atualiza status
-  const dot = document.getElementById("status-dot");
-  const txt = document.getElementById("status-text");
-  if (online !== null) {
-    dot.className = "status-dot status-online";
-    txt.textContent = "🟢 Conectado ao Firebase";
-  } else {
-    dot.className = "status-dot status-offline";
-    txt.textContent = "🔴 Sem conexão";
-  }
-
-  onlineData = online || {};
-  bansData = bans || {};
-  historyData = history || {};
-
-  renderUsers(onlineData);
-  renderBans(bansData);
-  renderHistory(historyData);
-}
-
-setInterval(atualizarTudo, 2000);
-atualizarTudo();
-
-// ============================================
-// RENDER USERS
-// ============================================
-function fmtT(s) {
-  s = Math.max(0, Math.floor(s));
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${ss}s`;
-  return `${ss}s`;
-}
-
-function renderUsers(data) {
-  const now = Math.floor(Date.now() / 1000);
-  const users = Object.entries(data)
-    .map(([k, v]) => ({ ...v, _id: k }))
-    .filter(u => u.lastPing && (now - u.lastPing) < 120)
-    .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
-
-  document.getElementById("st-online").textContent = users.length;
-  document.getElementById("live-badge").textContent = users.length;
-  document.getElementById("st-scripts").textContent = new Set(users.map(u => u.script).filter(Boolean)).size;
-  document.getElementById("st-keys").textContent = new Set(users.map(u => u.keyHash).filter(Boolean)).size;
-
-  const list = document.getElementById("users-list");
-  if (users.length === 0) {
-    list.innerHTML = '<div class="empty">👻 Nenhum usuário online</div>';
-    return;
-  }
-  list.innerHTML = users.map(u => {
-    const init = (u.name || "?")[0].toUpperCase();
-    const hue = (u.name || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
-    const lvl = u.nivel || "normal";
-    const hwidShort = (u.hwid || "").substring(0, 12);
-    return `<div class="user-row">
-      <div class="user-avatar" style="background:hsl(${hue},70%,60%)">${esc(init)}</div>
-      <div><div class="user-name">${esc(u.name || "?")}</div><div class="user-sub">ID: ${esc(String(u.userId || "?"))}</div></div>
-      <div class="user-script">${esc(u.script || "-")}</div>
-      <div><div class="user-badge badge-${esc(lvl)}">${esc(lvl)}</div></div>
-      <div class="user-time">${fmtT(now - (u.startedAt || now))}</div>
-      <div class="user-sub" style="font-size:9px;">${esc(hwidShort)}...</div>
-      <div style="display:flex;gap:4px;">
-        <button class="btn micro danger" onclick="kick('${u._id}')">🚫</button>
-        <button class="btn micro danger" onclick="ban('${u._id}')" style="background:linear-gradient(135deg,#ec4899,#f87171);">⛔</button>
-      </div>
-    </div>`;
-  }).join("");
-}
-
-// ============================================
-// AÇÕES
-// ============================================
-window.kick = async (uid) => {
-  if (!confirm("Kickar esse usuário?")) return;
-  const u = onlineData[uid];
-  await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), {
-    name: u ? u.name : uid, event: "kick", timestamp: Math.floor(Date.now() / 1000)
-  });
-  toast("🚫 Kick enviado!");
-  setTimeout(atualizarTudo, 500);
-};
-
-window.ban = async (uid) => {
-  const u = onlineData[uid];
-  if (!u) { toast("⚠️ Usuário não encontrado", true); return; }
-  if (!confirm(`Banir ${u.name}?\nHWID: ${u.hwid}`)) return;
-  await fbPut("/bans/" + u.hwid, {
-    name: u.name, userId: u.userId, reason: "Banido pelo admin",
-    bannedAt: Math.floor(Date.now() / 1000)
-  });
-  await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), {
-    name: u.name, event: "ban", timestamp: Math.floor(Date.now() / 1000)
-  });
-  toast("⛔ Banido!");
-  setTimeout(atualizarTudo, 500);
-};
-
-// ============================================
-// RENDER BANS
-// ============================================
-function renderBans(data) {
-  const bans = Object.entries(data).map(([k, v]) => ({ ...v, hwid: k })).sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0));
-  document.getElementById("st-bans").textContent = bans.length;
-  const list = document.getElementById("bans-list");
-  if (bans.length === 0) {
-    list.innerHTML = '<div class="empty">✨ Ninguém banido</div>';
-    return;
-  }
-  list.innerHTML = bans.map(b => `
-    <div style="display:grid;grid-template-columns:1.3fr 1.5fr 100px 80px;gap:10px;padding:10px 12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;align-items:center;font-size:11px;">
-      <div><div style="font-weight:700;">${esc(b.name || "?")}</div><div style="font-size:9px;color:var(--pink);font-family:'JetBrains Mono';">${esc(b.hwid.substring(0, 20))}...</div></div>
-      <div style="color:var(--sub);font-size:10px;">${esc(b.reason || "N/A")}</div>
-      <div style="color:var(--sub);font-size:10px;font-family:'JetBrains Mono';">${b.bannedAt ? new Date(b.bannedAt * 1000).toLocaleDateString('pt-BR') : "-"}</div>
-      <button class="mini-btn" style="color:var(--green);" onclick="unban('${esc(b.hwid)}')">✅ Unban</button>
-    </div>
-  `).join("");
-}
-
-window.unban = async (hwid) => {
-  if (!confirm("Remover ban?")) return;
-  await fbDelete("/bans/" + hwid);
-  toast("✅ Unban!");
-  setTimeout(atualizarTudo, 500);
-};
-
-window.adicionarBan = async () => {
-  const hwid = document.getElementById("ban-hwid").value.trim();
-  const nome = document.getElementById("ban-nome").value.trim() || "Desconhecido";
-  const motivo = document.getElementById("ban-motivo").value.trim() || "Banido pelo admin";
-  if (!hwid) { toast("⚠️ Cole o HWID!", true); return; }
-  await fbPut("/bans/" + hwid, {
-    name: nome, reason: motivo, bannedAt: Math.floor(Date.now() / 1000)
-  });
-  document.getElementById("ban-hwid").value = "";
-  document.getElementById("ban-nome").value = "";
-  document.getElementById("ban-motivo").value = "";
-  toast("⛔ Banido!");
-  setTimeout(atualizarTudo, 500);
-};
-
-// ============================================
-// RENDER HISTORY
-// ============================================
-function renderHistory(data) {
-  const evs = Object.entries(data).map(([k, v]) => ({ ...v, _id: k })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-  const list = document.getElementById("history-list");
-  if (evs.length === 0) {
-    list.innerHTML = '<div class="empty">📭 Nenhum evento ainda</div>';
-    return;
-  }
-  list.innerHTML = evs.slice(0, 50).map(e => {
-    const d = new Date((e.timestamp || 0) * 1000);
-    const t = d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    const icons = { login: "🟢", logout: "🔴", kick: "🚫", ban: "⛔" };
-    return `<div style="display:grid;grid-template-columns:40px 1.5fr 1fr 100px;gap:10px;padding:10px 14px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;align-items:center;font-size:11px;">
-      <div style="font-size:16px;text-align:center;">${icons[e.event] || "📌"}</div>
-      <div style="font-weight:700;">${esc(e.name || "?")}</div>
-      <div style="color:var(--cyan);font-family:'JetBrains Mono';font-size:10px;">${esc(e.event || "?")}</div>
-      <div style="color:var(--sub);font-family:'JetBrains Mono';font-size:10px;">${t}</div>
-    </div>`;
-  }).join("");
-}
-
-// ============================================
-// GERADOR DE KEYS
-// ============================================
-document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
-  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-  document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
-  t.classList.add("active");
-  document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+document.addEventListener("click", async (e) => {
+	const copyBtn = e.target.closest("[data-copy]");
+	if (copyBtn) {
+		const text = decodeURIComponent(copyBtn.dataset.copy);
+		const ok = await copyText(text);
+		if (ok) {
+			copyBtn.classList.add("copied");
+			const original = copyBtn.innerHTML;
+			copyBtn.innerHTML = "✅ Copiado!";
+			showToast("✅ Loadstring copiado!");
+			setTimeout(() => { copyBtn.classList.remove("copied"); copyBtn.innerHTML = original; }, 1800);
+		}
+		return;
+	}
+	const openBtn = e.target.closest("[data-open]");
+	if (openBtn) window.open(openBtn.dataset.open, "_blank");
 });
-
-window.gerarKey = () => {
-  const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const s = () => Array.from({ length: 4 }, () => c[Math.floor(Math.random() * c.length)]).join("");
-  document.getElementById("inp-key").value = `SAILENT-${s()}-${s()}-${s()}`;
-};
-
-let historico = [];
-
-window.gerar = async () => {
-  const nome = document.getElementById("inp-nome").value.trim();
-  const key = document.getElementById("inp-key").value.trim();
-  const nivel = document.getElementById("inp-nivel").value;
-  const dias = parseInt(document.getElementById("inp-dias").value) || 0;
-  const bind = document.getElementById("inp-bind").value;
-  if (!nome) { toast("⚠️ Preencha o nome!", true); return; }
-  if (!key) { toast("⚠️ Gere uma key!", true); return; }
-  const hash = await sha256(key);
-  const agora = Math.floor(Date.now() / 1000);
-  const expira = dias === 0 ? 99999999999 : agora + (dias * 86400);
-  historico.push({ nome, key, hash, nivel, dias, expira, bindMode: bind });
-  atualizarKeys();
-  toast("✅ Key gerada!");
-};
-
-function atualizarKeys() {
-  const list = document.getElementById("keys-list");
-  if (historico.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma key gerada ainda</div>';
-  } else {
-    list.innerHTML = historico.map((k, i) => `
-      <div style="padding:10px 12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:700;">${esc(k.nome)} <span style="color:var(--sub);font-size:10px;">[${k.nivel}]</span></div>
-            <div style="font-size:9px;color:var(--cyan);font-family:'JetBrains Mono';margin-top:2px;overflow:hidden;text-overflow:ellipsis;">${esc(k.key)}</div>
-          </div>
-          <button class="mini-btn" onclick="copiarKey(${i})">📋</button>
-          <button class="mini-btn" style="color:var(--red);" onclick="delKey(${i})">🗑️</button>
-        </div>
-      </div>
-    `).join("");
-  }
-  const obj = { keys: {} };
-  for (const k of historico) {
-    obj.keys[k.hash] = {
-      nome: k.nome, nivel: k.nivel, status: "ativa",
-      expira: k.expira, bindMode: k.bindMode
-    };
-  }
-  document.getElementById("out-json").textContent = JSON.stringify(obj, null, 2);
-}
-
-window.copiarKey = (i) => {
-  navigator.clipboard.writeText(historico[i].key).then(() => toast("✅ Copiado!"));
-};
-window.delKey = (i) => {
-  historico.splice(i, 1);
-  atualizarKeys();
-};
 </script>
+
 </body>
 </html>
