@@ -20,12 +20,17 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
   background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
 .sub { font-size: 13px; color: var(--sub); }
+.status-bar { display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; font-size: 11px; font-weight: 700; width: fit-content; margin: 0 auto 20px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-online { background: var(--green); }
+.status-offline { background: var(--red); }
 .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 22px; padding: 5px;
   background: var(--card); border: 1px solid var(--border); border-radius: 12px;
   width: fit-content; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
 .tab { padding: 10px 18px; background: transparent; border: none; border-radius: 8px;
-  color: var(--sub); font-family: 'Inter'; font-size: 12px; font-weight: 700;
-  cursor: pointer; transition: 0.2s; }
+  color: var(--sub); font-family: 'Inter'; font-size: 12px; font-weight: 700; cursor: pointer; }
 .tab.active { background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%); color: #0a0a0f; }
 .panel { display: none; } .panel.active { display: block; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
@@ -39,28 +44,25 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .form-input, .form-select { width: 100%; padding: 11px 13px; background: #0a0a0f;
   border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-  font-family: 'JetBrains Mono'; font-size: 12px; outline: none; transition: 0.15s; }
-.form-input:focus, .form-select:focus { border-color: var(--accent); }
+  font-family: 'JetBrains Mono'; font-size: 12px; outline: none; }
 .form-select { font-family: 'Inter'; font-weight: 600; cursor: pointer; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-hint { font-size: 10px; color: var(--sub); margin-top: 5px; }
 .btn { padding: 12px 16px; background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
   border: none; border-radius: 8px; color: #0a0a0f; font-family: 'Inter'; font-size: 12px;
-  font-weight: 800; cursor: pointer; transition: 0.15s; letter-spacing: 0.3px; width: 100%; }
-.btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  font-weight: 800; cursor: pointer; width: 100%; }
 .btn.danger { background: linear-gradient(135deg, #f87171 0%, #ec4899 100%); color: #fff; }
 .btn.micro { padding: 5px 10px; font-size: 10px; width: auto; }
 .mini-btn { padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
   border-radius: 6px; color: var(--sub); font-family: 'Inter'; font-size: 10px;
-  font-weight: 700; cursor: pointer; transition: 0.15s; }
+  font-weight: 700; cursor: pointer; }
 .mini-btn:hover { background: rgba(124,158,255,0.15); color: var(--accent); border-color: var(--accent); }
 .output-label { display: flex; justify-content: space-between; align-items: center;
   font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase;
-  letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 6px; }
+  margin-top: 14px; margin-bottom: 6px; }
 .output-box { background: #08080c; border: 1px solid var(--border); border-radius: 8px;
   padding: 12px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text);
-  line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap;
-  word-break: break-all; }
+  line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
 .user-row { display: grid; grid-template-columns: 36px 1.3fr 1fr 1fr 90px 90px 100px;
   gap: 10px; padding: 12px 14px; background: #0a0a0f; border: 1px solid var(--border);
   border-radius: 10px; margin-bottom: 6px; align-items: center; font-size: 11px; }
@@ -71,33 +73,24 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
 .user-script { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--cyan); font-weight: 600; }
 .user-time { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--green); font-weight: 700; }
 .user-badge { font-size: 9px; font-weight: 800; padding: 3px 7px; border-radius: 5px;
-  text-transform: uppercase; text-align: center; width: fit-content; }
+  text-transform: uppercase; width: fit-content; }
 .badge-normal { background: rgba(138,138,158,0.15); color: var(--sub); }
 .badge-vip { background: rgba(251,191,36,0.15); color: var(--yellow); }
 .badge-admin { background: rgba(124,158,255,0.15); color: var(--accent); }
 .badge-owner { background: rgba(236,72,153,0.15); color: var(--pink); }
 .empty { padding: 30px; text-align: center; color: var(--sub); font-size: 12px; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
-.stat { background: #0a0a0f; border: 1px solid var(--border); border-radius: 10px;
-  padding: 16px; text-align: center; }
+.stat { background: #0a0a0f; border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
 .stat-num { font-size: 26px; font-weight: 800;
   background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
-.stat-lbl { font-size: 9px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-lbl { font-size: 9px; font-weight: 700; color: var(--sub); text-transform: uppercase; }
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #0a0a0f;
   padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 12px;
   box-shadow: 0 10px 30px rgba(74,222,128,0.4); transform: translateY(100px); opacity: 0;
   transition: 0.3s; z-index: 1000; }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.error { background: var(--red); }
-.status-bar { display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
-  border-radius: 999px; font-size: 11px; font-weight: 700; width: fit-content;
-  margin: 0 auto 20px; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-online { background: var(--green); animation: pulse 1.5s infinite; }
-.status-offline { background: var(--red); }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr); } }
 </style>
 </head>
@@ -122,7 +115,7 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
 
   <div class="panel active" id="panel-users">
     <div class="card" style="--card-color: var(--green);">
-      <div class="card-title">🟢 Usuários Online Agora <span id="live-badge" style="background:var(--green);color:#0a0a0f;padding:2px 8px;border-radius:6px;font-size:10px;margin-left:8px;">0</span></div>
+      <div class="card-title">🟢 Usuários Online <span id="live-badge" style="background:var(--green);color:#0a0a0f;padding:2px 8px;border-radius:6px;font-size:10px;margin-left:8px;">0</span></div>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="st-online">0</div><div class="stat-lbl">Online</div></div>
         <div class="stat"><div class="stat-num" id="st-scripts">0</div><div class="stat-lbl">Scripts</div></div>
@@ -165,16 +158,16 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
           <label class="form-label">Trava HWID</label>
           <select class="form-select" id="inp-bind">
             <option value="auto" selected>🔒 Auto (trava no 1º uso)</option>
-            <option value="free">🌐 Livre (qualquer device)</option>
+            <option value="free">🌐 Livre</option>
           </select>
         </div>
         <button class="btn" onclick="gerar()">⚡ Gerar Key</button>
       </div>
       <div class="card" style="--card-color: var(--purple);">
-        <div class="card-title">📋 Keys Geradas (Sessão)</div>
+        <div class="card-title">📋 Keys Geradas</div>
         <div id="keys-list"><div class="empty">Nenhuma key gerada ainda</div></div>
         <div class="output-label" style="margin-top:14px;">
-          <span>🌐 keys.json completo</span>
+          <span>🌐 keys.json</span>
           <button class="mini-btn" onclick="copiar('out-json')">📋 Copiar</button>
         </div>
         <div class="output-box" id="out-json" style="max-height:180px;">{"keys":{}}</div>
@@ -189,19 +182,19 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
         <div class="form-group"><label class="form-label">HWID</label><input type="text" class="form-input" id="ban-hwid" placeholder="Cole o HWID"></div>
         <div class="form-group"><label class="form-label">Nome</label><input type="text" class="form-input" id="ban-nome" placeholder="Nome do user"></div>
       </div>
-      <div class="form-group"><label class="form-label">Motivo</label><input type="text" class="form-input" id="ban-motivo" placeholder="Ex: Compartilhou key"></div>
+      <div class="form-group"><label class="form-label">Motivo</label><input type="text" class="form-input" id="ban-motivo" placeholder="Motivo do ban"></div>
       <button class="btn danger" onclick="adicionarBan()">🚫 Banir</button>
     </div>
     <div class="card" style="--card-color: var(--red);">
-      <div class="card-title">📋 Lista de Banidos</div>
+      <div class="card-title">📋 Banidos</div>
       <div id="bans-list"><div class="empty">Ninguém banido</div></div>
     </div>
   </div>
 
   <div class="panel" id="panel-history">
     <div class="card" style="--card-color: var(--purple);">
-      <div class="card-title">📊 Últimos Eventos</div>
-      <div id="history-list"><div class="empty">Nenhum evento ainda</div></div>
+      <div class="card-title">📊 Histórico</div>
+      <div id="history-list"><div class="empty">Nenhum evento</div></div>
     </div>
   </div>
 </div>
@@ -209,21 +202,14 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
-// ============================================
-// CONFIG FIREBASE
-// ============================================
 const FB = "https://sailent-c8150-default-rtdb.firebaseio.com";
 let onlineData = {}, bansData = {}, historyData = {};
 
-// ============================================
-// UTILS
-// ============================================
 async function sha256(m) {
   const b = new TextEncoder().encode(m);
   const h = await crypto.subtle.digest('SHA-256', b);
   return Array.from(new Uint8Array(h)).map(x => x.toString(16).padStart(2, '0')).join('');
 }
-
 function toast(t, e = false) {
   const el = document.getElementById("toast");
   el.textContent = t;
@@ -231,66 +217,33 @@ function toast(t, e = false) {
   clearTimeout(window._tt);
   window._tt = setTimeout(() => el.className = "toast", 2000);
 }
-
-function esc(t) {
-  const d = document.createElement("div");
-  d.textContent = t;
-  return d.innerHTML;
-}
-
+function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
 window.copiar = (id) => {
-  const el = document.getElementById(id);
-  navigator.clipboard.writeText(el.textContent).then(() => toast("✅ Copiado!"));
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => toast("✅ Copiado!"));
 };
 
-// ============================================
-// FETCH FIREBASE (sem SDK)
-// ============================================
 async function fbGet(path) {
   try {
     const r = await fetch(FB + path + ".json?" + Date.now());
     if (!r.ok) throw new Error("HTTP " + r.status);
     return await r.json();
-  } catch (e) {
-    console.log("fbGet erro:", path, e.message);
-    return null;
-  }
+  } catch (e) { return null; }
 }
-
 async function fbPut(path, data) {
   try {
     const r = await fetch(FB + path + ".json", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
     });
     return r.ok;
-  } catch (e) {
-    console.log("fbPut erro:", e.message);
-    return false;
-  }
+  } catch (e) { return false; }
 }
-
 async function fbDelete(path) {
-  try {
-    const r = await fetch(FB + path + ".json", { method: "DELETE" });
-    return r.ok;
-  } catch (e) {
-    return false;
-  }
+  try { const r = await fetch(FB + path + ".json", { method: "DELETE" }); return r.ok; }
+  catch (e) { return false; }
 }
 
-// ============================================
-// POLLING (atualiza a cada 2 segundos)
-// ============================================
 async function atualizarTudo() {
-  const [online, bans, history] = await Promise.all([
-    fbGet("/online"),
-    fbGet("/bans"),
-    fbGet("/history")
-  ]);
-
-  // Atualiza status
+  const [online, bans, history] = await Promise.all([fbGet("/online"), fbGet("/bans"), fbGet("/history")]);
   const dot = document.getElementById("status-dot");
   const txt = document.getElementById("status-text");
   if (online !== null) {
@@ -300,22 +253,16 @@ async function atualizarTudo() {
     dot.className = "status-dot status-offline";
     txt.textContent = "🔴 Sem conexão";
   }
-
   onlineData = online || {};
   bansData = bans || {};
   historyData = history || {};
-
   renderUsers(onlineData);
   renderBans(bansData);
   renderHistory(historyData);
 }
-
 setInterval(atualizarTudo, 2000);
 atualizarTudo();
 
-// ============================================
-// RENDER USERS
-// ============================================
 function fmtT(s) {
   s = Math.max(0, Math.floor(s));
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
@@ -326,33 +273,26 @@ function fmtT(s) {
 
 function renderUsers(data) {
   const now = Math.floor(Date.now() / 1000);
-  const users = Object.entries(data)
-    .map(([k, v]) => ({ ...v, _id: k }))
+  const users = Object.entries(data).map(([k, v]) => ({ ...v, _id: k }))
     .filter(u => u.lastPing && (now - u.lastPing) < 120)
     .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
-
   document.getElementById("st-online").textContent = users.length;
   document.getElementById("live-badge").textContent = users.length;
   document.getElementById("st-scripts").textContent = new Set(users.map(u => u.script).filter(Boolean)).size;
   document.getElementById("st-keys").textContent = new Set(users.map(u => u.keyHash).filter(Boolean)).size;
-
   const list = document.getElementById("users-list");
-  if (users.length === 0) {
-    list.innerHTML = '<div class="empty">👻 Nenhum usuário online</div>';
-    return;
-  }
+  if (users.length === 0) { list.innerHTML = '<div class="empty">👻 Nenhum usuário online</div>'; return; }
   list.innerHTML = users.map(u => {
     const init = (u.name || "?")[0].toUpperCase();
     const hue = (u.name || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
     const lvl = u.nivel || "normal";
-    const hwidShort = (u.hwid || "").substring(0, 12);
     return `<div class="user-row">
       <div class="user-avatar" style="background:hsl(${hue},70%,60%)">${esc(init)}</div>
       <div><div class="user-name">${esc(u.name || "?")}</div><div class="user-sub">ID: ${esc(String(u.userId || "?"))}</div></div>
       <div class="user-script">${esc(u.script || "-")}</div>
       <div><div class="user-badge badge-${esc(lvl)}">${esc(lvl)}</div></div>
       <div class="user-time">${fmtT(now - (u.startedAt || now))}</div>
-      <div class="user-sub" style="font-size:9px;">${esc(hwidShort)}...</div>
+      <div class="user-sub" style="font-size:9px;">${esc((u.hwid || "").substring(0, 12))}...</div>
       <div style="display:flex;gap:4px;">
         <button class="btn micro danger" onclick="kick('${u._id}')">🚫</button>
         <button class="btn micro danger" onclick="ban('${u._id}')" style="background:linear-gradient(135deg,#ec4899,#f87171);">⛔</button>
@@ -361,47 +301,30 @@ function renderUsers(data) {
   }).join("");
 }
 
-// ============================================
-// AÇÕES
-// ============================================
 window.kick = async (uid) => {
   if (!confirm("Kickar esse usuário?")) return;
   const u = onlineData[uid];
   await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), {
-    name: u ? u.name : uid, event: "kick", timestamp: Math.floor(Date.now() / 1000)
-  });
+  await fbPut("/history/" + Date.now(), { name: u ? u.name : uid, event: "kick", timestamp: Math.floor(Date.now() / 1000) });
   toast("🚫 Kick enviado!");
   setTimeout(atualizarTudo, 500);
 };
-
 window.ban = async (uid) => {
   const u = onlineData[uid];
-  if (!u) { toast("⚠️ Usuário não encontrado", true); return; }
-  if (!confirm(`Banir ${u.name}?\nHWID: ${u.hwid}`)) return;
-  await fbPut("/bans/" + u.hwid, {
-    name: u.name, userId: u.userId, reason: "Banido pelo admin",
-    bannedAt: Math.floor(Date.now() / 1000)
-  });
+  if (!u) return;
+  if (!confirm(`Banir ${u.name}?`)) return;
+  await fbPut("/bans/" + u.hwid, { name: u.name, userId: u.userId, reason: "Banido pelo admin", bannedAt: Math.floor(Date.now() / 1000) });
   await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), {
-    name: u.name, event: "ban", timestamp: Math.floor(Date.now() / 1000)
-  });
+  await fbPut("/history/" + Date.now(), { name: u.name, event: "ban", timestamp: Math.floor(Date.now() / 1000) });
   toast("⛔ Banido!");
   setTimeout(atualizarTudo, 500);
 };
 
-// ============================================
-// RENDER BANS
-// ============================================
 function renderBans(data) {
   const bans = Object.entries(data).map(([k, v]) => ({ ...v, hwid: k })).sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0));
   document.getElementById("st-bans").textContent = bans.length;
   const list = document.getElementById("bans-list");
-  if (bans.length === 0) {
-    list.innerHTML = '<div class="empty">✨ Ninguém banido</div>';
-    return;
-  }
+  if (bans.length === 0) { list.innerHTML = '<div class="empty">✨ Ninguém banido</div>'; return; }
   list.innerHTML = bans.map(b => `
     <div style="display:grid;grid-template-columns:1.3fr 1.5fr 100px 80px;gap:10px;padding:10px 12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;align-items:center;font-size:11px;">
       <div><div style="font-weight:700;">${esc(b.name || "?")}</div><div style="font-size:9px;color:var(--pink);font-family:'JetBrains Mono';">${esc(b.hwid.substring(0, 20))}...</div></div>
@@ -411,22 +334,18 @@ function renderBans(data) {
     </div>
   `).join("");
 }
-
 window.unban = async (hwid) => {
   if (!confirm("Remover ban?")) return;
   await fbDelete("/bans/" + hwid);
   toast("✅ Unban!");
   setTimeout(atualizarTudo, 500);
 };
-
 window.adicionarBan = async () => {
   const hwid = document.getElementById("ban-hwid").value.trim();
   const nome = document.getElementById("ban-nome").value.trim() || "Desconhecido";
-  const motivo = document.getElementById("ban-motivo").value.trim() || "Banido pelo admin";
+  const motivo = document.getElementById("ban-motivo").value.trim() || "Banido";
   if (!hwid) { toast("⚠️ Cole o HWID!", true); return; }
-  await fbPut("/bans/" + hwid, {
-    name: nome, reason: motivo, bannedAt: Math.floor(Date.now() / 1000)
-  });
+  await fbPut("/bans/" + hwid, { name: nome, reason: motivo, bannedAt: Math.floor(Date.now() / 1000) });
   document.getElementById("ban-hwid").value = "";
   document.getElementById("ban-nome").value = "";
   document.getElementById("ban-motivo").value = "";
@@ -434,16 +353,10 @@ window.adicionarBan = async () => {
   setTimeout(atualizarTudo, 500);
 };
 
-// ============================================
-// RENDER HISTORY
-// ============================================
 function renderHistory(data) {
   const evs = Object.entries(data).map(([k, v]) => ({ ...v, _id: k })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   const list = document.getElementById("history-list");
-  if (evs.length === 0) {
-    list.innerHTML = '<div class="empty">📭 Nenhum evento ainda</div>';
-    return;
-  }
+  if (evs.length === 0) { list.innerHTML = '<div class="empty">📭 Nenhum evento</div>'; return; }
   list.innerHTML = evs.slice(0, 50).map(e => {
     const d = new Date((e.timestamp || 0) * 1000);
     const t = d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -457,9 +370,6 @@ function renderHistory(data) {
   }).join("");
 }
 
-// ============================================
-// GERADOR DE KEYS
-// ============================================
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
   document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
   document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
@@ -472,9 +382,7 @@ window.gerarKey = () => {
   const s = () => Array.from({ length: 4 }, () => c[Math.floor(Math.random() * c.length)]).join("");
   document.getElementById("inp-key").value = `SAILENT-${s()}-${s()}-${s()}`;
 };
-
 let historico = [];
-
 window.gerar = async () => {
   const nome = document.getElementById("inp-nome").value.trim();
   const key = document.getElementById("inp-key").value.trim();
@@ -490,18 +398,16 @@ window.gerar = async () => {
   atualizarKeys();
   toast("✅ Key gerada!");
 };
-
 function atualizarKeys() {
   const list = document.getElementById("keys-list");
-  if (historico.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma key gerada ainda</div>';
-  } else {
+  if (historico.length === 0) { list.innerHTML = '<div class="empty">Nenhuma key gerada</div>'; }
+  else {
     list.innerHTML = historico.map((k, i) => `
       <div style="padding:10px 12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:12px;font-weight:700;">${esc(k.nome)} <span style="color:var(--sub);font-size:10px;">[${k.nivel}]</span></div>
-            <div style="font-size:9px;color:var(--cyan);font-family:'JetBrains Mono';margin-top:2px;overflow:hidden;text-overflow:ellipsis;">${esc(k.key)}</div>
+            <div style="font-size:9px;color:var(--cyan);font-family:'JetBrains Mono';margin-top:2px;">${esc(k.key)}</div>
           </div>
           <button class="mini-btn" onclick="copiarKey(${i})">📋</button>
           <button class="mini-btn" style="color:var(--red);" onclick="delKey(${i})">🗑️</button>
@@ -511,21 +417,12 @@ function atualizarKeys() {
   }
   const obj = { keys: {} };
   for (const k of historico) {
-    obj.keys[k.hash] = {
-      nome: k.nome, nivel: k.nivel, status: "ativa",
-      expira: k.expira, bindMode: k.bindMode
-    };
+    obj.keys[k.hash] = { nome: k.nome, nivel: k.nivel, status: "ativa", expira: k.expira, bindMode: k.bindMode };
   }
   document.getElementById("out-json").textContent = JSON.stringify(obj, null, 2);
 }
-
-window.copiarKey = (i) => {
-  navigator.clipboard.writeText(historico[i].key).then(() => toast("✅ Copiado!"));
-};
-window.delKey = (i) => {
-  historico.splice(i, 1);
-  atualizarKeys();
-};
+window.copiarKey = (i) => { navigator.clipboard.writeText(historico[i].key).then(() => toast("✅ Copiado!")); };
+window.delKey = (i) => { historico.splice(i, 1); atualizarKeys(); };
 </script>
 </body>
 </html>
