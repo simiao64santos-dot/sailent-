@@ -56,6 +56,10 @@
 		align-items: center; justify-content: center; color: #0a0a0f;
 		font-size: 14px; font-weight: 700;
 	}
+	.card-check.vip {
+		background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+		box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+	}
 	.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
 	.card-icon {
 		font-size: 32px; width: 56px; height: 56px; display: flex;
@@ -72,6 +76,10 @@
 		font-size: 10.5px; font-weight: 600; padding: 5px 11px; border-radius: 6px;
 		background: rgba(124, 158, 255, 0.1); color: var(--accent);
 		font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(124, 158, 255, 0.2);
+	}
+	.tag.gold {
+		background: rgba(251, 191, 36, 0.1); color: var(--yellow);
+		border-color: rgba(251, 191, 36, 0.3);
 	}
 	.code-preview {
 		background: #08080c; border: 1px solid var(--border); border-radius: 10px;
@@ -136,10 +144,52 @@ const REPO = "sailent-";
 const BRANCH = "main";
 
 const SCRIPTS = [
-	{ id: "gari", icon: "🗑️", name: "Sailent Auto Gari v9.0", file: "main.lua", desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo).", color: "#4ade80", tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"] },
-	{ id: "prisao", icon: "🔓", name: "Sailent Auto Prisão v3.1", file: "prisao.lua", desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço.", color: "#a78bfa", tags: ["Varredura", "Caixas", "Vel única", "Noclip"] },
-	{ id: "pizza", icon: "🍕", name: "Sailent Auto Pizza v6.1b", file: "pizza.lua", desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda.", color: "#fbbf24", tags: ["Anti-kick", "Anti-queda", "Vel única"] },
-	{ id: "eletricista", icon: "⚡", name: "Sailent Auto Eletricista v3.2", file: "eletricista.lua", desc: "Pega escada, teleporta pro topo do poste e conserta.", color: "#f87171", tags: ["TP topo", "God Mode", "Anti-Sit"] }
+	{
+		id: "vip",
+		icon: "👑",
+		name: "Sailent Tix Money VIP v9.0",
+		file: "sailent.lua",
+		desc: "MENU COMPLETO VIP. Sistema de key com HWID bind, live tracking, kick e ban à distância. Inclui Auto Gari + Eletricista + Pizza + Prisão + Aimbot + Spectate + Save Config.",
+		color: "#fbbf24",
+		vip: true,
+		tags: ["👑 VIP", "Key System", "Aimbot", "Auto Gari", "Eletricista", "Pizza", "Prisão"]
+	},
+	{
+		id: "gari",
+		icon: "🗑️",
+		name: "Sailent Auto Gari v7.0",
+		file: "main.lua",
+		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo).",
+		color: "#4ade80",
+		tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar"]
+	},
+	{
+		id: "prisao",
+		icon: "🔓",
+		name: "Sailent Auto Prisão v3.1",
+		file: "prisao.lua",
+		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço.",
+		color: "#a78bfa",
+		tags: ["Varredura", "Caixas", "Vel única", "Noclip"]
+	},
+	{
+		id: "pizza",
+		icon: "🍕",
+		name: "Sailent Auto Pizza v6.1b",
+		file: "pizza.lua",
+		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda.",
+		color: "#fbbf24",
+		tags: ["Anti-kick", "Anti-queda", "Vel única"]
+	},
+	{
+		id: "eletricista",
+		icon: "⚡",
+		name: "Sailent Auto Eletricista v3.2",
+		file: "eletricista.lua",
+		desc: "Pega escada, teleporta pro topo do poste e conserta.",
+		color: "#f87171",
+		tags: ["TP topo", "God Mode", "Anti-Sit"]
+	}
 ];
 
 function buildURL(file) { return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`; }
@@ -156,7 +206,7 @@ function buildScriptCards() {
 		const url = buildURL(s.file);
 		const load = buildLoadstring(s.file);
 		card.innerHTML = `
-			<div class="card-check">✓</div>
+			<div class="card-check ${s.vip ? 'vip' : ''}">${s.vip ? '👑' : '✓'}</div>
 			<div class="card-header">
 				<div class="card-icon">${s.icon}</div>
 				<div class="card-title-wrap">
@@ -165,7 +215,7 @@ function buildScriptCards() {
 				</div>
 			</div>
 			<div class="card-desc">${escapeHtml(s.desc)}</div>
-			<div class="tags">${s.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+			<div class="tags">${s.tags.map(t => `<span class="tag ${s.vip ? 'gold' : ''}">${escapeHtml(t)}</span>`).join("")}</div>
 			<div class="code-preview">
 				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 			</div>
