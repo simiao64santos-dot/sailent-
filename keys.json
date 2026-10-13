@@ -1,16 +1,11 @@
 {
   "keys": {
-    "0a8048b280933b8eb10dcc7ff0628851a80609960cffd638c8c7a41a0a859eb3": {
-      "nome": "dono",
+    "378e108579b14b7c07c1a36e7d7b439e3c54792bfb8aa5eac74454ba69c3b441": {
+      "nome": "Dono",
       "nivel": "owner",
       "status": "ativa",
       "expira": 99999999999,
-      "hwid": "",
-      "bindMode": "auto",
-      "boundTo": "",
-      "boundAt": 0,
-      "max_usos": -1,
-      "usos": 0
+      "bindMode": "auto"
     }
   }
 }
