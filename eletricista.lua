@@ -1,7 +1,31 @@
 -- ============================================================
 -- SAILENT AUTO ELETRICISTA v3.2 — UI Pizza + Vel Única + Anti-Sit
 -- TP + Part invisível + God Mode + Anti-Sit
+-- Auth: opcional via auth.lua (nunca quebra o script)
 -- ============================================================
+
+-- ===== AUTH (opcional) =====
+local _AUTH = { ok = false, nome = "Cliente", nivel = "normal" }
+do
+	local AUTH_URL = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"
+	local ok, res = pcall(function()
+		return loadstring(game:HttpGet(AUTH_URL .. "?t=" .. os.time()))()
+	end)
+	if ok and type(res) == "table" then
+		_AUTH.ok    = true
+		_AUTH.nome  = res.nome  or "Cliente"
+		_AUTH.nivel = res.nivel or "normal"
+		_G.SailentNome  = _AUTH.nome
+		_G.SailentNivel = _AUTH.nivel
+		print("[Eletricista] ✅ auth.lua ok: " .. _AUTH.nome .. " [" .. _AUTH.nivel .. "]")
+	elseif ok and res == true then
+		_AUTH.ok = true
+		print("[Eletricista] ✅ auth.lua ok (boolean)")
+	else
+		warn("[Eletricista] ⚠️ auth.lua indisponível — usando login local por key")
+	end
+end
+-- ===== FIM AUTH =====
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -460,7 +484,6 @@ local function CarregarConfig()
 			end
 		end
 	end)
-	-- compatibilidade: se tinha velFly antigo, migra
 	if Config.velFly then Config.velFly = nil end
 end
 
@@ -577,7 +600,7 @@ local function EquiparEscada()
 	return false
 end
 
--- ⭐⭐⭐ VOO (usa velocidade ÚNICA) ⭐⭐⭐
+-- ⭐⭐⭐ VOO ⭐⭐⭐
 local function VoarAte(posAlvo, timeout)
 	if not posAlvo then return false end
 	local hrp = GetHRP(); local hum = GetHum()
@@ -591,8 +614,6 @@ local function VoarAte(posAlvo, timeout)
 			p.CanCollide = false
 		end
 	end
-	-- ⭐ Multiplicador ajustado para que velocidade = studs/s aproximado
-	-- a cada 0.03s move (vel * 0.05) studs → velocidade efetiva = vel * 1.67
 	while tick() - t0 < timeout do
 		local h = GetHRP()
 		if not h then break end
@@ -731,7 +752,7 @@ local function AtivarGodMode()
 	end)
 end
 
--- UI (mesmo estilo do Pizza)
+-- UI
 local function IniciarScript()
 
 	for _, name in ipairs({"SailentKeyUI", "SailentEletricista", "SailentFloatBtn"}) do
@@ -825,7 +846,6 @@ local function IniciarScript()
 		end)
 	end
 
-	-- Header
 	local HB = Instance.new("Frame")
 	HB.Size = UDim2.new(1, 0, 0, 64); HB.BackgroundColor3 = C.Card
 	HB.BackgroundTransparency = 0.5; HB.BorderSizePixel = 0; HB.Parent = Main
@@ -1355,9 +1375,22 @@ local function IniciarScript()
 	Notificar("⚡ Auto Eletricista v3.2 carregado!", C.Accent, 2.5)
 end
 
-Log("🔐 Verificando key...")
+-- ===== INÍCIO (auth → key salva → UI de key) =====
+Log("🔐 Verificando autenticação...")
 
 task.spawn(function()
+	-- 1) auth.lua já aprovou? entra direto, sem UI de key
+	if _AUTH.ok then
+		KeyState.valida = true
+		KeyState.nome   = _AUTH.nome
+		KeyState.nivel  = _AUTH.nivel
+		Log("✅ Auth ok — iniciando direto (" .. _AUTH.nome .. ")")
+		Notificar("🔓 Auth ok — bem-vindo, " .. _AUTH.nome .. "!", C.Green, 2)
+		IniciarScript()
+		return
+	end
+
+	-- 2) fallback: tenta key salva no cache
 	local k = CarregarKeyLocal()
 	if k and k ~= "" then
 		local ok = ValidarKey(k)
@@ -1369,5 +1402,7 @@ task.spawn(function()
 			Log("⚠️ Key salva inválida, pedindo nova...")
 		end
 	end
+
+	-- 3) fallback final: UI de login por key
 	MostrarUILogin(function() IniciarScript() end)
 end)
