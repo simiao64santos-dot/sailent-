@@ -1,12 +1,16 @@
-"09cb0c90411c8964b8538be37acb5eb325884290a7fdb1d2e91feb53942e9e62": {
-  "nome": "DONO",
-  "nivel": "owner",
-  "status": "ativa",
-  "expira": 1794445630,
-  "hwid": "",
-  "bindMode": "auto",
-  "boundTo": "",
-  "boundAt": 0,
-  "max_usos": -1,
-  "usos": 0
+{
+  "keys": {
+    "0a8048b280933b8eb10dcc7ff0628851a80609960cffd638c8c7a41a0a859eb3": {
+      "nome": "dono",
+      "nivel": "owner",
+      "status": "ativa",
+      "expira": 99999999999,
+      "hwid": "",
+      "bindMode": "auto",
+      "boundTo": "",
+      "boundAt": 0,
+      "max_usos": -1,
+      "usos": 0
+    }
+  }
 }
