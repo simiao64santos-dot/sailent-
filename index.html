@@ -4,16 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚡ SAILENT HUB</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 	* { margin: 0; padding: 0; box-sizing: border-box; }
 	:root {
 		--bg: #0a0a0f; --card: #12121a; --card-hover: #1a1a26; --border: #1f1f2e;
 		--accent: #7c9eff; --text: #f0f0f5; --sub: #8a8a9e;
-		--green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa;
-		--red: #f87171;
+		--green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa; --red: #f87171;
 	}
 	body {
 		font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
@@ -109,36 +106,26 @@
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
 	}
 	.toast.show { transform: translateY(0); opacity: 1; }
-	.toast.error { background: var(--red); }
-	footer {
-		text-align: center; margin-top: 60px; color: var(--sub); font-size: 12px;
-	}
+	footer { text-align: center; margin-top: 60px; color: var(--sub); font-size: 12px; }
 	footer b { color: var(--accent); }
 	@media (max-width: 700px) {
 		body { padding: 24px 14px; }
 		.logo { font-size: 34px; }
 		.grid { grid-template-columns: 1fr; gap: 16px; }
 		.card { padding: 22px; }
-		.toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
 	}
 </style>
 </head>
 <body>
 
 <div class="container">
-
 	<header>
 		<h1 class="logo">⚡ SAILENT HUB</h1>
 		<p class="subtitle">Painel privado de scripts</p>
 		<div class="lock-badge">🔒 Acesso restrito</div>
 	</header>
-
 	<div class="grid" id="grid"></div>
-
-	<footer>
-		Painel <b>Sailent</b> • Scripts privados • por becks & kevim
-	</footer>
-
+	<footer>Painel <b>Sailent</b> • Scripts privados • por becks & kevim</footer>
 </div>
 
 <div class="toast" id="toast">✅ Copiado!</div>
@@ -149,26 +136,10 @@ const REPO = "sailent-";
 const BRANCH = "main";
 
 const SCRIPTS = [
-	{
-		id: "gari", icon: "🗑️", name: "Sailent Auto Gari v9.0", file: "main.lua",
-		desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo) em 1 slider.",
-		color: "#4ade80", tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"]
-	},
-	{
-		id: "prisao", icon: "🔓", name: "Sailent Auto Prisão v3.1", file: "prisao.lua",
-		desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço. Velocidade única (a pé e voo).",
-		color: "#a78bfa", tags: ["Varredura", "Caixas", "Vel única", "Noclip", "Anti-AFK"]
-	},
-	{
-		id: "pizza", icon: "🍕", name: "Sailent Auto Pizza v6.1b", file: "pizza.lua",
-		desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda. Voo opcional.",
-		color: "#fbbf24", tags: ["Anti-kick", "Anti-queda", "Vel única", "Espera", "Anti-Sit"]
-	},
-	{
-		id: "eletricista", icon: "⚡", name: "Sailent Auto Eletricista v3.2", file: "eletricista.lua",
-		desc: "Pega escada, teleporta pro topo do poste e conserta. Marca postes feitos. God Mode + anti-sit + noclip.",
-		color: "#f87171", tags: ["TP topo", "God Mode", "Vel única", "Anti-Sit", "Noclip"]
-	}
+	{ id: "gari", icon: "🗑️", name: "Sailent Auto Gari v9.0", file: "main.lua", desc: "Coleta e entrega lixo automaticamente. Noclip + God Mode. Velocidade única (a pé e voo).", color: "#4ade80", tags: ["Vel única", "Noclip", "God Mode", "A Pé/Voar", "Anti-AFK"] },
+	{ id: "prisao", icon: "🔓", name: "Sailent Auto Prisão v3.1", file: "prisao.lua", desc: "Varre o perímetro e entrega caixas. Reduz a pena sem esforço.", color: "#a78bfa", tags: ["Varredura", "Caixas", "Vel única", "Noclip"] },
+	{ id: "pizza", icon: "🍕", name: "Sailent Auto Pizza v6.1b", file: "pizza.lua", desc: "Pega pedido e entrega no cliente. Modo Seguro com anti-kick e anti-queda.", color: "#fbbf24", tags: ["Anti-kick", "Anti-queda", "Vel única"] },
+	{ id: "eletricista", icon: "⚡", name: "Sailent Auto Eletricista v3.2", file: "eletricista.lua", desc: "Pega escada, teleporta pro topo do poste e conserta.", color: "#f87171", tags: ["TP topo", "God Mode", "Anti-Sit"] }
 ];
 
 function buildURL(file) { return `https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/${file}`; }
@@ -210,9 +181,9 @@ buildScriptCards();
 
 const toast = document.getElementById("toast");
 let toastTimer;
-function showToast(txt, isError = false) {
+function showToast(txt) {
 	toast.textContent = txt;
-	toast.className = "toast show" + (isError ? " error" : "");
+	toast.className = "toast show";
 	clearTimeout(toastTimer);
 	toastTimer = setTimeout(() => toast.className = "toast", 2200);
 }
@@ -226,7 +197,6 @@ async function copyText(text) {
 		document.body.removeChild(ta); return ok;
 	}
 }
-
 document.addEventListener("click", async (e) => {
 	const copyBtn = e.target.closest("[data-copy]");
 	if (copyBtn) {
