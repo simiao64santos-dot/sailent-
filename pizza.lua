@@ -1,6 +1,23 @@
--- ===== AUTH =====
-local authOk = loadstring(game:HttpGet("https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"))()
-if not authOk then return end
+-- ===== AUTH (opcional — nunca mata o script) =====
+local _AUTH = { ok = false, nome = "Cliente", nivel = "normal" }
+pcall(function()
+	local ok, res = pcall(function()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/auth.lua"))()
+	end)
+	if ok and type(res) == "table" then
+		_AUTH.ok = true
+		_AUTH.nome = res.nome or "Cliente"
+		_AUTH.nivel = res.nivel or "normal"
+		_G.SailentNome = _AUTH.nome
+		_G.SailentNivel = _AUTH.nivel
+		print("[Pizza] ✅ auth.lua ok: " .. _AUTH.nome)
+	elseif ok and res == true then
+		_AUTH.ok = true
+		print("[Pizza] ✅ auth.lua ok")
+	else
+		warn("[Pizza] ⚠️ auth.lua indisponível — seguindo normalmente")
+	end
+end)
 -- ===== FIM AUTH =====
 
 -- ============================================================
@@ -73,7 +90,6 @@ local C = {
 local function Tween(o,p,t) if not o or not o.Parent then return end; local tw = TweenService:Create(o, TweenInfo.new(t or 0.2, Enum.EasingStyle.Quint), p); tw:Play(); return tw end
 local function Log(m) print("[Pizza] "..tostring(m)) end
 
--- Helpers
 local function HRP() local c = lp.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 local function HUM() local c = lp.Character; return c and c:FindFirstChild("Humanoid") end
 
@@ -168,7 +184,6 @@ local function TemPizza()
 	return d and d:FindFirstChild("PizzaTemplate") ~= nil
 end
 
--- Noclip
 local ncConn = nil
 local function AtivarNoclip()
 	if ncConn then pcall(function() ncConn:Disconnect() end) end
@@ -189,7 +204,6 @@ local function DesativarNoclip()
 	end
 end
 
--- Anti-Sentar
 local antiSitConns = {}
 local function AtivarAntiSit()
 	for _, c in ipairs(antiSitConns) do pcall(function() c:Disconnect() end) end
@@ -248,7 +262,6 @@ local function DesativarAntiSit()
 	if _G.SailentAntiSitConn then pcall(function() _G.SailentAntiSitConn:Disconnect() end); _G.SailentAntiSitConn = nil end
 end
 
--- Anti-Dano de Queda
 local fallConn = nil
 local fallDamageProtectAtivo = false
 local fallCharConn = nil
@@ -291,7 +304,6 @@ local function DesativarAntiDano()
 	fallDamageProtectAtivo = false
 end
 
--- Anti-AFK
 local afkConn = nil
 local function SetAFK(on)
 	if afkConn then pcall(function() afkConn:Disconnect() end); afkConn = nil end
@@ -302,12 +314,10 @@ local function SetAFK(on)
 	end
 end
 
--- Stats
 local StatsD = { entregues = 0, pegos = 0, inicio = tick() }
 local function FmtT(s) s = math.floor(s); return string.format("%02d:%02d:%02d", math.floor(s/3600), math.floor(s%3600/60), s%60) end
 local function Resumo() local d = tick() - StatsD.inicio; return string.format("⏱ %s  📦 %d  🎯 %d", FmtT(d), StatsD.entregues, StatsD.pegos) end
 
--- ANDAR RÁPIDO
 local function AndarRapido(posAlvo, timeout, dist)
 	if not posAlvo then return false end
 	if _suspenderTudo then return false end
@@ -389,7 +399,6 @@ local function AndarRapido(posAlvo, timeout, dist)
 	return false
 end
 
--- VOO
 local function Voar(posAlvo, timeout)
 	if not posAlvo then return false end
 	if _suspenderTudo then return false end
@@ -568,9 +577,6 @@ local function DestravarCam()
 	end
 end
 
--- ═══════════════════════════════════════════════════════════
--- UI
--- ═══════════════════════════════════════════════════════════
 local function Iniciar()
 	for _, n in ipairs({"SailentPizza","SailentFloatBtn"}) do
 		local o = CoreGui:FindFirstChild(n); if o then pcall(function() o:Destroy() end) end
@@ -1143,7 +1149,7 @@ local function Iniciar()
 	if CFG.autoEnt then UI.setEnt(true) end
 	AtualizarInd()
 
-	Log("🍕 Auto Pizza v"..VER.." pronto! ".._G.SailentNome)
+	Log("🍕 Auto Pizza v"..VER.." pronto! "..(_G.SailentNome or "Cliente"))
 end
 
 Iniciar()
