@@ -1,7 +1,42 @@
 {
   "keys": {
-    "378e108579b14b7c07c1a36e7d7b439e3c54792bfb8aa5eac74454ba69c3b441": {
-      "nome": "Dono",
+    "1857a0c344678d47d62115a18c40ddea94e958da89c1dc294004184c0f065bfa": {
+      "nome": "clinte key",
+      "nivel": "normal",
+      "status": "ativa",
+      "expira": 1792642435,
+      "bindMode": "auto"
+    },
+    "39d5f1e8ec0f0aaba0850c127a152a8316b191bc910b860753cab335ecc1aba3": {
+      "nome": "clinte key",
+      "nivel": "normal",
+      "status": "ativa",
+      "expira": 1792642446,
+      "bindMode": "auto"
+    },
+    "f3872dd08c12bdce5f1ec51303cdf4ed33373e006da1583f6f6fbdfac07673c3": {
+      "nome": "clinte key",
+      "nivel": "normal",
+      "status": "ativa",
+      "expira": 1792642449,
+      "bindMode": "auto"
+    },
+    "a7bcc9aed6daca085947e48935257ebf36d02f54be0b19f86786bb6db4d2b3f9": {
+      "nome": "clinte key",
+      "nivel": "normal",
+      "status": "ativa",
+      "expira": 1792642452,
+      "bindMode": "auto"
+    },
+    "efe09608053357030ec15eedfcde3262d8e49139a51beafbe638e6846fa0eb99": {
+      "nome": "clinte key",
+      "nivel": "normal",
+      "status": "ativa",
+      "expira": 1792642457,
+      "bindMode": "auto"
+    },
+    "3d8786f7538a13bb21103372cbccb37e15149d11aaa493e9a090af96ee34fcc6": {
+      "nome": "DONOS",
       "nivel": "owner",
       "status": "ativa",
       "expira": 99999999999,
