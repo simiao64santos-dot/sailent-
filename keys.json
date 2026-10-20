@@ -1,11 +1,11 @@
 {
   "keys": {
-    "d95ece0f1296c86842ad139e1b828e30bd025bef67fa6a278037792681530f7e": {
-      "nome": "Dono",
-      "nivel": "owner",
+    "cd2fbcf4b3096c30ab9e5be3786fbf3269a05b416873872f530055cc20d4c7c9": {
+      "nome": "Donoss",
+      "nivel": "admin",
       "status": "ativa",
       "expira": 99999999999,
-      "bindMode": "auto"
+      "bindMode": "free"
     }
   }
 }
