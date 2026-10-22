@@ -354,7 +354,7 @@
 		<p class="subtitle">Painel privado de scripts • by becks &amp; kevim</p>
 		<div class="badges">
 			<span class="badge pulse">Sistema online</span>
-			<span class="badge auth">🛡️ Anti-Cheat Bypass</span>
+			<span class="badge auth">🛡️ Auth via auth.lua</span>
 			<span class="badge key">🔑 Key unificada</span>
 		</div>
 	</header>
@@ -464,21 +464,13 @@ const SCRIPTS = [
 	}
 ];
 
-// ===== HELPERS =====
+// ===== HELPERS (ORIGINAL RESTAURADO) =====
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
 }
 
-// GERADOR DE SCRIPT PROTEGIDO (BYPASS ANTI-CHEAT) - VERSÃO ULTRA COMPATÍVEL
-function buildSafeLoadstring(file) {
-    const urlPart1 = "https://raw.githubusercontent.com/";
-    const urlPart2 = `${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
-    
-    // Transforma a URL em números (string.char) para enganar o anti-cheat
-    const chars1 = Array.from(urlPart1).map(c => c.charCodeAt(0)).join(",");
-    
-    // Loader simples, sem getfenv, que funciona em todos os executores
-    return `local a = string.char(${chars1}) .. "${urlPart2}"\nlocal b = game:HttpGet(a)\nlocal c = loadstring or load\nif c then c(b)() end`;
+function buildLoadstring(file) {
+	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
 
 function escapeHtml(str) {
@@ -510,7 +502,7 @@ function renderCards() {
 		card.style.setProperty("--card-color", s.color);
 
 		const url = buildURL(s.file);
-		const load = buildSafeLoadstring(s.file); // Usa a versão segura
+		const load = buildLoadstring(s.file);
 
 		const badgeHtml = s.vip
 			? '<span class="card-badge vip">👑 VIP</span>'
@@ -534,11 +526,10 @@ function renderCards() {
 				).join("")}
 			</div>
 			<div class="code-preview">
-				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))() <br>
-				<span style="color:var(--green); font-size:10px;">[Protegido contra Anti-Cheat]</span>
+				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
 			</div>
 			<div class="actions">
-				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Script Seguro</button>
+				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Loadstring</button>
 				<button class="btn btn-raw" data-open="${escapeHtml(url)}">🔗 Raw</button>
 			</div>
 		`;
@@ -627,7 +618,7 @@ document.addEventListener("click", async (e) => {
 			const original = copyBtn.innerHTML;
 			copyBtn.classList.add("copied");
 			copyBtn.innerHTML = "✅ Copiado!";
-			showToast("✅ Script Seguro copiado!");
+			showToast("✅ Loadstring copiado!");
 			setTimeout(() => {
 				copyBtn.classList.remove("copied");
 				copyBtn.innerHTML = original;
