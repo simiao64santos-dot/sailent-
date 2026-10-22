@@ -464,11 +464,12 @@ const SCRIPTS = [
 	}
 ];
 
-// ===== HELPERS (ORIGINAL RESTAURADO) =====
+// ===== HELPERS (SIMPLES E PURO) =====
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
 }
 
+// EXATAMENTE COMO VOCÊ PEDIU: loadstring(game:HttpGet("URL"))()
 function buildLoadstring(file) {
 	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
