@@ -469,16 +469,16 @@ function buildURL(file) {
 	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
 }
 
-// GERADOR DE SCRIPT PROTEGIDO (BYPASS ANTI-CHEAT)
+// GERADOR DE SCRIPT PROTEGIDO (BYPASS ANTI-CHEAT) - VERSÃO ULTRA COMPATÍVEL
 function buildSafeLoadstring(file) {
     const urlPart1 = "https://raw.githubusercontent.com/";
     const urlPart2 = `${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
     
-    // Transforma a URL principal em uma sequência de números (string.char)
+    // Transforma a URL em números (string.char) para enganar o anti-cheat
     const chars1 = Array.from(urlPart1).map(c => c.charCodeAt(0)).join(",");
     
-    // O script gerado esconde "loadstring", "HttpGet" e a URL. Ele tenta 'request' primeiro e depois 'HttpGet'.
-    return `local a=string.char(${chars1}) local b="${urlPart2}" local c=a..b local e=game local f=getfenv() local g=f["HttpGet"] or e["HttpGet"] local h=f[string.char(108,111,97,100,115,116,114,105,110,103)] local i,j=pcall(function() if f[string.char(114,101,113,117,101,115,116)] then local k=f[string.char(114,101,113,117,101,115,116)]({Url=c,Method="GET"}) return k.Body or k.body else return g(e,c) end end) if i and j and j~="" then local l=h(j) if l then pcall(l) end end`;
+    // Loader simples, sem getfenv, que funciona em todos os executores
+    return `local a = string.char(${chars1}) .. "${urlPart2}"\nlocal b = game:HttpGet(a)\nlocal c = loadstring or load\nif c then c(b)() end`;
 }
 
 function escapeHtml(str) {
