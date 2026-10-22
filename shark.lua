@@ -1,13 +1,14 @@
 -- =======================================================
--- SAILENT TIX MONEY VIP v9.0 COMPLETO
+-- SHARK MENU v10.8 COMPLETO
 -- Auth + HWID Bind + Live + Kick + Ban + Aimbot + Scripts
 -- Criado por: becks & kevim
+-- v10.8: Adicionado "Puxar Carro" (Em desenvolvimento) em Privates
 -- =======================================================
 
 local FIREBASE_URL = "https://sailent-c8150-default-rtdb.firebaseio.com"
 local GITHUB_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
-local SCRIPT_NAME = "Sailent Tix Money VIP"
-local SCRIPT_VER = "9.0"
+local SCRIPT_NAME = "Shark Menu"
+local SCRIPT_VER = "10.8"
 local DISCORD_LINK = "https://discord.gg/955U6r5RAQ"
 
 local CoreGui = game:GetService("CoreGui")
@@ -194,7 +195,7 @@ local function mostrarLogin()
 	corner(box,16)stroke(box,CIANO,1.5,0.3)
 	local top=Instance.new("Frame")top.Size=UDim2.new(1,0,0,4)top.BackgroundColor3=CIANO top.BorderSizePixel=0 top.Parent=box corner(top,16)grad(top,CIANO,AZUL,0)
 	local icon=Instance.new("TextLabel")icon.Size=UDim2.new(0,60,0,60)icon.Position=UDim2.new(0.5,-30,0,20)icon.BackgroundColor3=CIANO icon.Text="🔐"icon.Font=Enum.Font.GothamBold icon.TextSize=30 icon.BorderSizePixel=0 icon.Parent=box corner(icon,30)grad(icon,CIANO,AZUL,45)
-	local titulo=Instance.new("TextLabel")titulo.Size=UDim2.new(1,0,0,26)titulo.Position=UDim2.new(0,0,0,90)titulo.BackgroundTransparency=1 titulo.Text="SAILENT TIX MONEY VIP"titulo.Font=Enum.Font.GothamBold titulo.TextSize=18 titulo.TextColor3=TEXTO titulo.Parent=box
+	local titulo=Instance.new("TextLabel")titulo.Size=UDim2.new(1,0,0,26)titulo.Position=UDim2.new(0,0,0,90)titulo.BackgroundTransparency=1 titulo.Text="SHARK MENU"titulo.Font=Enum.Font.GothamBold titulo.TextSize=18 titulo.TextColor3=TEXTO titulo.Parent=box
 	local subt=Instance.new("TextLabel")subt.Size=UDim2.new(1,0,0,16)subt.Position=UDim2.new(0,0,0,116)subt.BackgroundTransparency=1 subt.Text="Cole sua key para continuar"subt.Font=Enum.Font.Gotham subt.TextSize=11 subt.TextColor3=SUB subt.Parent=box
 	local inp=Instance.new("TextBox")inp.Size=UDim2.new(1,-56,0,48)inp.Position=UDim2.new(0,28,0,150)inp.BackgroundColor3=CARD inp.BorderSizePixel=0 inp.Text=""inp.PlaceholderText="SAILENT-XXXX-XXXX-XXXX"inp.PlaceholderColor3=SUB inp.TextColor3=TEXTO inp.TextSize=14 inp.Font=Enum.Font.Code inp.ClearTextOnFocus=false inp.Parent=box corner(inp,10)stroke(inp,BORDA,1,0.3)
 	local status=Instance.new("TextLabel")status.Size=UDim2.new(1,-56,0,40)status.Position=UDim2.new(0,28,0,210)status.BackgroundTransparency=1 status.Text=""status.Font=Enum.Font.GothamBold status.TextSize=11 status.TextColor3=VERMELHO status.TextWrapped=true status.Parent=box
@@ -229,20 +230,20 @@ local function mostrarLogin()
 end
 
 _G.SailentStartTick=tick()
-print("[Sailent] v"..SCRIPT_VER.." iniciando...")
+print("["..SCRIPT_NAME.."] v"..SCRIPT_VER.." iniciando...")
 
 do
 	local keySalva=getSavedKey()
 	if keySalva and keySalva~=""then
-		print("[Sailent] 🔄 Validando key salva...")
+		print("["..SCRIPT_NAME.."] 🔄 Validando key salva...")
 		local ok,entry,hash=validarKey(keySalva)
 		if ok then
 			_G.SailentNivel=entry.nivel or "normal"
 			_G.SailentNome=entry.nome or "Cliente"
 			_G.SailentKeyHash=hash
-			print("[Sailent] ✅ ".._G.SailentNome.." [".._G.SailentNivel.."]")
+			print("["..SCRIPT_NAME.."] ✅ ".._G.SailentNome.." [".._G.SailentNivel.."]")
 		else
-			print("[Sailent] ❌ "..tostring(entry))
+			print("["..SCRIPT_NAME.."] ❌ "..tostring(entry))
 			deleteKey()
 			keySalva=nil
 		end
@@ -259,18 +260,17 @@ do
 end
 
 -- CONFIG
-local CFG_FILE="sailent_vip_cfg.json"
-local CFG={vel=100,modoVoo=false,noclip=true,antiAfk=true,godMode=true,antiSit=true,
+local CFG_FILE="shark_menu_cfg.json"
+local CFG={vel=60,modoVoo=false,noclip=true,antiAfk=true,godMode=true,antiSit=true,
 	autoGari=false,autoEletricista=false,autoPizza=false,autoVarrer=false,autoCaixa=false,
-	esperaEntrega=5,listaAdmin=false,aimbotEnabled=false,aimbotKey="E",aimbotFov=150,
+	esperaEntrega=5, esperaVarredura=3, listaAdmin=false,aimbotEnabled=false,aimbotKey="E",aimbotFov=150,
 	aimbotSmoothness=0.2,aimbotTeamCheck=true,aimbotWallCheck=false,aimbotTargetPart="Head",
 	aimbotMode="Camera",aimbotAutoShoot=false,aimbotFovCircle=true}
 local function saveCfg()pcall(function()if writefile then writefile(CFG_FILE,HttpService:JSONEncode(CFG))end end)end
 local function loadCfg()pcall(function()if isfile and isfile(CFG_FILE)and readfile then local d=HttpService:JSONDecode(readfile(CFG_FILE))for k,v in pairs(d)do CFG[k]=v end end end)end
 loadCfg()
+if CFG.vel>200 then CFG.vel=200 end
 
-local godAtivo=CFG.godMode
-local GodConns={}
 local ncConn=nil
 local afkConn=nil
 local antiSitConns={}
@@ -293,14 +293,116 @@ local function antiSitOn()
 end
 local function antiSitOff()for _,c in ipairs(antiSitConns)do pcall(function()c:Disconnect()end)end antiSitConns={}end
 
-local function godChar(char)
-	if not char then return end
-	local hum=char:FindFirstChildOfClass("Humanoid")if not hum then return end
-	table.insert(GodConns,RunService.Heartbeat:Connect(function()if not godAtivo then return end local h=char:FindFirstChildOfClass("Humanoid")if not h then return end if h.Health>0 and h.Health<h.MaxHealth then h.Health=h.MaxHealth end end))
-	table.insert(GodConns,hum.HealthChanged:Connect(function(v)if not godAtivo then return end if v<hum.MaxHealth and v>0 then hum.Health=hum.MaxHealth end end))
-	pcall(function()hum.MaxHealth=10000 hum.Health=10000 end)
+-- =======================================================
+-- GOD MODE v2.1
+-- =======================================================
+local godAtivo = CFG.godMode
+local GodConns = {}
+local GodCharConns = {}
+local GodLastSafe = nil
+
+local GOD_SOFT_DIST = 10
+local GOD_SAFE_SPEED = 22
+local GOD_VOID_Y = Workspace.FallenPartsDestroyHeight + 80
+
+local function godClearChar()
+	for _, c in ipairs(GodCharConns) do pcall(function() c:Disconnect() end) end
+	GodCharConns = {}
 end
-local function godOn()for _,c in ipairs(GodConns)do pcall(function()c:Disconnect()end)end GodConns={}if lp.Character then godChar(lp.Character)end table.insert(GodConns,lp.CharacterAdded:Connect(function(c)task.wait(0.3)godChar(c)end))end
+
+local function godChar(char)
+	godClearChar()
+	if not char then return end
+	local hum = char:WaitForChild("Humanoid", 5)
+	local hrp = char:WaitForChild("HumanoidRootPart", 5)
+	if not hum or not hrp then return end
+
+	pcall(function() hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false) end)
+	pcall(function() hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false) end)
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = {char}
+
+	table.insert(GodCharConns, RunService.Heartbeat:Connect(function()
+		if not godAtivo then return end
+		if not hum.Parent or not hrp.Parent then return end
+
+		if hum.Health > 0 and hum.Health < hum.MaxHealth then
+			hum.Health = hum.MaxHealth
+		end
+
+		if hum.FloorMaterial ~= Enum.Material.Air and hrp.Position.Y > GOD_VOID_Y + 50 then
+			GodLastSafe = hrp.CFrame
+		end
+
+		local v = hrp.AssemblyLinearVelocity
+		if v.Y < -GOD_SAFE_SPEED then
+			local hit = Workspace:Raycast(hrp.Position, Vector3.new(0, -GOD_SOFT_DIST, 0), rayParams)
+			if hit then
+				local novoY = math.max(v.Y * 0.55, -GOD_SAFE_SPEED)
+				hrp.AssemblyLinearVelocity = Vector3.new(v.X, novoY, v.Z)
+			end
+		end
+
+		if hrp.Position.Y < GOD_VOID_Y and GodLastSafe then
+			hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+			hrp.CFrame = GodLastSafe + Vector3.new(0, 4, 0)
+		end
+	end))
+
+	table.insert(GodCharConns, hum.StateChanged:Connect(function(_, new)
+		if not godAtivo then return end
+		if new == Enum.HumanoidStateType.FallingDown or new == Enum.HumanoidStateType.Ragdoll then
+			pcall(function() hum:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+		end
+	end))
+end
+
+local function godOn()
+	for _, c in ipairs(GodConns) do pcall(function() c:Disconnect() end) end
+	GodConns = {}
+	godAtivo = true
+	if lp.Character then task.spawn(godChar, lp.Character) end
+	table.insert(GodConns, lp.CharacterAdded:Connect(function(c)
+		task.wait(0.3)
+		if godAtivo then task.spawn(godChar, c) end
+	end))
+end
+
+local function godOff()
+	godAtivo = false
+	for _, c in ipairs(GodConns) do pcall(function() c:Disconnect() end) end
+	GodConns = {}
+	godClearChar()
+	local h = HUM()
+	if h then
+		pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true) end)
+		pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true) end)
+	end
+end
+
+-- ANTI-KICK
+pcall(function()
+	if not (hookmetamethod and getnamecallmethod and newcclosure) then return end
+	local oldNC
+	oldNC = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+		local m = getnamecallmethod()
+		if self == lp and type(m) == "string" and m:lower() == "kick" then
+			if checkcaller and checkcaller() then return oldNC(self, ...) end
+			return nil
+		end
+		return oldNC(self, ...)
+	end))
+end)
+pcall(function()
+	if not (hookfunction and newcclosure) then return end
+	local oldK
+	oldK = hookfunction(lp.Kick, newcclosure(function(self, ...)
+		if self == lp and not (checkcaller and checkcaller()) then return nil end
+		return oldK(self, ...)
+	end))
+end)
 
 local function andar(pos,to,dist)
 	if not pos then return false end
@@ -364,7 +466,7 @@ local function isVisible(part)
 	return hit and hit:IsDescendantOf(part.Parent)
 end
 local function getTarget()
-	local closest=nil closestDist=math.huge
+	local closest,closestDist=nil,math.huge
 	local mp=Vector2.new(Mouse.X,Mouse.Y)
 	local cp=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
 	local check=(CFG.aimbotMode=="Mouse"and mp)or cp
@@ -486,17 +588,104 @@ local function localMarcado()
 end
 local function temPizza()local d=Workspace:FindFirstChild(lp.Name)return d and d:FindFirstChild("PizzaTemplate")~=nil end
 
--- PRISÃO HELPERS
-local varridos={}
+-- =======================================================
+-- PRISÃO HELPERS — AUTO VARRER v10.8
+-- =======================================================
 local PrisaoSt={v=0,c=0,e=0,i=tick()}
-local function localVarrer()
-	local f=Workspace:FindFirstChild("LocaisVarrer")if not f then return nil end
-	local hrp=HRP()if not hrp then return nil end
-	local mp,md=nil,math.huge
-	for _,p in ipairs(f:GetChildren())do if p:IsA("BasePart")and not varridos[p]then local d=(p.Position-hrp.Position).Magnitude if d<md then md=d mp=p end end end
-	if not mp then varridos={}for _,p in ipairs(f:GetChildren())do if p:IsA("BasePart")then local d=(p.Position-hrp.Position).Magnitude if d<md then md=d mp=p end end end end
-	return mp
+
+local VASSOURA_KW = {"vassoura","broom","sweep","varrer","limpar","limpeza","clean","mop","esfregona","rodo"}
+
+local function contemAlguma(str, kws)
+	if not str then return false end
+	str = str:lower()
+	for _, k in ipairs(kws) do
+		if str:find(k, 1, true) then return true end
+	end
+	return false
 end
+
+local function acharPastaVarredura()
+	return Workspace:FindFirstChild("LocaisVarrer")
+end
+
+local function acharVassoura()
+	if not lp.Character then return nil end
+	for _, o in ipairs(lp.Character:GetChildren()) do
+		if o:IsA("Tool") and contemAlguma(o.Name, VASSOURA_KW) then return o end
+	end
+	if lp.Backpack then
+		for _, o in ipairs(lp.Backpack:GetChildren()) do
+			if o:IsA("Tool") and contemAlguma(o.Name, VASSOURA_KW) then return o end
+		end
+	end
+	return nil
+end
+
+local function equipVassoura()
+	local hum = HUM()
+	if not hum or not lp.Character then return nil end
+	for _, o in ipairs(lp.Character:GetChildren()) do
+		if o:IsA("Tool") and contemAlguma(o.Name, VASSOURA_KW) then return o end
+	end
+	local tool = acharVassoura()
+	if tool and tool.Parent == lp.Backpack then
+		pcall(function() hum:EquipTool(tool) end)
+		task.wait(0.5)
+		for _, t in ipairs(lp.Character:GetChildren()) do
+			if t:IsA("Tool") and contemAlguma(t.Name, VASSOURA_KW) then return t end
+		end
+	end
+	return nil
+end
+
+local function proximoPontoVarredura()
+	local hrp = HRP()
+	if not hrp then return nil end
+	local pasta = acharPastaVarredura()
+	if not pasta then return nil end
+
+	local lista = {}
+	for _, p in ipairs(pasta:GetChildren()) do
+		if p:IsA("BasePart") and not p:GetAttribute("EmCooldown") then
+			local dist = (p.Position - hrp.Position).Magnitude
+			table.insert(lista, {part = p, pos = p.Position, dist = dist})
+		end
+	end
+
+	if #lista == 0 then return nil end
+	table.sort(lista, function(a, b) return a.dist < b.dist end)
+	return lista[1]
+end
+
+local function debugVarredura()
+	print("═══════════════════════════════════════")
+	print("🔍 DEBUG AUTO VARRER v10.8 (Vassoura)")
+	print("═══════════════════════════════════════")
+	local pasta = acharPastaVarredura()
+	if not pasta then
+		print("❌ workspace.LocaisVarrer NÃO encontrado!")
+	else
+		print("✅ workspace.LocaisVarrer: " .. pasta:GetFullName())
+		local total, emCooldown, disponiveis = 0, 0, 0
+		for _, p in ipairs(pasta:GetChildren()) do
+			if p:IsA("BasePart") then
+				total = total + 1
+				if p:GetAttribute("EmCooldown") then
+					emCooldown = emCooldown + 1
+				else
+					disponiveis = disponiveis + 1
+				end
+			end
+		end
+		print("📊 Total de BaseParts: " .. total)
+		print("⏳ Em cooldown: " .. emCooldown)
+		print("✅ Disponíveis: " .. disponiveis)
+	end
+	local tool = acharVassoura()
+	print("🧹 Vassoura: " .. (tool and tool.Name or "NÃO ENCONTRADA"))
+	print("═══════════════════════════════════════")
+end
+
 local function promPrisao(txt)
 	local hrp=HRP()if not hrp then return nil end
 	local mp,md=nil,math.huge
@@ -507,8 +696,14 @@ local function promPrisao(txt)
 	end
 	return mp
 end
-local function temCaixa()if not lp.Character then return false end for _,o in ipairs(lp.Character:GetChildren())do if o:IsA("Tool")and(o.Name:lower():find("caixa")or o.Name:lower():find("lixo")or o.Name:lower():find("trash"))then return true end end return false end
-local function equipVassoura()local hum=HUM()if not hum then return end for _,o in ipairs(lp.Character:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("vassoura")then return end end if lp.Backpack then for _,o in ipairs(lp.Backpack:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("vassoura")then pcall(function()hum:EquipTool(o)end)return end end end end
+
+local function temCaixa()
+	if not lp.Character then return false end
+	for _,o in ipairs(lp.Character:GetChildren())do
+		if o:IsA("Tool")and(o.Name:lower():find("caixa")or o.Name:lower():find("lixo")or o.Name:lower():find("trash"))then return true end
+	end
+	return false
+end
 
 -- ADM DETECT
 local ADM_KW={"admin","adm","mod","moderador","staff","owner","dono","gerente","manager","dev","developer","criador","creator","helper","ajudante","suporte","support","cargo","rank"}
@@ -523,7 +718,7 @@ local function detectAdm(p)
 end
 
 -- INTERFACE
-local ScreenGui=Instance.new("ScreenGui")ScreenGui.Name="TixMoneyVIP_UI"ScreenGui.ResetOnSpawn=false ScreenGui.IgnoreGuiInset=true ScreenGui.Parent=CoreGui
+local ScreenGui=Instance.new("ScreenGui")ScreenGui.Name="SharkMenu_UI"ScreenGui.ResetOnSpawn=false ScreenGui.IgnoreGuiInset=true ScreenGui.Parent=CoreGui
 
 local function Notif(txt,cor,dur)
 	cor=cor or AMARELO dur=dur or 2
@@ -555,11 +750,9 @@ local C=Instance.new("Frame")C.Size=UDim2.new(1,-460,1,-20)C.Position=UDim2.new(
 local Header=Instance.new("Frame")Header.Size=UDim2.new(1,0,0,78)Header.BackgroundColor3=INPUT Header.BackgroundTransparency=0.3 Header.BorderSizePixel=0 Header.Parent=C corner(Header,10)
 local DragBar=Instance.new("Frame")DragBar.Size=UDim2.new(0,40,0,3)DragBar.Position=UDim2.new(0.5,-20,0,4)DragBar.BackgroundColor3=BORDA DragBar.BorderSizePixel=0 DragBar.Parent=Header corner(DragBar,2)
 
-local LogoIcon=Instance.new("Frame")LogoIcon.Size=UDim2.new(0,56,0,56)LogoIcon.Position=UDim2.new(0,14,0.5,-28)LogoIcon.BackgroundColor3=CIANO LogoIcon.BorderSizePixel=0 LogoIcon.Parent=Header corner(LogoIcon,28)grad(LogoIcon,CIANO,AZUL,45)stroke(LogoIcon,CIANO,2,0.2)
-local LogoE=Instance.new("TextLabel")LogoE.Size=UDim2.new(1,0,1,0)LogoE.BackgroundTransparency=1 LogoE.Text="👑"LogoE.TextSize=30 LogoE.Font=Enum.Font.GothamBold LogoE.Parent=LogoIcon
-local LogoTitle=Instance.new("TextLabel")LogoTitle.Size=UDim2.new(0,300,0,22)LogoTitle.Position=UDim2.new(0,78,0,10)LogoTitle.BackgroundTransparency=1 LogoTitle.Text="SAILENT"LogoTitle.TextColor3=CIANO LogoTitle.TextSize=20 LogoTitle.Font=Enum.Font.GothamBold LogoTitle.TextXAlignment=Enum.TextXAlignment.Left LogoTitle.Parent=Header
-local LogoSub=Instance.new("TextLabel")LogoSub.Size=UDim2.new(0,300,0,14)LogoSub.Position=UDim2.new(0,78,0,31)LogoSub.BackgroundTransparency=1 LogoSub.Text="TIX MONEY VIP"LogoSub.TextColor3=AMARELO LogoSub.TextSize=11 LogoSub.Font=Enum.Font.GothamBold LogoSub.TextXAlignment=Enum.TextXAlignment.Left LogoSub.Parent=Header
-local Creditos=Instance.new("TextLabel")Creditos.Size=UDim2.new(0,300,0,12)Creditos.Position=UDim2.new(0,78,0,47)Creditos.BackgroundTransparency=1 Creditos.Text="by becks & kevim • RightShift"Creditos.TextColor3=SUB Creditos.TextSize=9 Creditos.Font=Enum.Font.Gotham Creditos.TextXAlignment=Enum.TextXAlignment.Left Creditos.Parent=Header
+local LogoTitle=Instance.new("TextLabel")LogoTitle.Size=UDim2.new(0,300,0,22)LogoTitle.Position=UDim2.new(0,20,0,10)LogoTitle.BackgroundTransparency=1 LogoTitle.Text="SHARK MENU"LogoTitle.TextColor3=CIANO LogoTitle.TextSize=20 LogoTitle.Font=Enum.Font.GothamBold LogoTitle.TextXAlignment=Enum.TextXAlignment.Left LogoTitle.Parent=Header
+local LogoSub=Instance.new("TextLabel")LogoSub.Size=UDim2.new(0,300,0,14)LogoSub.Position=UDim2.new(0,20,0,31)LogoSub.BackgroundTransparency=1 LogoSub.Text="TIX MONEY VIP"LogoSub.TextColor3=AMARELO LogoSub.TextSize=11 LogoSub.Font=Enum.Font.GothamBold LogoSub.TextXAlignment=Enum.TextXAlignment.Left LogoSub.Parent=Header
+local Creditos=Instance.new("TextLabel")Creditos.Size=UDim2.new(0,300,0,12)Creditos.Position=UDim2.new(0,20,0,47)Creditos.BackgroundTransparency=1 Creditos.Text="by becks & kevim • RightShift"Creditos.TextColor3=SUB Creditos.TextSize=9 Creditos.Font=Enum.Font.Gotham Creditos.TextXAlignment=Enum.TextXAlignment.Left Creditos.Parent=Header
 
 local OnInd=Instance.new("Frame")OnInd.Size=UDim2.new(0,100,0,26)OnInd.Position=UDim2.new(1,-230,0.5,-13)OnInd.BackgroundColor3=CARD OnInd.BorderSizePixel=0 OnInd.Parent=Header corner(OnInd,13)stroke(OnInd,VERDE_NEON,1.5,0.2)
 local OnDot=Instance.new("Frame")OnDot.Size=UDim2.new(0,8,0,8)OnDot.Position=UDim2.new(0,10,0.5,-4)OnDot.BackgroundColor3=VERDE_NEON OnDot.BorderSizePixel=0 OnDot.Parent=OnInd corner(OnDot,4)
@@ -575,9 +768,8 @@ local InnerMenu=Instance.new("Frame")InnerMenu.Size=UDim2.new(0,165,1,0)InnerMen
 local Content=Instance.new("ScrollingFrame")Content.Size=UDim2.new(1,-175,1,0)Content.Position=UDim2.new(0,165,0,0)Content.BackgroundTransparency=1 Content.BorderSizePixel=0 Content.ScrollBarThickness=3 Content.ScrollBarImageColor3=AMARELO Content.CanvasSize=UDim2.new(0,0,0,0)Content.AutomaticCanvasSize=Enum.AutomaticSize.Y Content.Parent=Body
 local CList=Instance.new("UIListLayout")CList.Padding=UDim.new(0,8)CList.Parent=Content
 
-local FloatBtn=Instance.new("TextButton")FloatBtn.Size=UDim2.new(0,55,0,55)FloatBtn.Position=UDim2.new(0,20,0.5,-27)FloatBtn.BackgroundColor3=FUNDO FloatBtn.Text="👑"FloatBtn.TextSize=24 FloatBtn.Font=Enum.Font.GothamBold FloatBtn.TextColor3=CIANO FloatBtn.BorderSizePixel=0 FloatBtn.AutoButtonColor=false FloatBtn.Visible=false FloatBtn.Parent=ScreenGui corner(FloatBtn,27)stroke(FloatBtn,CIANO,2,0.3)
+local FloatBtn=Instance.new("TextButton")FloatBtn.Size=UDim2.new(0,55,0,55)FloatBtn.Position=UDim2.new(0,20,0.5,-27)FloatBtn.BackgroundColor3=FUNDO FloatBtn.Text="🦈"FloatBtn.TextSize=24 FloatBtn.Font=Enum.Font.GothamBold FloatBtn.TextColor3=CIANO FloatBtn.BorderSizePixel=0 FloatBtn.AutoButtonColor=false FloatBtn.Visible=false FloatBtn.Parent=ScreenGui corner(FloatBtn,27)stroke(FloatBtn,CIANO,2,0.3)
 
--- Admin Panel (detecta admins no servidor)
 local AdminP=Instance.new("Frame")AdminP.Size=UDim2.new(0,250,0,400)AdminP.Position=UDim2.new(1,-270,0.5,-200)AdminP.BackgroundColor3=FUNDO AdminP.BorderSizePixel=0 AdminP.Visible=false AdminP.Parent=ScreenGui corner(AdminP,12)stroke(AdminP,VERMELHO2,2,0.3)grad(AdminP,FUNDO,Color3.fromRGB(25,5,10),90)
 local AH=Instance.new("Frame")AH.Size=UDim2.new(1,0,0,44)AH.BackgroundColor3=CARD AH.BackgroundTransparency=0.3 AH.BorderSizePixel=0 AH.Parent=AdminP corner(AH,12)
 local AI=Instance.new("TextLabel")AI.Size=UDim2.new(0,30,0,30)AI.Position=UDim2.new(0,10,0.5,-15)AI.BackgroundColor3=VERMELHO2 AI.Text="🛡️"AI.Font=Enum.Font.GothamBold AI.TextSize=16 AI.BorderSizePixel=0 AI.Parent=AH corner(AI,8)
@@ -724,7 +916,11 @@ tabs["Jogador"]=function()
 	toggle("🛡️ Ativar Lista Admin",CFG.listaAdmin,VERMELHO2,function(s)CFG.listaAdmin=s AdminP.Visible=s if s then atualizarAdmins()Notif("🛡️ ATIVADA",VERMELHO2,2)else Notif("🛡️ DESATIVADA",AMARELO,1.5)end atual()saveCfg()end)
 	botao("🔄 Atualizar Lista Admin",VERMELHO2,function()if CFG.listaAdmin then atualizarAdmins()atual()Notif("🔄 Atualizado!",VERMELHO2,1.5)else Notif("⚠️ Ative primeiro!",AMARELO,1.5)end end)
 	secao("⚡ Ações Rápidas",VERMELHO)
-	botao("🔄 Resetar Personagem",VERMELHO,function()local c=lp.Character if c then c:BreakJoints()end Notif("🔄 Resetado!",VERMELHO)end)
+	botao("🔄 Resetar Personagem",VERMELHO,function()
+		local c=lp.Character
+		if c then c:BreakJoints()end
+		Notif("🔄 Resetado!",VERMELHO)
+	end)
 	botao("💚 Restaurar Vida",VERDE,function()local h=HUM()if h then h.Health=h.MaxHealth end Notif("💚 Vida restaurada!",VERDE)end)
 	task.spawn(function()while admL and admL.Parent do task.wait(3)pcall(atual)end end)
 end
@@ -762,53 +958,11 @@ tabs["Aimbot"]=function()
 	if CFG.aimbotFovCircle then criarFOV()end
 end
 
-tabs["Visual"]=function()
-	secao("💡 Iluminação",AMARELO)
-	botao("🌫️ Remover Névoa",AMARELO,function()Lighting.FogEnd=100000 Lighting.FogStart=0 Notif("🌫️ OK!",AMARELO)end)
-	botao("☀️ Meio-dia",AMARELO,function()Lighting.ClockTime=12 Notif("☀️ OK!",AMARELO)end)
-	botao("🌙 Meia-noite",AMARELO,function()Lighting.ClockTime=0 Notif("🌙 OK!",AMARELO)end)
-	botao("🌈 Fullbright",AZUL,function()Lighting.Ambient=Color3.fromRGB(178,178,178)Lighting.OutdoorAmbient=Color3.fromRGB(178,178,178)Lighting.Brightness=3 Notif("🌈 OK!",AZUL)end)
-end
-
 tabs["Tróli"]=function()
 	secao("😜 Diversão",ROXO)
 	botao("💃 Dançar",ROXO,function()local h=HUM()if h then h:ChangeState(Enum.HumanoidStateType.Jumping)end end)
 	botao("😴 Deitar",ROXO,function()local h=HUM()if h then h.PlatformStand=true end end)
 	botao("🕺 Levantar",ROXO,function()local h=HUM()if h then h.PlatformStand=false end end)
-end
-
-tabs["Dinheiro"]=function()
-	secao("💰 Editor",VERDE)
-	local mS=statL("💰 Verificando...",VERDE)
-	local function at()
-		local ls=lp:FindFirstChild("leaderstats")
-		if ls then
-			local names={"Dinheiro","Money","Cash","Coins","Gems","Rubies","Gold","Dollars"}
-			for _,n in ipairs(names)do local v=ls:FindFirstChild(n)if v and(v:IsA("IntValue")or v:IsA("NumberValue"))then mS.Text="💰 "..n..": "..tostring(v.Value)return end end
-			mS.Text="💰 Nenhuma moeda"
-		else mS.Text="💰 Sem leaderstats"end
-	end
-	at()
-	inputVal(Content,"Digite o valor...",function(n)
-		local ls=lp:FindFirstChild("leaderstats")if not ls then return end
-		local names={"Dinheiro","Money","Cash","Coins","Gems","Rubies","Gold","Dollars"}
-		for _,nm in ipairs(names)do local v=ls:FindFirstChild(nm)if v and(v:IsA("IntValue")or v:IsA("NumberValue"))then pcall(function()v.Value=n end)Notif("💰 "..nm.." = "..n,VERDE,2)break end end
-		at()
-	end)
-	secao("⚡ Rápidas",VERDE)
-	local qF=Instance.new("Frame")qF.Size=UDim2.new(1,-10,0,76)qF.BackgroundTransparency=1 qF.Parent=Content
-	local qG=Instance.new("UIGridLayout")qG.CellSize=UDim2.new(0,100,0,32)qG.CellPadding=UDim2.new(0,5,0,5)qG.Parent=qF
-	local function qb(txt,val,c)
-		local b=Instance.new("TextButton")b.Text=txt b.Font=Enum.Font.GothamBold b.TextSize=11 b.TextColor3=FUNDO b.BackgroundColor3=c or VERDE b.BorderSizePixel=0 b.AutoButtonColor=false b.Parent=qF corner(b,6)
-		b.MouseButton1Click:Connect(function()
-			local ls=lp:FindFirstChild("leaderstats")if not ls then return end
-			local names={"Dinheiro","Money","Cash","Coins","Gems","Rubies","Gold","Dollars"}
-			for _,nm in ipairs(names)do local v=ls:FindFirstChild(nm)if v and(v:IsA("IntValue")or v:IsA("NumberValue"))then pcall(function()v.Value=val end)Notif("💰 "..nm.." = "..val,VERDE,1.5)break end end
-			at()
-		end)
-	end
-	qb("+1K",1000)qb("+10K",10000)qb("+100K",100000)
-	qb("+1M",1000000)qb("💰 MAX",999999999)qb("🔄 Zerar",0,VERMELHO)
 end
 
 tabs["Exploits"]=function()
@@ -1089,26 +1243,79 @@ tabs["Exploits"]=function()
 	slider("⏱️ Espera entre entregas",0,30,CFG.esperaEntrega,ROSA,function(v)CFG.esperaEntrega=v saveCfg()end,pB)
 
 	local prID={min=false}
-	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v3.1","🔓",AMARELO2,prID)
+	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v10.8","🔓",AMARELO2,prID)
 	local prS=statL("Status: PARADO",SUB,prB)
 	local vOn=false cOn=false vRun=0 cRun=0
 
+	botao("🔍 DEBUG Varredura (F9)",CIANO,function()
+		debugVarredura()
+		Notif("📋 Veja o F9 (Console)",CIANO,4)
+	end,prB)
+
 	local function cicloV(myRun)
-		if not HRP()then task.wait(1)return end
-		local lc=localVarrer()
-		if not lc then prS.Text="⚠️ Sem local"task.wait(2)return end
-		prS.TextColor3=VERDE prS.Text="🧹 Varrendo..."
-		irPara(lc.Position,20)
-		if myRun~=vRun then return end
+		if not HRP() then task.wait(1) return end
+
+		-- 1. Equipa vassoura (Tool)
+		local tool = equipVassoura()
+		if not tool then
+			prS.Text = "⚠️ Sem vassoura no inventário"
+			prS.TextColor3 = VERMELHO
+			task.wait(2)
+			return
+		end
+
+		-- 2. Acha próximo BasePart SEM cooldown
+		local info = proximoPontoVarredura()
+		if not info then
+			prS.Text = "⏳ Todos em cooldown, aguardando..."
+			prS.TextColor3 = AMARELO
+			task.wait(3)
+			return
+		end
+
+		-- 3. Vai até o ponto
+		prS.TextColor3 = VERDE
+		prS.Text = "🧹 Indo (" .. math.floor(info.dist) .. "m)..."
+		irPara(info.pos, 30)
+		if myRun ~= vRun then return end
 		task.wait(0.3)
-		local p=lc:FindFirstChildWhichIsA("ProximityPrompt",true)
-		if p then pcall(function()fireproximityprompt(p)end)end
-		equipVassoura()
-		task.wait(5)
-		if myRun~=vRun then return end
-		varridos[lc]=true
-		PrisaoSt.v=PrisaoSt.v+1
-		Notif("🧹 Varreu!",AMARELO2,1.5)
+
+		-- 4. Confirma distância < 8 studs (regra do LocalScript)
+		local hrp = HRP()
+		if not hrp then return end
+		local distReal = (hrp.Position - info.pos).Magnitude
+		if distReal > 7 then
+			pcall(function() hrp.CFrame = CFrame.new(info.pos + Vector3.new(0, 3.5, 0)) end)
+			task.wait(0.4)
+		end
+
+		-- 5. Ativa a tool (equivale ao Activated do LocalScript)
+		prS.Text = "🧹 Varrendo..."
+		pcall(function() tool:Activate() end)
+
+		-- 6. Espera EmCooldown virar true
+		local t0 = tick()
+		while tick() - t0 < 5 do
+			if myRun ~= vRun then return end
+			if info.part:GetAttribute("EmCooldown") then break end
+			task.wait(0.15)
+		end
+		
+		-- 7. Contabiliza
+		PrisaoSt.v = PrisaoSt.v + 1
+		Notif("🧹 Varreu! Total: " .. PrisaoSt.v, AMARELO2, 1.5)
+
+		-- 8. Slider de espera na varredura
+		local esp = tonumber(CFG.esperaVarredura) or 3
+		if esp > 0 then
+			prS.Text = "⏳ Espera " .. esp .. "s..."
+			prS.TextColor3 = AMARELO
+			local tE = tick()
+			while tick() - tE < esp do
+				if not CFG.autoVarrer or myRun ~= vRun then return end
+				task.wait(0.2)
+			end
+		end
 	end
 
 	local function cicloC(myRun)
@@ -1143,15 +1350,25 @@ tabs["Exploits"]=function()
 		if s then
 			local myRun=vRun
 			if CFG.noclip then noclipOn()end
-			varridos={}
 			prS.Text="● ATIVO"prS.TextColor3=VERDE
 			Notif("🧹 Varredura ON",AMARELO2,1.5)
-			task.spawn(function()while vOn and myRun==vRun do pcall(cicloV,myRun)task.wait(0.5)end end)
+			task.spawn(function()
+				while vOn and myRun==vRun do 
+					local ok, err = pcall(cicloV,myRun)
+					if not ok then
+						prS.Text = "⚠️ Erro: "..tostring(err):sub(1,30)
+						prS.TextColor3 = VERMELHO
+					end
+					task.wait(0.3) -- Tempo pra respirar entre os loops
+				end 
+			end)
 		else
 			if not cOn and CFG.noclip then noclipOff()end
 			prS.Text="PARADO"prS.TextColor3=SUB
 		end
 	end,prB)
+
+	slider("⏱️ Espera na varredura",0,10,CFG.esperaVarredura or 3,AMARELO2,function(v)CFG.esperaVarredura=v saveCfg()end,prB)
 
 	toggle("📦 Ativar Caixa",CFG.autoCaixa,AZUL,function(s)
 		cOn=s CFG.autoCaixa=s cRun=cRun+1 saveCfg()
@@ -1167,14 +1384,14 @@ tabs["Exploits"]=function()
 
 	secao("⚙️ Configurações Compartilhadas",AMARELO)
 	local modSt=statL(CFG.modoVoo and "Modo: 🚁 VOANDO"or"Modo: 🚶 A PÉ",AMARELO)
-	slider("⚡ Velocidade",20,500,CFG.vel,VERDE,function(v)CFG.vel=v local h=HUM()if h and not CFG.modoVoo then h.WalkSpeed=v end saveCfg()end)
+	slider("⚡ Velocidade",20,200,math.clamp(CFG.vel,20,200),VERDE,function(v)CFG.vel=v local h=HUM()if h and not CFG.modoVoo then h.WalkSpeed=v end saveCfg()end)
 	botao("🚶 A PÉ",VERDE,function()CFG.modoVoo=false modSt.Text="Modo: 🚶 A PÉ"modSt.TextColor3=VERDE saveCfg()end)
 	botao("🚁 VOAR",AMARELO,function()CFG.modoVoo=true modSt.Text="Modo: 🚁 VOANDO"modSt.TextColor3=AMARELO saveCfg()end)
 
 	secao("🛡️ Comportamento",AMARELO)
 	toggle("🚪 Noclip",CFG.noclip,VERDE,function(s)CFG.noclip=s if s then if eOn or gOn or pOn or vOn or cOn then noclipOn()end else noclipOff()end saveCfg()end)
 	toggle("😴 Anti-AFK",CFG.antiAfk,AMARELO,function(s)CFG.antiAfk=s setAFK(s)saveCfg()end)
-	toggle("🛡️ God Mode",CFG.godMode,VERDE,function(s)CFG.godMode=s godAtivo=s if s then godOn()end saveCfg()end)
+	toggle("🛡️ God Mode",CFG.godMode,VERDE,function(s)CFG.godMode=s godAtivo=s if s then godOn()else godOff()end saveCfg()end)
 	toggle("🪑 Anti-Sentar",CFG.antiSit,LARANJA,function(s)CFG.antiSit=s if s then antiSitOn()else antiSitOff()end saveCfg()end)
 
 	secao("🚨 Emergência",VERMELHO)
@@ -1191,7 +1408,14 @@ end
 
 tabs["Privates"]=function()
 	secao("🔒 Área Privada",ROXO)
-	statL("Em desenvolvimento",SUB)
+	
+	secao("🚗 Puxar Carro",CIANO)
+	local carroSt = statL("Status: Em desenvolvimento",SUB)
+	botao("🚗 Puxar Carro (Em breve)",CIANO,function()
+		Notif("⚠️ Puxar Carro está em desenvolvimento!",AMARELO,3)
+	end)
+	statL("Aguarde futuras atualizações...",SUB)
+
 	secao("💬 Loja",Color3.fromRGB(88,101,242))
 	botao("💬 Entrar no Discord",Color3.fromRGB(88,101,242),function()
 		pcall(function()if setclipboard then setclipboard(DISCORD_LINK)end end)
@@ -1210,12 +1434,6 @@ tabs["Config"]=function()
 	local n2=Instance.new("TextLabel")n2.Size=UDim2.new(1,-70,0,22)n2.Position=UDim2.new(0,60,0,62)n2.BackgroundTransparency=1 n2.Text="kevim"n2.Font=Enum.Font.GothamBold n2.TextSize=18 n2.TextColor3=AMARELO n2.TextXAlignment=Enum.TextXAlignment.Left n2.Parent=card
 	local r2=Instance.new("TextLabel")r2.Size=UDim2.new(1,-70,0,14)r2.Position=UDim2.new(0,60,0,84)r2.BackgroundTransparency=1 r2.Text="👨‍💻 CRIADOR / DEV"r2.Font=Enum.Font.GothamBold r2.TextSize=10 r2.TextColor3=CIANO r2.TextXAlignment=Enum.TextXAlignment.Left r2.Parent=card
 
-	secao("💌 Nota dos Criadores",ROSA)
-	local nf=Instance.new("Frame")nf.Size=UDim2.new(1,-10,0,140)nf.BackgroundColor3=CARD nf.BorderSizePixel=0 nf.Parent=Content corner(nf,12)stroke(nf,ROSA,1.5,0.4)grad(nf,Color3.fromRGB(35,15,25),CARD,90)
-	local q=Instance.new("TextLabel")q.Size=UDim2.new(0,30,0,30)q.Position=UDim2.new(0,12,0,8)q.BackgroundTransparency=1 q.Text="❝"q.TextSize=30 q.Font=Enum.Font.GothamBold q.TextColor3=ROSA q.Parent=nf
-	local nt=Instance.new("TextLabel")nt.Size=UDim2.new(1,-30,1,-30)nt.Position=UDim2.new(0,15,0,20)nt.BackgroundTransparency=1 nt.Text="Este script foi feito com muito carinho e dedicação por becks e kevim. Cada linha foi pensada para trazer a melhor experiência possível. Se você gostou, compartilhe com a galera e não esqueça de dar aquele feedback no nosso Discord. Boa jogatina e aproveite! 💙"nt.Font=Enum.Font.Gotham nt.TextSize=11 nt.TextColor3=TEXTO nt.TextXAlignment=Enum.TextXAlignment.Left nt.TextYAlignment=Enum.TextYAlignment.Top nt.TextWrapped=true nt.Parent=nf
-	local sig=Instance.new("TextLabel")sig.Size=UDim2.new(1,-30,0,16)sig.Position=UDim2.new(0,15,1,-22)sig.BackgroundTransparency=1 sig.Text="— becks & kevim 💫"sig.Font=Enum.Font.GothamBold sig.TextSize=10 sig.TextColor3=ROSA sig.TextXAlignment=Enum.TextXAlignment.Right sig.Parent=nf
-
 	secao("🔧 Key Info",CIANO)
 	statL("👤 "..(_G.SailentNome or "?"),CIANO)
 	statL("📊 Nível: "..(_G.SailentNivel or "?"),VERDE)
@@ -1233,9 +1451,7 @@ end
 local InnerBtns={
 	{name="Jogador",icon="👤"},
 	{name="Aimbot",icon="🎯"},
-	{name="Visual",icon="👁️"},
 	{name="Tróli",icon="😜"},
-	{name="Dinheiro",icon="💰"},
 	{name="Exploits",icon="🐛"},
 	{name="Privates",icon="🔒"},
 	{name="Config",icon="⚙️"},
@@ -1277,12 +1493,12 @@ local aberto=true
 local function fechar()
 	if not aberto then return end
 	aberto=false
-	Tw(Main,{Size=UDim2.new(0,0,0,0),Position=UDim2.new(0.5,0,0.5,0)},0.3,Enum.EasingStyle.Back,Enum.EasingDirection.In)
+	Tw(Main,{Size=UDim2.new(0,0,0,0),Position=UDim2.new(0.5,0,0.5,0)},0.3)
 	task.wait(0.3)
 	Main.Visible=false
 	FloatBtn.Visible=true
 	FloatBtn.Size=UDim2.new(0,0,0,0)
-	Tw(FloatBtn,{Size=UDim2.new(0,55,0,55)},0.25,Enum.EasingStyle.Back)
+	Tw(FloatBtn,{Size=UDim2.new(0,55,0,55)},0.25)
 end
 local function abrir()
 	if aberto then return end
@@ -1291,7 +1507,7 @@ local function abrir()
 	Main.Visible=true
 	Main.Size=UDim2.new(0,0,0,0)
 	Main.Position=UDim2.new(0.5,0,0.5,0)
-	Tw(Main,{Size=UDim2.new(0,940,0,600),Position=UDim2.new(0.5,0,0.5,0)},0.35,Enum.EasingStyle.Back)
+	Tw(Main,{Size=UDim2.new(0,940,0,600),Position=UDim2.new(0.5,0,0.5,0)},0.35)
 end
 
 CloseBtn.MouseButton1Click:Connect(fechar)
@@ -1324,7 +1540,7 @@ do
 end
 
 setAFK(CFG.antiAfk)
-godOn()
+if CFG.godMode then godOn()end
 if CFG.antiSit then antiSitOn()end
-Notif("👑 Bem-vindo, "..(_G.SailentNome or "Cliente").."!",CIANO,3)
-print("[Sailent] ✅ Painel v"..SCRIPT_VER.." pronto!")
+Notif("🦈 Bem-vindo, "..(_G.SailentNome or "Cliente").."!",CIANO,3)
+print("[Shark Menu] ✅ Painel v"..SCRIPT_VER.." pronto!")
