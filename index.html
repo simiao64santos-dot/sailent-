@@ -354,7 +354,7 @@
 		<p class="subtitle">Painel privado de scripts • by becks &amp; kevim</p>
 		<div class="badges">
 			<span class="badge pulse">Sistema online</span>
-			<span class="badge auth">🛡️ Auth via auth.lua</span>
+			<span class="badge auth">🛡️ Anti-Cheat Bypass</span>
 			<span class="badge key">🔑 Key unificada</span>
 		</div>
 	</header>
@@ -468,9 +468,19 @@ const SCRIPTS = [
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
 }
-function buildLoadstring(file) {
-	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
+
+// GERADOR DE SCRIPT PROTEGIDO (BYPASS ANTI-CHEAT)
+function buildSafeLoadstring(file) {
+    const urlPart1 = "https://raw.githubusercontent.com/";
+    const urlPart2 = `${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
+    
+    // Transforma a URL principal em uma sequência de números (string.char)
+    const chars1 = Array.from(urlPart1).map(c => c.charCodeAt(0)).join(",");
+    
+    // O script gerado esconde "loadstring", "HttpGet" e a URL. Ele tenta 'request' primeiro e depois 'HttpGet'.
+    return `local a=string.char(${chars1}) local b="${urlPart2}" local c=a..b local e=game local f=getfenv() local g=f["HttpGet"] or e["HttpGet"] local h=f[string.char(108,111,97,100,115,116,114,105,110,103)] local i,j=pcall(function() if f[string.char(114,101,113,117,101,115,116)] then local k=f[string.char(114,101,113,117,101,115,116)]({Url=c,Method="GET"}) return k.Body or k.body else return g(e,c) end end) if i and j and j~="" then local l=h(j) if l then pcall(l) end end`;
 }
+
 function escapeHtml(str) {
 	const div = document.createElement("div");
 	div.textContent = str;
@@ -500,7 +510,7 @@ function renderCards() {
 		card.style.setProperty("--card-color", s.color);
 
 		const url = buildURL(s.file);
-		const load = buildLoadstring(s.file);
+		const load = buildSafeLoadstring(s.file); // Usa a versão segura
 
 		const badgeHtml = s.vip
 			? '<span class="card-badge vip">👑 VIP</span>'
@@ -524,10 +534,11 @@ function renderCards() {
 				).join("")}
 			</div>
 			<div class="code-preview">
-				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
+				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))() <br>
+				<span style="color:var(--green); font-size:10px;">[Protegido contra Anti-Cheat]</span>
 			</div>
 			<div class="actions">
-				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Loadstring</button>
+				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Script Seguro</button>
 				<button class="btn btn-raw" data-open="${escapeHtml(url)}">🔗 Raw</button>
 			</div>
 		`;
@@ -616,7 +627,7 @@ document.addEventListener("click", async (e) => {
 			const original = copyBtn.innerHTML;
 			copyBtn.classList.add("copied");
 			copyBtn.innerHTML = "✅ Copiado!";
-			showToast("✅ Loadstring copiado!");
+			showToast("✅ Script Seguro copiado!");
 			setTimeout(() => {
 				copyBtn.classList.remove("copied");
 				copyBtn.innerHTML = original;
