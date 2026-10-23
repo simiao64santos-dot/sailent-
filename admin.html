@@ -15,6 +15,35 @@
 }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 30px 20px; }
 .container { max-width: 1300px; margin: 0 auto; }
+
+/* CAMADA DE LOGIN */
+#login-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--bg); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.login-box {
+  background: var(--card); padding: 40px; border-radius: 16px;
+  border: 1px solid var(--border); text-align: center; width: 100%; max-width: 400px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+.login-box h2 { margin-bottom: 20px; color: var(--cyan); font-size: 24px; }
+.login-box input {
+  width: 100%; padding: 14px; margin-bottom: 16px;
+  background: #0a0a0f; border: 1px solid var(--border);
+  border-radius: 8px; color: #fff; font-size: 16px; text-align: center;
+  outline: none; font-family: 'Inter';
+}
+.login-box button {
+  width: 100%; padding: 14px; background: var(--cyan); color: #000;
+  border: none; border-radius: 8px; font-weight: 800; font-size: 16px; cursor: pointer;
+  transition: 0.2s;
+}
+.login-box button:hover { filter: brightness(1.1); }
+.error-msg { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+
+/* RESTO DO PAINEL */
 header { text-align: center; margin-bottom: 24px; }
 h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
   background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
@@ -30,14 +59,15 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
   background: var(--card); border: 1px solid var(--border); border-radius: 12px;
   width: fit-content; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
 .tab { padding: 10px 18px; background: transparent; border: none; border-radius: 8px;
-  color: var(--sub); font-family: 'Inter'; font-size: 12px; font-weight: 700; cursor: pointer; }
+  color: var(--sub); font-family: 'Inter'; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
 .tab.active { background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%); color: #0a0a0f; }
+.tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.05); }
 .panel { display: none; } .panel.active { display: block; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
   padding: 22px; margin-bottom: 18px; position: relative; }
 .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: var(--card-color, var(--accent)); border-radius: 14px 14px 0 0; }
-.card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .form-group { margin-bottom: 14px; }
 .form-label { display: block; font-size: 10px; font-weight: 700; color: var(--sub);
@@ -50,12 +80,14 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
 .form-hint { font-size: 10px; color: var(--sub); margin-top: 5px; }
 .btn { padding: 12px 16px; background: linear-gradient(135deg, #22d3ee 0%, #7c9eff 100%);
   border: none; border-radius: 8px; color: #0a0a0f; font-family: 'Inter'; font-size: 12px;
-  font-weight: 800; cursor: pointer; width: 100%; }
+  font-weight: 800; cursor: pointer; width: 100%; transition: 0.2s; }
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .btn.danger { background: linear-gradient(135deg, #f87171 0%, #ec4899 100%); color: #fff; }
+.btn.warning { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0a0a0f; }
 .btn.micro { padding: 5px 10px; font-size: 10px; width: auto; }
 .mini-btn { padding: 5px 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
   border-radius: 6px; color: var(--sub); font-family: 'Inter'; font-size: 10px;
-  font-weight: 700; cursor: pointer; }
+  font-weight: 700; cursor: pointer; transition: 0.2s; }
 .mini-btn:hover { background: rgba(124,158,255,0.15); color: var(--accent); border-color: var(--accent); }
 .output-label { display: flex; justify-content: space-between; align-items: center;
   font-size: 10px; font-weight: 700; color: var(--sub); text-transform: uppercase;
@@ -88,14 +120,34 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #0a0a0f;
   padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 12px;
   box-shadow: 0 10px 30px rgba(74,222,128,0.4); transform: translateY(100px); opacity: 0;
-  transition: 0.3s; z-index: 1000; }
+  transition: 0.3s; z-index: 10000; }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.error { background: var(--red); }
 @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr); } }
+
+/* Switches (Toggles) */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--red); }
+input:checked + .slider:before { transform: translateX(18px); }
 </style>
 </head>
 <body>
-<div class="container">
+
+<!-- TELA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>🛡️ SAILENT ADMIN</h2>
+    <p class="sub" style="margin-bottom:20px;">Acesso Restrito</p>
+    <input type="password" id="admin-pass" placeholder="Digite a senha..." onkeypress="if(event.key==='Enter') login()">
+    <button onclick="login()">Acessar Painel</button>
+    <div class="error-msg" id="login-error">Senha incorreta!</div>
+  </div>
+</div>
+
+<div class="container" id="main-panel" style="display:none;">
   <header>
     <h1>⚡ SAILENT ADMIN</h1>
     <p class="sub">Painel de controle em tempo real</p>
@@ -109,13 +161,16 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
   <div class="tabs">
     <button class="tab active" data-tab="users">👥 Ao Vivo</button>
     <button class="tab" data-tab="keys">🔑 Gerar Keys</button>
+    <button class="tab" data-tab="manage">🛠️ Gerenciar</button>
     <button class="tab" data-tab="bans">🚫 Banidos</button>
     <button class="tab" data-tab="history">📊 Histórico</button>
+    <button class="tab" data-tab="system">⚙️ Sistema</button>
   </div>
 
+  <!-- ABA AO VIVO -->
   <div class="panel active" id="panel-users">
     <div class="card" style="--card-color: var(--green);">
-      <div class="card-title">🟢 Usuários Online <span id="live-badge" style="background:var(--green);color:#0a0a0f;padding:2px 8px;border-radius:6px;font-size:10px;margin-left:8px;">0</span></div>
+      <div class="card-title">🟢 Usuários Online <span id="live-badge" style="background:var(--green);color:#0a0a0f;padding:2px 8px;border-radius:6px;font-size:10px;">0</span></div>
       <div class="stats">
         <div class="stat"><div class="stat-num" id="st-online">0</div><div class="stat-lbl">Online</div></div>
         <div class="stat"><div class="stat-num" id="st-scripts">0</div><div class="stat-lbl">Scripts</div></div>
@@ -126,6 +181,7 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
     </div>
   </div>
 
+  <!-- ABA KEYS -->
   <div class="panel" id="panel-keys">
     <div class="grid-2">
       <div class="card" style="--card-color: var(--cyan);">
@@ -151,30 +207,52 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
           <div class="form-group">
             <label class="form-label">Dias</label>
             <input type="number" class="form-input" id="inp-dias" value="0" min="0">
-            <div class="form-hint">0 = nunca expira</div>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Trava HWID</label>
           <select class="form-select" id="inp-bind">
-            <option value="auto" selected>🔒 Auto (trava no 1º uso)</option>
+            <option value="auto" selected>🔒 Auto</option>
             <option value="free">🌐 Livre</option>
           </select>
         </div>
         <button class="btn" onclick="gerar()">⚡ Gerar Key</button>
       </div>
       <div class="card" style="--card-color: var(--purple);">
-        <div class="card-title">📋 Keys Geradas</div>
-        <div id="keys-list"><div class="empty">Nenhuma key gerada ainda</div></div>
+        <div class="card-title">📋 Keys Salvas (Local)</div>
+        <div id="keys-list" style="max-height:200px;overflow-y:auto;"><div class="empty">Nenhuma key salva</div></div>
         <div class="output-label" style="margin-top:14px;">
           <span>🌐 keys.json</span>
-          <button class="mini-btn" onclick="copiar('out-json')">📋 Copiar</button>
+          <div style="display:flex;gap:6px;">
+            <button class="mini-btn" onclick="copiar('out-json')">📋 Copiar</button>
+            <button class="mini-btn" onclick="baixarJSON()">📥 Baixar</button>
+          </div>
         </div>
         <div class="output-box" id="out-json" style="max-height:180px;">{"keys":{}}</div>
       </div>
     </div>
   </div>
 
+  <!-- ABA GERENCIAR (NOVA) -->
+  <div class="panel" id="panel-manage">
+    <div class="grid-2">
+      <!-- Controle de Scripts -->
+      <div class="card" style="--card-color: var(--yellow);">
+        <div class="card-title">🛠️ Status dos Scripts</div>
+        <p style="font-size:11px;color:var(--sub);margin-bottom:15px;">Desative globalmente um script. Todos que tentarem usar receberão um aviso de manutenção.</p>
+        <div id="scripts-manage-list"></div>
+      </div>
+      
+      <!-- Controle de Keys -->
+      <div class="card" style="--card-color: var(--red);">
+        <div class="card-title">🔑 Status das Keys</div>
+        <p style="font-size:11px;color:var(--sub);margin-bottom:15px;">Desative uma key gerada sem precisar apagá-la do JSON.</p>
+        <div id="keys-manage-list" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA BANIDOS -->
   <div class="panel" id="panel-bans">
     <div class="card" style="--card-color: var(--red);">
       <div class="card-title">🚫 Banir HWID</div>
@@ -186,24 +264,88 @@ h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
       <button class="btn danger" onclick="adicionarBan()">🚫 Banir</button>
     </div>
     <div class="card" style="--card-color: var(--red);">
-      <div class="card-title">📋 Banidos</div>
+      <div class="card-title">
+        <span>📋 Lista de Banidos</span>
+        <input type="text" id="search-ban" placeholder="Pesquisar..." style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:#0a0a0f;color:#fff;font-size:11px;outline:none;" oninput="renderBans(bansData)">
+      </div>
       <div id="bans-list"><div class="empty">Ninguém banido</div></div>
     </div>
   </div>
 
+  <!-- ABA HISTÓRICO -->
   <div class="panel" id="panel-history">
     <div class="card" style="--card-color: var(--purple);">
-      <div class="card-title">📊 Histórico</div>
+      <div class="card-title">📊 Histórico de Eventos</div>
       <div id="history-list"><div class="empty">Nenhum evento</div></div>
     </div>
   </div>
+
+  <!-- ABA SISTEMA -->
+  <div class="panel" id="panel-system">
+    <div class="grid-2">
+      <div class="card" style="--card-color: var(--yellow);">
+        <div class="card-title">📢 Aviso Global</div>
+        <div class="form-group">
+          <label class="form-label">Mensagem</label>
+          <input type="text" class="form-input" id="inp-msg" placeholder="Ex: Servidor reiniciando em 5 min!">
+        </div>
+        <button class="btn warning" onclick="enviarAviso()">📢 Enviar para Todos</button>
+      </div>
+      
+      <div class="card" style="--card-color: var(--red);">
+        <div class="card-title">🚨 Ações de Emergência</div>
+        <button class="btn danger" onclick="kickAll()" style="margin-bottom:10px;">🚫 Kickar TODOS</button>
+        <button class="btn danger" onclick="clearHistory()" style="margin-bottom:10px; background:#8a2be2;">🗑️ Limpar Histórico</button>
+        <button class="btn danger" onclick="clearBans()" style="background:#dc143c;">💣 Resetar Banidos</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="toast" id="toast">✅ Copiado!</div>
 
 <script>
+// ==========================================
+// SISTEMA DE LOGIN
+// ==========================================
+const SENHA_MESTRA = "admin123"; // MUDE AQUI SUA SENHA
+
+function login() {
+  const pass = document.getElementById("admin-pass").value;
+  if (pass === SENHA_MESTRA) {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("main-panel").style.display = "block";
+    sessionStorage.setItem("sailent_admin_logged", "true");
+  } else {
+    document.getElementById("login-error").style.display = "block";
+  }
+}
+
+if (sessionStorage.getItem("sailent_admin_logged") === "true") {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("main-panel").style.display = "block";
+}
+
+// ==========================================
+// FIREBASE E VARIÁVEIS
+// ==========================================
 const FB = "https://sailent-c8150-default-rtdb.firebaseio.com";
-let onlineData = {}, bansData = {}, historyData = {};
+let onlineData = {}, bansData = {}, historyData = {}, disabledKeys = {}, disabledScripts = {};
+let historico = [];
+
+// Carrega keys salvas do navegador
+function loadLocalKeys() {
+  const saved = localStorage.getItem("sailent_keys");
+  if (saved) {
+    try { historico = JSON.parse(saved); } catch(e) {}
+  }
+  atualizarKeys();
+}
+function saveLocalKeys() {
+  localStorage.setItem("sailent_keys", JSON.stringify(historico));
+}
+loadLocalKeys();
 
 async function sha256(m) {
   const b = new TextEncoder().encode(m);
@@ -223,27 +365,26 @@ window.copiar = (id) => {
 };
 
 async function fbGet(path) {
-  try {
-    const r = await fetch(FB + path + ".json?" + Date.now());
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return await r.json();
-  } catch (e) { return null; }
+  try { const r = await fetch(FB + path + ".json?" + Date.now()); return await r.json(); } 
+  catch (e) { return null; }
 }
 async function fbPut(path, data) {
   try {
-    const r = await fetch(FB + path + ".json", {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data)
-    });
+    const r = await fetch(FB + path + ".json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
     return r.ok;
   } catch (e) { return false; }
 }
 async function fbDelete(path) {
-  try { const r = await fetch(FB + path + ".json", { method: "DELETE" }); return r.ok; }
+  try { const r = await fetch(FB + path + ".json", { method: "DELETE" }); return r.ok; } 
   catch (e) { return false; }
 }
 
 async function atualizarTudo() {
-  const [online, bans, history] = await Promise.all([fbGet("/online"), fbGet("/bans"), fbGet("/history")]);
+  const [online, bans, history, dKeys, dScripts] = await Promise.all([
+    fbGet("/online"), fbGet("/bans"), fbGet("/history"), 
+    fbGet("/disabled_keys"), fbGet("/disabled_scripts")
+  ]);
+  
   const dot = document.getElementById("status-dot");
   const txt = document.getElementById("status-text");
   if (online !== null) {
@@ -253,14 +394,19 @@ async function atualizarTudo() {
     dot.className = "status-dot status-offline";
     txt.textContent = "🔴 Sem conexão";
   }
+  
   onlineData = online || {};
   bansData = bans || {};
   historyData = history || {};
+  disabledKeys = dKeys || {};
+  disabledScripts = dScripts || {};
+
   renderUsers(onlineData);
   renderBans(bansData);
   renderHistory(historyData);
+  renderManage();
 }
-setInterval(atualizarTudo, 2000);
+setInterval(atualizarTudo, 3000);
 atualizarTudo();
 
 function fmtT(s) {
@@ -303,9 +449,7 @@ function renderUsers(data) {
 
 window.kick = async (uid) => {
   if (!confirm("Kickar esse usuário?")) return;
-  const u = onlineData[uid];
   await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), { name: u ? u.name : uid, event: "kick", timestamp: Math.floor(Date.now() / 1000) });
   toast("🚫 Kick enviado!");
   setTimeout(atualizarTudo, 500);
 };
@@ -315,16 +459,18 @@ window.ban = async (uid) => {
   if (!confirm(`Banir ${u.name}?`)) return;
   await fbPut("/bans/" + u.hwid, { name: u.name, userId: u.userId, reason: "Banido pelo admin", bannedAt: Math.floor(Date.now() / 1000) });
   await fbPut("/online/" + uid + "/kick", true);
-  await fbPut("/history/" + Date.now(), { name: u.name, event: "ban", timestamp: Math.floor(Date.now() / 1000) });
   toast("⛔ Banido!");
   setTimeout(atualizarTudo, 500);
 };
 
 function renderBans(data) {
-  const bans = Object.entries(data).map(([k, v]) => ({ ...v, hwid: k })).sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0));
-  document.getElementById("st-bans").textContent = bans.length;
+  const query = document.getElementById("search-ban")?.value.toLowerCase() || "";
+  let bans = Object.entries(data).map(([k, v]) => ({ ...v, hwid: k })).sort((a, b) => (b.bannedAt || 0) - (a.bannedAt || 0));
+  if (query) bans = bans.filter(b => (b.name || "").toLowerCase().includes(query) || b.hwid.toLowerCase().includes(query));
+  
+  document.getElementById("st-bans").textContent = Object.keys(data).length;
   const list = document.getElementById("bans-list");
-  if (bans.length === 0) { list.innerHTML = '<div class="empty">✨ Ninguém banido</div>'; return; }
+  if (bans.length === 0) { list.innerHTML = '<div class="empty">✨ Ninguém encontrado</div>'; return; }
   list.innerHTML = bans.map(b => `
     <div style="display:grid;grid-template-columns:1.3fr 1.5fr 100px 80px;gap:10px;padding:10px 12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;align-items:center;font-size:11px;">
       <div><div style="font-weight:700;">${esc(b.name || "?")}</div><div style="font-size:9px;color:var(--pink);font-family:'JetBrains Mono';">${esc(b.hwid.substring(0, 20))}...</div></div>
@@ -370,6 +516,98 @@ function renderHistory(data) {
   }).join("");
 }
 
+// ==========================================
+// GERENCIAMENTO (NOVA ABA)
+// ==========================================
+function renderManage() {
+  // Renderiza Scripts
+  const scriptsList = document.getElementById("scripts-manage-list");
+  const scripts = ["shark.lua", "pizza.lua", "prisao.lua", "eletricista.lua", "main.lua"];
+  
+  scriptsList.innerHTML = scripts.map(s => {
+    const isDisabled = disabledScripts[s] === true;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+        <div style="font-weight:700;font-size:12px;color:${isDisabled ? 'var(--red)' : 'var(--green)'}">${s}</div>
+        <label class="switch">
+          <input type="checkbox" ${isDisabled ? 'checked' : ''} onchange="toggleScript('${s}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    `;
+  }).join("");
+
+  // Renderiza Keys Salvas
+  const keysList = document.getElementById("keys-manage-list");
+  if (historico.length === 0) {
+    keysList.innerHTML = '<div class="empty">Nenhuma key gerada</div>';
+  } else {
+    keysList.innerHTML = historico.map(k => {
+      const isDisabled = disabledKeys[k.hash] === true;
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#0a0a0f;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">
+          <div>
+            <div style="font-weight:700;font-size:12px;">${esc(k.nome)}</div>
+            <div style="font-size:9px;color:var(--cyan);font-family:'JetBrains Mono';">${esc(k.key.substring(0, 15))}...</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${isDisabled ? 'checked' : ''} onchange="toggleKey('${k.hash}', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      `;
+    }).join("");
+  }
+}
+
+window.toggleScript = async (scriptName, isDisabled) => {
+  await fbPut("/disabled_scripts/" + scriptName, isDisabled);
+  toast(isDisabled ? "🛑 Script Desativado!" : "✅ Script Ativado!", !isDisabled);
+  setTimeout(atualizarTudo, 500);
+};
+
+window.toggleKey = async (hash, isDisabled) => {
+  await fbPut("/disabled_keys/" + hash, isDisabled);
+  toast(isDisabled ? "🛑 Key Desativada!" : "✅ Key Ativada!", !isDisabled);
+  setTimeout(atualizarTudo, 500);
+};
+
+// ==========================================
+// SISTEMA E AÇÕES
+// ==========================================
+window.enviarAviso = async () => {
+  const msg = document.getElementById("inp-msg").value.trim();
+  if (!msg) { toast("⚠️ Digite uma mensagem!", true); return; }
+  await fbPut("/global/broadcast", { msg: msg, time: Math.floor(Date.now() / 1000) });
+  toast("📢 Aviso enviado!");
+  document.getElementById("inp-msg").value = "";
+};
+
+window.kickAll = async () => {
+  if (!confirm("Kickar TODOS os usuários?")) return;
+  const users = Object.keys(onlineData);
+  for (const uid of users) { await fbPut("/online/" + uid + "/kick", true); }
+  toast("🚨 Todos kickados!");
+  setTimeout(atualizarTudo, 500);
+};
+
+window.clearHistory = async () => {
+  if (!confirm("Apagar TODO o histórico?")) return;
+  await fbDelete("/history");
+  toast("🗑️ Histórico limpo!");
+  setTimeout(atualizarTudo, 500);
+};
+
+window.clearBans = async () => {
+  if (!confirm("REMOVER TODOS OS BANS?")) return;
+  await fbDelete("/bans");
+  toast("💣 Banidos limpos!");
+  setTimeout(atualizarTudo, 500);
+};
+
+// ==========================================
+// TABS E KEYS
+// ==========================================
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
   document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
   document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
@@ -382,7 +620,7 @@ window.gerarKey = () => {
   const s = () => Array.from({ length: 4 }, () => c[Math.floor(Math.random() * c.length)]).join("");
   document.getElementById("inp-key").value = `SAILENT-${s()}-${s()}-${s()}`;
 };
-let historico = [];
+
 window.gerar = async () => {
   const nome = document.getElementById("inp-nome").value.trim();
   const key = document.getElementById("inp-key").value.trim();
@@ -391,13 +629,18 @@ window.gerar = async () => {
   const bind = document.getElementById("inp-bind").value;
   if (!nome) { toast("⚠️ Preencha o nome!", true); return; }
   if (!key) { toast("⚠️ Gere uma key!", true); return; }
+  
   const hash = await sha256(key);
   const agora = Math.floor(Date.now() / 1000);
   const expira = dias === 0 ? 99999999999 : agora + (dias * 86400);
+  
   historico.push({ nome, key, hash, nivel, dias, expira, bindMode: bind });
+  saveLocalKeys(); // SALVA NO NAVEGADOR
   atualizarKeys();
-  toast("✅ Key gerada!");
+  renderManage();
+  toast("✅ Key gerada e salva!");
 };
+
 function atualizarKeys() {
   const list = document.getElementById("keys-list");
   if (historico.length === 0) { list.innerHTML = '<div class="empty">Nenhuma key gerada</div>'; }
@@ -421,8 +664,28 @@ function atualizarKeys() {
   }
   document.getElementById("out-json").textContent = JSON.stringify(obj, null, 2);
 }
+
 window.copiarKey = (i) => { navigator.clipboard.writeText(historico[i].key).then(() => toast("✅ Copiado!")); };
-window.delKey = (i) => { historico.splice(i, 1); atualizarKeys(); };
+window.delKey = (i) => { 
+  historico.splice(i, 1); 
+  saveLocalKeys();
+  atualizarKeys(); 
+  renderManage();
+};
+
+window.baixarJSON = () => {
+  const data = document.getElementById("out-json").textContent;
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "keys.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("📥 keys.json baixado!");
+};
 </script>
 </body>
 </html>
