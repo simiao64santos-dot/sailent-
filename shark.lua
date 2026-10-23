@@ -1,5 +1,5 @@
 -- =======================================================
--- SHARK MENU v10.9 COMPLETO + INTEGRAÇÃO ADMIN
+-- SHARK MENU v11.1 COMPLETO (MOBILE FRIENDLY + REVISADO)
 -- Auth + HWID Bind + Live + Kick + Ban + Aimbot + Scripts
 -- Criado por: becks & kevim
 -- =======================================================
@@ -7,7 +7,7 @@
 local FIREBASE_URL = "https://sailent-c8150-default-rtdb.firebaseio.com"
 local GITHUB_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SCRIPT_NAME = "Shark Menu"
-local SCRIPT_VER = "10.9"
+local SCRIPT_VER = "11.1"
 local DISCORD_LINK = "https://discord.gg/955U6r5RAQ"
 
 local CoreGui = game:GetService("CoreGui")
@@ -294,7 +294,7 @@ local CFG={vel=60,modoVoo=false,noclip=true,antiAfk=true,godMode=true,antiSit=tr
 	autoGari=false,autoEletricista=false,autoPizza=false,autoVarrer=false,autoCaixa=false,
 	esperaEntrega=5, esperaVarredura=3, listaAdmin=false,aimbotEnabled=false,aimbotKey="E",aimbotFov=150,
 	aimbotSmoothness=0.2,aimbotTeamCheck=true,aimbotWallCheck=false,aimbotTargetPart="Head",
-	aimbotMode="Camera",aimbotAutoShoot=false,aimbotFovCircle=true}
+	aimbotMode="Camera",aimbotAutoShoot=false,aimbotFovCircle=true, hitboxExpander=false, clickTP=false, fpsBoost=false}
 local function saveCfg()pcall(function()if writefile then writefile(CFG_FILE,HttpService:JSONEncode(CFG))end end)end
 local function loadCfg()pcall(function()if isfile and isfile(CFG_FILE)and readfile then local d=HttpService:JSONDecode(readfile(CFG_FILE))for k,v in pairs(d)do CFG[k]=v end end end)end
 loadCfg()
@@ -468,7 +468,7 @@ end
 
 local function irPara(pos,to)if CFG.modoVoo then return voar(pos,to)else return andar(pos,to)end end
 
--- AIMBOT
+-- AIMBOT E HITBOX (Otimizado)
 local Aimbot={Target=nil,FOV=nil,Conn=nil}
 local function criarFOV()
 	if Aimbot.FOV then pcall(function()Aimbot.FOV:Destroy()end)end
@@ -536,8 +536,44 @@ local function loopAimbot()
 	end)
 end
 loopAimbot()
+
+-- OTIMIZAÇÃO HITBOX EXPANDER (Não trava o celular)
+task.spawn(function()
+	while task.wait(0.5) do
+		if CFG.hitboxExpander then
+			for _,plr in pairs(Players:GetPlayers()) do
+				if plr ~= lp and plr.Character then
+					local head = plr.Character:FindFirstChild("Head")
+					local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+					if head and head.Size ~= Vector3.new(10, 10, 10) then head.Size = Vector3.new(10, 10, 10) end
+					if hrp and hrp.Size ~= Vector3.new(10, 10, 10) then hrp.Size = Vector3.new(10, 10, 10) end
+				end
+			end
+		end
+	end
+end)
+
 UserInput.InputBegan:Connect(function(i,gp)if gp or i.UserInputType~=Enum.UserInputType.Keyboard then return end if i.KeyCode.Name==CFG.aimbotKey then CFG.aimbotEnabled=true end end)
 UserInput.InputEnded:Connect(function(i,gp)if gp or i.UserInputType~=Enum.UserInputType.Keyboard then return end if i.KeyCode.Name==CFG.aimbotKey then CFG.aimbotEnabled=false end end)
+
+-- CLICK TP
+UserInput.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if CFG.clickTP and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        local hrp = HRP()
+        if hrp then
+            local mousePos = UserInput:GetMouseLocation()
+            local ray = Camera:ViewportPointToRay(mousePos.X, mousePos.Y)
+            local params = RaycastParams.new()
+            params.FilterType = Enum.RaycastFilterType.Exclude
+            params.FilterDescendantsInstances = {lp.Character}
+            local hit = Workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+            if hit then
+                hrp.CFrame = CFrame.new(hit.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
 
 -- SPECTATE
 local Spec={Target=nil,Orig=nil}
@@ -545,7 +581,7 @@ local function specOn(plr)if not plr or plr==lp then return end local char=plr.C
 local function specOff()if Spec.Target then Spec.Target=nil Camera.CameraSubject=HUM()or Spec.Orig end end
 task.spawn(function()while true do task.wait(1)if Spec.Target then local char=Spec.Target.Character if not char then specOff()else local hum=char:FindFirstChildOfClass("Humanoid")if hum and hum.Health>0 then Camera.CameraSubject=hum else specOff()end end end end end)
 
--- GARI HELPERS
+-- HELPERS (Gari, Eletricista, Pizza, Prisão)
 local lixosUsados={}
 local GariSt={c=0,e=0,i=tick()}
 local function rg()local d=tick()-GariSt.i return string.format("⏱ %s 🗑 %d 📤 %d",Fmt(d),GariSt.c,GariSt.e)end
@@ -564,7 +600,6 @@ local function proxLixo()
 	return d[1]and d[1].l or nil
 end
 
--- ELETRICISTA HELPERS
 local postesOK={}
 local EletSt={e=0,i=tick()}
 local function acharCarro()local s=Workspace:FindFirstChild("CarrosSpawnados")if not s then return nil end return s:FindFirstChild("Eletricista")end
@@ -592,7 +627,6 @@ local function promPoste(p,txt,ig)if not p then return nil end for _,d in ipairs
 local function temEscada()if not lp.Character then return false end for _,o in ipairs(lp.Character:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("escada")then return true end end if lp.Backpack then for _,o in ipairs(lp.Backpack:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("escada")then return true end end end return false end
 local function equipEscada()local hum=HUM()if not hum then return false end for _,o in ipairs(lp.Character:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("escada")then return true end end if lp.Backpack then for _,t in ipairs(lp.Backpack:GetChildren())do if t:IsA("Tool")and t.Name:lower():find("escada")then pcall(function()hum:EquipTool(t)end)return true end end end return false end
 
--- PIZZA HELPERS
 local PizzaSt={e=0,p=0,i=tick()}
 local function getPos(o)if not o then return nil end if o:IsA("BasePart")then return o.Position end if o:IsA("Model")then local r=o:FindFirstChild("HumanoidRootPart")or o.PrimaryPart if r then return r.Position end end for _,d in ipairs(o:GetDescendants())do if d:IsA("BasePart")then return d.Position end end return nil end
 local function promPizza(txt)
@@ -617,13 +651,8 @@ local function localMarcado()
 end
 local function temPizza()local d=Workspace:FindFirstChild(lp.Name)return d and d:FindFirstChild("PizzaTemplate")~=nil end
 
--- =======================================================
--- PRISÃO HELPERS — AUTO VARRER v10.9
--- =======================================================
 local PrisaoSt={v=0,c=0,e=0,i=tick()}
-
 local VASSOURA_KW = {"vassoura","broom","sweep","varrer","limpar","limpeza","clean","mop","esfregona","rodo"}
-
 local function contemAlguma(str, kws)
 	if not str then return false end
 	str = str:lower()
@@ -632,11 +661,7 @@ local function contemAlguma(str, kws)
 	end
 	return false
 end
-
-local function acharPastaVarredura()
-	return Workspace:FindFirstChild("LocaisVarrer")
-end
-
+local function acharPastaVarredura() return Workspace:FindFirstChild("LocaisVarrer") end
 local function acharVassoura()
 	if not lp.Character then return nil end
 	for _, o in ipairs(lp.Character:GetChildren()) do
@@ -649,7 +674,6 @@ local function acharVassoura()
 	end
 	return nil
 end
-
 local function equipVassoura()
 	local hum = HUM()
 	if not hum or not lp.Character then return nil end
@@ -666,13 +690,9 @@ local function equipVassoura()
 	end
 	return nil
 end
-
 local function proximoPontoVarredura()
-	local hrp = HRP()
-	if not hrp then return nil end
-	local pasta = acharPastaVarredura()
-	if not pasta then return nil end
-
+	local hrp = HRP() if not hrp then return nil end
+	local pasta = acharPastaVarredura() if not pasta then return nil end
 	local lista = {}
 	for _, p in ipairs(pasta:GetChildren()) do
 		if p:IsA("BasePart") and not p:GetAttribute("EmCooldown") then
@@ -680,43 +700,19 @@ local function proximoPontoVarredura()
 			table.insert(lista, {part = p, pos = p.Position, dist = dist})
 		end
 	end
-
 	if #lista == 0 then return nil end
 	table.sort(lista, function(a, b) return a.dist < b.dist end)
 	return lista[1]
 end
-
 local function debugVarredura()
-	print("═══════════════════════════════════════")
-	print("🔍 DEBUG AUTO VARRER v10.9 (Vassoura)")
-	print("═══════════════════════════════════════")
+	print("🔍 DEBUG AUTO VARRER v11.1")
 	local pasta = acharPastaVarredura()
-	if not pasta then
-		print("❌ workspace.LocaisVarrer NÃO encontrado!")
-	else
+	if not pasta then print("❌ workspace.LocaisVarrer NÃO encontrado!") else
 		print("✅ workspace.LocaisVarrer: " .. pasta:GetFullName())
-		local total, emCooldown, disponiveis = 0, 0, 0
-		for _, p in ipairs(pasta:GetChildren()) do
-			if p:IsA("BasePart") then
-				total = total + 1
-				if p:GetAttribute("EmCooldown") then
-					emCooldown = emCooldown + 1
-				else
-					disponiveis = disponiveis + 1
-				end
-			end
-		end
-		print("📊 Total de BaseParts: " .. total)
-		print("⏳ Em cooldown: " .. emCooldown)
-		print("✅ Disponíveis: " .. disponiveis)
 	end
-	local tool = acharVassoura()
-	print("🧹 Vassoura: " .. (tool and tool.Name or "NÃO ENCONTRADA"))
-	print("═══════════════════════════════════════")
 end
-
 local function promPrisao(txt)
-	local hrp=HRP()if not hrp then return nil end
+	local hrp=HRP() if not hrp then return nil end
 	local mp,md=nil,math.huge
 	for _,o in ipairs(Workspace:GetDescendants())do
 		if o:IsA("ProximityPrompt")and o.ActionText and o.ActionText:lower():find(txt:lower())then
@@ -725,7 +721,6 @@ local function promPrisao(txt)
 	end
 	return mp
 end
-
 local function temCaixa()
 	if not lp.Character then return false end
 	for _,o in ipairs(lp.Character:GetChildren())do
@@ -746,7 +741,7 @@ local function detectAdm(p)
 	return false,nil
 end
 
--- INTERFACE
+-- INTERFACE (RESPONSIVA CORRIGIDA)
 local ScreenGui=Instance.new("ScreenGui")ScreenGui.Name="SharkMenu_UI"ScreenGui.ResetOnSpawn=false ScreenGui.IgnoreGuiInset=true ScreenGui.Parent=CoreGui
 
 local function Notif(txt,cor,dur)
@@ -761,8 +756,12 @@ local function Notif(txt,cor,dur)
 end
 
 local Main=Instance.new("Frame")
-Main.Size=UDim2.new(0,940,0,600)Main.Position=UDim2.new(0.5,0,0.5,0)Main.AnchorPoint=Vector2.new(0.5,0.5)
+Main.Size=UDim2.new(0.9, 0, 0.8, 0)
+Main.Position=UDim2.new(0.5,0,0.5,0)Main.AnchorPoint=Vector2.new(0.5,0.5)
 Main.BackgroundColor3=FUNDO Main.BorderSizePixel=0 Main.Parent=ScreenGui
+local uiScale = Instance.new("UISizeConstraint", Main)
+uiScale.MaxSize = Vector2.new(940, 600)
+uiScale.MinSize = Vector2.new(320, 480) -- CORRIGIDO AQUI
 corner(Main,12)stroke(Main,AMARELO,1.5,0.6)grad(Main,FUNDO,Color3.fromRGB(15,12,5),90)
 
 local L=Instance.new("Frame")L.Size=UDim2.new(0,220,1,-20)L.Position=UDim2.new(0,10,0,10)L.BackgroundColor3=PAINEL L.BorderSizePixel=0 L.Parent=Main corner(L,10)
@@ -797,7 +796,7 @@ local InnerMenu=Instance.new("Frame")InnerMenu.Size=UDim2.new(0,165,1,0)InnerMen
 local Content=Instance.new("ScrollingFrame")Content.Size=UDim2.new(1,-175,1,0)Content.Position=UDim2.new(0,165,0,0)Content.BackgroundTransparency=1 Content.BorderSizePixel=0 Content.ScrollBarThickness=3 Content.ScrollBarImageColor3=AMARELO Content.CanvasSize=UDim2.new(0,0,0,0)Content.AutomaticCanvasSize=Enum.AutomaticSize.Y Content.Parent=Body
 local CList=Instance.new("UIListLayout")CList.Padding=UDim.new(0,8)CList.Parent=Content
 
-local FloatBtn=Instance.new("TextButton")FloatBtn.Size=UDim2.new(0,55,0,55)FloatBtn.Position=UDim2.new(0,20,0.5,-27)FloatBtn.BackgroundColor3=FUNDO FloatBtn.Text="🦈"FloatBtn.TextSize=24 FloatBtn.Font=Enum.Font.GothamBold FloatBtn.TextColor3=CIANO FloatBtn.BorderSizePixel=0 FloatBtn.AutoButtonColor=false FloatBtn.Visible=false FloatBtn.Parent=ScreenGui corner(FloatBtn,27)stroke(FloatBtn,CIANO,2,0.3)
+local FloatBtn=Instance.new("TextButton")FloatBtn.Size=UDim2.new(0,60,0,60)FloatBtn.Position=UDim2.new(0,20,0.5,-30)FloatBtn.BackgroundColor3=FUNDO FloatBtn.Text="🦈"FloatBtn.TextSize=28 FloatBtn.Font=Enum.Font.GothamBold FloatBtn.TextColor3=CIANO FloatBtn.BorderSizePixel=0 FloatBtn.AutoButtonColor=false FloatBtn.Visible=false FloatBtn.Parent=ScreenGui corner(FloatBtn,30)stroke(FloatBtn,CIANO,2,0.3)
 
 local AdminP=Instance.new("Frame")AdminP.Size=UDim2.new(0,250,0,400)AdminP.Position=UDim2.new(1,-270,0.5,-200)AdminP.BackgroundColor3=FUNDO AdminP.BorderSizePixel=0 AdminP.Visible=false AdminP.Parent=ScreenGui corner(AdminP,12)stroke(AdminP,VERMELHO2,2,0.3)grad(AdminP,FUNDO,Color3.fromRGB(25,5,10),90)
 local AH=Instance.new("Frame")AH.Size=UDim2.new(1,0,0,44)AH.BackgroundColor3=CARD AH.BackgroundTransparency=0.3 AH.BorderSizePixel=0 AH.Parent=AdminP corner(AH,12)
@@ -932,7 +931,6 @@ local function secaoCol(parent,titulo,subtitulo,icone,cor,id)
 end
 
 local tabs={}
-
 tabs["Jogador"]=function()
 	secao("👤 Informações",AMARELO)
 	statL("👤 Nome: "..lp.Name)
@@ -969,6 +967,7 @@ tabs["Aimbot"]=function()
 	toggle("👥 Team Check",CFG.aimbotTeamCheck,AZUL,function(s)CFG.aimbotTeamCheck=s saveCfg()end)
 	toggle("🧱 Wall Check",CFG.aimbotWallCheck,AMARELO,function(s)CFG.aimbotWallCheck=s saveCfg()end)
 	toggle("⭕ FOV Circle",CFG.aimbotFovCircle,VERDE_NEON,function(s)CFG.aimbotFovCircle=s if s then criarFOV()else if Aimbot.FOV then pcall(function()Aimbot.FOV:Destroy()end)Aimbot.FOV=nil end end saveCfg()end)
+	toggle("🔍 Hitbox Expander (Fácil)",CFG.hitboxExpander,CIANO,function(s)CFG.hitboxExpander=s saveCfg()end)
 	secao("⌨️ Tecla",AMARELO)
 	statL("Tecla atual: "..CFG.aimbotKey,VERDE_NEON)
 	botao("🎮 Alterar Tecla",AMARELO,function()
@@ -987,6 +986,28 @@ tabs["Aimbot"]=function()
 	if CFG.aimbotFovCircle then criarFOV()end
 end
 
+tabs["Visual"]=function()
+	secao("👁️ Visual",CIANO)
+	toggle("🔦 FPS Booster",CFG.fpsBoost,VERDE,function(s)
+		CFG.fpsBoost = s
+		if s then
+			pcall(function() Lighting.GlobalShadows = false end)
+			pcall(function() Lighting.FogEnd = 9e9 end)
+			pcall(function() settings().Rendering.QualityLevel = "Level01" end)
+			Notif("🚀 FPS Boost ATIVADO", VERDE)
+		else
+			pcall(function() Lighting.GlobalShadows = true end)
+			pcall(function() Lighting.FogEnd = 100000 end)
+			pcall(function() settings().Rendering.QualityLevel = "Level07" end)
+			Notif("🔄 Gráficos restaurados", AMARELO)
+		end
+		saveCfg()
+	end)
+	botao("🌫️ Remover Névoa",AMARELO,function()Lighting.FogEnd=100000 Lighting.FogStart=0 Notif("🌫️ OK!",AMARELO)end)
+	botao("☀️ Meio-dia",AMARELO,function()Lighting.ClockTime=12 Notif("☀️ OK!",AMARELO)end)
+	botao("🌙 Meia-noite",AMARELO,function()Lighting.ClockTime=0 Notif("🌙 OK!",AMARELO)end)
+end
+
 tabs["Tróli"]=function()
 	secao("😜 Diversão",ROXO)
 	botao("💃 Dançar",ROXO,function()local h=HUM()if h then h:ChangeState(Enum.HumanoidStateType.Jumping)end end)
@@ -995,6 +1016,13 @@ tabs["Tróli"]=function()
 end
 
 tabs["Exploits"]=function()
+	secao("🐛 Exploits Rápidos",CIANO)
+	toggle("🖱️ Click TP (Tocar p/ ir)",CFG.clickTP,AZUL,function(s)CFG.clickTP = s saveCfg()end)
+	toggle("❄️ Freeze Player", false, CIANO, function(s)
+		local hrp = HRP()
+		if hrp then hrp.Anchored = s end
+	end)
+
 	local gID={min=false}
 	local gB=secaoCol(Content,"SAILENT GARI","Auto Gari v9.0","🗑️",VERDE,gID)
 	local gS=statL("Status: PARADO",SUB,gB)
@@ -1272,7 +1300,7 @@ tabs["Exploits"]=function()
 	slider("⏱️ Espera entre entregas",0,30,CFG.esperaEntrega,ROSA,function(v)CFG.esperaEntrega=v saveCfg()end,pB)
 
 	local prID={min=false}
-	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v10.9","🔓",AMARELO2,prID)
+	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v11.1","🔓",AMARELO2,prID)
 	local prS=statL("Status: PARADO",SUB,prB)
 	local vOn=false cOn=false vRun=0 cRun=0
 
@@ -1284,7 +1312,6 @@ tabs["Exploits"]=function()
 	local function cicloV(myRun)
 		if not HRP() then task.wait(1) return end
 
-		-- 1. Equipa vassoura (Tool)
 		local tool = equipVassoura()
 		if not tool then
 			prS.Text = "⚠️ Sem vassoura no inventário"
@@ -1293,7 +1320,6 @@ tabs["Exploits"]=function()
 			return
 		end
 
-		-- 2. Acha próximo BasePart SEM cooldown
 		local info = proximoPontoVarredura()
 		if not info then
 			prS.Text = "⏳ Todos em cooldown, aguardando..."
@@ -1302,14 +1328,12 @@ tabs["Exploits"]=function()
 			return
 		end
 
-		-- 3. Vai até o ponto
 		prS.TextColor3 = VERDE
 		prS.Text = "🧹 Indo (" .. math.floor(info.dist) .. "m)..."
 		irPara(info.pos, 30)
 		if myRun ~= vRun then return end
 		task.wait(0.3)
 
-		-- 4. Confirma distância < 8 studs (regra do LocalScript)
 		local hrp = HRP()
 		if not hrp then return end
 		local distReal = (hrp.Position - info.pos).Magnitude
@@ -1318,11 +1342,9 @@ tabs["Exploits"]=function()
 			task.wait(0.4)
 		end
 
-		-- 5. Ativa a tool (equivale ao Activated do LocalScript)
 		prS.Text = "🧹 Varrendo..."
 		pcall(function() tool:Activate() end)
 
-		-- 6. Espera EmCooldown virar true
 		local t0 = tick()
 		while tick() - t0 < 5 do
 			if myRun ~= vRun then return end
@@ -1330,11 +1352,9 @@ tabs["Exploits"]=function()
 			task.wait(0.15)
 		end
 		
-		-- 7. Contabiliza
 		PrisaoSt.v = PrisaoSt.v + 1
 		Notif("🧹 Varreu! Total: " .. PrisaoSt.v, AMARELO2, 1.5)
 
-		-- 8. Slider de espera na varredura
 		local esp = tonumber(CFG.esperaVarredura) or 3
 		if esp > 0 then
 			prS.Text = "⏳ Espera " .. esp .. "s..."
@@ -1388,7 +1408,7 @@ tabs["Exploits"]=function()
 						prS.Text = "⚠️ Erro: "..tostring(err):sub(1,30)
 						prS.TextColor3 = VERMELHO
 					end
-					task.wait(0.3) -- Tempo pra respirar entre os loops
+					task.wait(0.3) 
 				end 
 			end)
 		else
@@ -1480,6 +1500,7 @@ end
 local InnerBtns={
 	{name="Jogador",icon="👤"},
 	{name="Aimbot",icon="🎯"},
+	{name="Visual",icon="👁️"},
 	{name="Tróli",icon="😜"},
 	{name="Exploits",icon="🐛"},
 	{name="Privates",icon="🔒"},
@@ -1503,7 +1524,7 @@ end
 
 for _,d in ipairs(InnerBtns)do
 	local b=Instance.new("TextButton")
-	b.Size=UDim2.new(1,-20,0,35)b.Position=UDim2.new(0,10,0,yP)
+	b.Size=UDim2.new(1,-20,0,40)b.Position=UDim2.new(0,10,0,yP)
 	b.BackgroundColor3=PAINEL b.BorderSizePixel=0
 	b.Text="  "..d.icon.."  "..d.name
 	b.TextColor3=SUB b.TextSize=13 b.Font=Enum.Font.GothamBold
@@ -1513,7 +1534,7 @@ for _,d in ipairs(InnerBtns)do
 	b.MouseLeave:Connect(function()if b.TextColor3~=AMARELO then Tw(b,{BackgroundColor3=PAINEL},0.15)Tw(b,{TextColor3=SUB},0.15)end end)
 	b.MouseButton1Click:Connect(function()selTab(d.name)end)
 	btns[d.name]={btn=b,bar=bar}
-	yP=yP+40
+	yP=yP+45
 end
 
 selTab("Jogador")
@@ -1527,7 +1548,7 @@ local function fechar()
 	Main.Visible=false
 	FloatBtn.Visible=true
 	FloatBtn.Size=UDim2.new(0,0,0,0)
-	Tw(FloatBtn,{Size=UDim2.new(0,55,0,55)},0.25)
+	Tw(FloatBtn,{Size=UDim2.new(0,60,0,60)},0.25)
 end
 local function abrir()
 	if aberto then return end
@@ -1536,7 +1557,7 @@ local function abrir()
 	Main.Visible=true
 	Main.Size=UDim2.new(0,0,0,0)
 	Main.Position=UDim2.new(0.5,0,0.5,0)
-	Tw(Main,{Size=UDim2.new(0,940,0,600),Position=UDim2.new(0.5,0,0.5,0)},0.35)
+	Tw(Main,{Size=UDim2.new(0.9, 0, 0.8, 0),Position=UDim2.new(0.5,0,0.5,0)},0.35)
 end
 
 CloseBtn.MouseButton1Click:Connect(fechar)
