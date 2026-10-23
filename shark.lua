@@ -1,5 +1,5 @@
 -- =======================================================
--- SHARK MENU v11.1 COMPLETO (MOBILE FRIENDLY + REVISADO)
+-- SHARK MENU v12.8 (AUTO REVIVER MÁXIMO + ELETRICISTA)
 -- Auth + HWID Bind + Live + Kick + Ban + Aimbot + Scripts
 -- Criado por: becks & kevim
 -- =======================================================
@@ -7,7 +7,7 @@
 local FIREBASE_URL = "https://sailent-c8150-default-rtdb.firebaseio.com"
 local GITHUB_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SCRIPT_NAME = "Shark Menu"
-local SCRIPT_VER = "11.1"
+local SCRIPT_VER = "12.8"
 local DISCORD_LINK = "https://discord.gg/955U6r5RAQ"
 
 local CoreGui = game:GetService("CoreGui")
@@ -20,6 +20,7 @@ local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
+local TeleportService = game:GetService("TeleportService")
 local lp = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = lp:GetMouse()
@@ -132,17 +133,11 @@ local function validarKey(key)
 	if entry.expira and entry.expira<agora and entry.expira<99999999999 then return false,"⏰ Expirada"end
 	if entry.status and entry.status~="ativa"then return false,"🚫 Desativada"end
 
-	-- 🛑 VERIFICA SE O SCRIPT FOI DESATIVADO NO PAINEL ADMIN
 	local scriptDesativado = reqGet(FIREBASE_URL.."/disabled_scripts/shark.lua.json")
-	if scriptDesativado == true then
-		return false, "🛑 O Shark Menu foi DESATIVADO pelo admin."
-	end
+	if scriptDesativado == true then return false, "🛑 O Shark Menu foi DESATIVADO pelo admin." end
 
-	-- 🛑 VERIFICA SE A KEY FOI DESATIVADA NO PAINEL ADMIN
 	local keyDesativada = reqGet(FIREBASE_URL.."/disabled_keys/"..hash..".json")
-	if keyDesativada == true then
-		return false, "🛑 Esta KEY foi DESATIVADA pelo admin."
-	end
+	if keyDesativada == true then return false, "🛑 Esta KEY foi DESATIVADA pelo admin." end
 
 	local ban=reqGet(FIREBASE_URL.."/bans/"..meuHWID..".json")
 	if ban and type(ban)=="table"and(ban.reason or ban.bannedAt)then
@@ -164,8 +159,6 @@ end
 
 local function heartbeat()
 	local uid=tostring(lp.UserId)
-	
-	-- 📢 PUXA O AVISO GLOBAL DO PAINEL ADMIN
 	local avisoGlobal = reqGet(FIREBASE_URL.."/global/broadcast.json")
 	if avisoGlobal and avisoGlobal.msg then
 		local msgId = avisoGlobal.time
@@ -291,14 +284,79 @@ end
 -- CONFIG
 local CFG_FILE="shark_menu_cfg.json"
 local CFG={vel=60,modoVoo=false,noclip=true,antiAfk=true,godMode=true,antiSit=true,
-	autoGari=false,autoEletricista=false,autoPizza=false,autoVarrer=false,autoCaixa=false,
-	esperaEntrega=5, esperaVarredura=3, listaAdmin=false,aimbotEnabled=false,aimbotKey="E",aimbotFov=150,
-	aimbotSmoothness=0.2,aimbotTeamCheck=true,aimbotWallCheck=false,aimbotTargetPart="Head",
-	aimbotMode="Camera",aimbotAutoShoot=false,aimbotFovCircle=true, hitboxExpander=false, clickTP=false, fpsBoost=false}
+autoGari=false,autoEletricista=false,autoPizza=false,autoVarrer=false,autoCaixa=false,
+esperaEntrega=5, esperaVarredura=3, esperaPoste=180, listaAdmin=false,aimbotEnabled=false,aimbotKey="E",aimbotFov=150,
+aimbotSmoothness=0.2,aimbotTeamCheck=true,aimbotWallCheck=false,aimbotTargetPart="Head",
+aimbotMode="Camera",aimbotAutoShoot=false,aimbotFovCircle=true, hitboxExpander=false, clickTP=false, fpsBoost=false,
+fastFarm=false, infiniteJump=false, antiDespawn=false, antiRagdoll=false, fullbright=false, autoRejoin=false, protecaoStaff=false,
+autoReviver=false, macaTempo=5, macaTP=true, macaPos={x=4165.502, y=4.201, z=2081.9},
+carroNome="", carroTempo=15, postesFixos={}}
+
 local function saveCfg()pcall(function()if writefile then writefile(CFG_FILE,HttpService:JSONEncode(CFG))end end)end
 local function loadCfg()pcall(function()if isfile and isfile(CFG_FILE)and readfile then local d=HttpService:JSONDecode(readfile(CFG_FILE))for k,v in pairs(d)do CFG[k]=v end end end)end
 loadCfg()
 if CFG.vel>200 then CFG.vel=200 end
+
+-- FORÇANDO AS POSIÇÕES EXATAS (SOBRESCREVE O SALVO)
+CFG.postesFixos = {
+	{x=3223.529, y=12.626, z=2445.494},
+	{x=3299.914, y=12.626, z=2445.104},
+	{x=3383.775, y=12.626, z=2446.329}
+}
+-- SE O USUARIO NAO TIVER MUDADO MANUALMENTE A MACA, FORÇA A POSIÇÃO CORRETA
+if not CFG.macaPos or CFG.macaPos.x ~= 4165.502 then
+	CFG.macaPos = {x=4165.502, y=4.201, z=2081.9}
+end
+saveCfg()
+
+-- SISTEMA DE SERVER HOP (PROTEÇÃO STAFF)
+local isHopping = false
+local function serverHop()
+    if isHopping then return end
+    isHopping = true
+    Notif("🚨 STAFF DETECTADO! SAINDO DO SERVIDOR...", VERMELHO2, 5)
+    task.wait(1.5)
+    
+    local function fallbackRejoin()
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, lp) end)
+    end
+
+    local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
+    local req = httpFn()
+    if req then
+        local ok, res = pcall(function() return req({Url=url, Method="GET"}) end)
+        if ok and res and res.Body then
+            local data = nil
+            pcall(function() data = HttpService:JSONDecode(res.Body) end)
+            if data and data.data then
+                local servers = {}
+                for _, srv in ipairs(data.data) do
+                    if srv.id ~= game.JobId and srv.playing < srv.maxPlayers then
+                        table.insert(servers, srv.id)
+                    end
+                end
+                if #servers > 0 then
+                    local target = servers[math.random(1, #servers)]
+                    pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, target, lp) end)
+                    return
+                end
+            end
+        end
+    end
+    fallbackRejoin()
+end
+
+-- AUTO REJOIN (SE TOMAR KICK)
+task.spawn(function()
+    game:GetService("Players").PlayerRemoving:Connect(function(plr)
+        if plr == lp and CFG.autoRejoin and not isHopping then
+            task.wait(5)
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, lp)
+            end)
+        end
+    end)
+end)
 
 local ncConn=nil
 local afkConn=nil
@@ -448,6 +506,7 @@ local function andar(pos,to,dist)
 	return false
 end
 
+-- VOO ORIGINAL RESTAURADO (SEM BUGS)
 local function voar(pos,to)
 	if not pos then return false end
 	local hrp=HRP()local hum=HUM()if not hrp or not hum then return false end
@@ -468,7 +527,134 @@ end
 
 local function irPara(pos,to)if CFG.modoVoo then return voar(pos,to)else return andar(pos,to)end end
 
+-- =======================================================
+-- AUTO REVIVER (SISTEMA INTELIGENTE E BLINDADO)
+-- =======================================================
+task.spawn(function()
+    local isReviving = false
+    local lastSafePos = nil
+    
+    -- Salva constantemente a última posição segura
+    task.spawn(function()
+        while task.wait(0.5) do
+            local hum = HUM()
+            local hrp = HRP()
+            if hum and hrp and hum.Health > 0 and hum:GetState() ~= Enum.HumanoidStateType.Physics and hum:GetState() ~= Enum.HumanoidStateType.Ragdoll then
+                lastSafePos = hrp.CFrame
+            end
+        end
+    end)
+
+    while task.wait(1) do
+        if CFG.autoReviver and CFG.macaPos and not isReviving then
+            local hum = HUM()
+            local hrp = HRP()
+            if hum and hrp then
+                local isDead = hum.Health <= 0
+                local isRagdolled = (hum:GetState() == Enum.HumanoidStateType.Physics or hum:GetState() == Enum.HumanoidStateType.Ragdoll)
+                
+                if isDead or isRagdolled then
+                    if isDead then
+                        -- Se morreu, aguarda respawn
+                        pcall(function() lp.CharacterAdded:Wait() end)
+                        task.wait(2)
+                        hum = HUM()
+                        hrp = HRP()
+                    end
+                    
+                    if hum and hrp then
+                        isReviving = true
+                        Notif("🚑 Indo para a Maca...", VERDE, 2)
+                        local targetPos = Vector3.new(CFG.macaPos.x, CFG.macaPos.y, CFG.macaPos.z)
+                        
+                        -- Vai para a Maca (TP ou Andando)
+                        if CFG.macaTP then
+                            pcall(function() hrp.CFrame = CFrame.new(targetPos + Vector3.new(0,3,0)) end)
+                        else
+                            andar(targetPos, 20, 4)
+                        end
+                        task.wait(1)
+                        
+                        -- Procura o Prompt "Deitar" (ou Reviver/Curar)
+                        local promptFired = false
+                        for _, obj in ipairs(Workspace:GetDescendants()) do
+                            if obj:IsA("ProximityPrompt") then
+                                local action = string.lower(obj.ActionText)
+                                if action:find("deitar") or action:find("revive") or action:find("curar") then
+                                    local parentPart = obj.Parent
+                                    if parentPart and parentPart.Parent then
+                                        local pPos = parentPart.Parent:GetPivot().Position
+                                        if (pPos - targetPos).Magnitude < 30 then
+                                            pcall(function() fireproximityprompt(obj) end)
+                                            promptFired = true
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                        
+                        if promptFired then
+                            Notif("✅ Deitou na maca! Aguardando...", AZUL, 2)
+                        else
+                            Notif("⚠️ Prompt 'Deitar' não encontrado!", VERMELHO, 2)
+                        end
+                        
+                        -- Espera o tempo da barra
+                        task.wait(CFG.macaTempo)
+                        
+                        -- Volta para a posição segura
+                        local currentHrp = HRP()
+                        if currentHrp and lastSafePos then
+                            pcall(function() currentHrp.CFrame = lastSafePos end)
+                            Notif("✅ Reviver finalizado! Voltou ao local.", VERDE, 2)
+                        end
+                        
+                        task.wait(3)
+                        isReviving = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- =======================================================
+-- ANTI-DESPAWN AGENDADO (RODA EM BACKGROUND)
+-- =======================================================
+task.spawn(function()
+	while task.wait(5) do
+		if CFG.antiDespawn and CFG.carroNome ~= "" then
+			task.wait(CFG.carroTempo * 60)
+			if not CFG.antiDespawn then continue end
+			
+			local s = Workspace:FindFirstChild("CarrosSpawnados")
+			local carro = s and s:FindFirstChild(CFG.carroNome)
+			if carro then
+				local char = lp.Character
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				local seat = carro:FindFirstChildWhichIsA("VehicleSeat", true) or carro:FindFirstChildWhichIsA("Seat", true)
+				
+				if hrp and hum and seat and not hum.Sit then
+					local posOriginal = hrp.CFrame
+					pcall(function() hrp.CFrame = seat.CFrame + Vector3.new(0, 3, 0) end)
+					task.wait(0.5)
+					pcall(function() seat:Sit(hum) end)
+					task.wait(3)
+					pcall(function() hum.Sit = false end)
+					task.wait(0.3)
+					pcall(function() hrp.CFrame = posOriginal end)
+					Notif("🚗 Timer do carro resetado!", VERDE, 2)
+				end
+			end
+		end
+	end
+end)
+
+-- =======================================================
 -- AIMBOT E HITBOX (Otimizado)
+-- =======================================================
 local Aimbot={Target=nil,FOV=nil,Conn=nil}
 local function criarFOV()
 	if Aimbot.FOV then pcall(function()Aimbot.FOV:Destroy()end)end
@@ -537,7 +723,7 @@ local function loopAimbot()
 end
 loopAimbot()
 
--- OTIMIZAÇÃO HITBOX EXPANDER (Não trava o celular)
+-- OTIMIZAÇÃO HITBOX EXPANDER
 task.spawn(function()
 	while task.wait(0.5) do
 		if CFG.hitboxExpander then
@@ -575,6 +761,29 @@ UserInput.InputBegan:Connect(function(input, gp)
     end
 end)
 
+-- INFINITE JUMP
+UserInput.JumpRequest:Connect(function()
+    if CFG.infiniteJump then
+        local hum = HUM()
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- ANTI RAGDOLL
+task.spawn(function()
+	while task.wait(1) do
+		if CFG.antiRagdoll then
+			local char = lp.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if hum and hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Ragdoll then
+				hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+		end
+	end
+end)
+
 -- SPECTATE
 local Spec={Target=nil,Orig=nil}
 local function specOn(plr)if not plr or plr==lp then return end local char=plr.Character if not char then return end local hum=char:FindFirstChildOfClass("Humanoid")if not hum then return end Spec.Target=plr Spec.Orig=Camera.CameraSubject Camera.CameraSubject=hum end
@@ -600,28 +809,31 @@ local function proxLixo()
 	return d[1]and d[1].l or nil
 end
 
-local postesOK={}
 local EletSt={e=0,i=tick()}
+local postesConcluidos = {}
 local function acharCarro()local s=Workspace:FindFirstChild("CarrosSpawnados")if not s then return nil end return s:FindFirstChild("Eletricista")end
 local function promEscada()local c=acharCarro()if not c then return nil end local b=c:FindFirstChild("Body")if not b then return nil end local e=b:FindFirstChild("Escada")if not e then return nil end local p=e:FindFirstChild("Proxy")if not p then return nil end return p:FindFirstChild("ProximityPrompt")end
+
 local function proxPoste()
-	local p=Workspace:FindFirstChild("Complementos")if not p then return nil end
-	local po=p:FindFirstChild("Postes")if not po then return nil end
 	local hrp=HRP()if not hrp then return nil end
 	local mp,md=nil,math.huge
-	for _,poste in ipairs(po:GetChildren())do
-		if poste.Name=="Poste"and not postesOK[poste]then
-			local m=poste:FindFirstChild("Model")
-			if m then local im=m:FindFirstChild("Model")if im then
-				local r=im:FindFirstChild("HumanoidRootPart")or im.PrimaryPart
-				local pos=r and r.Position
-				if not pos then local pt=im:FindFirstChildWhichIsA("BasePart")if pt then pos=pt.Position end end
-				if pos then local d=(pos-hrp.Position).Magnitude if d<md then md=d mp={poste=poste,pos=pos}end end
-			end end
+	for i, savedPos in ipairs(CFG.postesFixos) do
+		if not postesConcluidos[i] then
+			local pos = Vector3.new(savedPos.x, savedPos.y, savedPos.z)
+			local d = (pos - hrp.Position).Magnitude
+			if d < md then
+				md = d
+				mp = {pos = pos, saved = true, index = i}
+			end
 		end
+	end
+	if not mp then
+		postesConcluidos = {}
+		return proxPoste()
 	end
 	return mp
 end
+
 local function contarPostes()local p=Workspace:FindFirstChild("Complementos")if not p then return 0 end local po=p:FindFirstChild("Postes")if not po then return 0 end local t=0 for _,x in ipairs(po:GetChildren())do if x.Name=="Poste"then t=t+1 end end return t end
 local function promPoste(p,txt,ig)if not p then return nil end for _,d in ipairs(p:GetDescendants())do if d:IsA("ProximityPrompt")then local ok=ig or d.Enabled if ok and d.ActionText and d.ActionText:lower():find(txt:lower())then return d end end end return nil end
 local function temEscada()if not lp.Character then return false end for _,o in ipairs(lp.Character:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("escada")then return true end end if lp.Backpack then for _,o in ipairs(lp.Backpack:GetChildren())do if o:IsA("Tool")and o.Name:lower():find("escada")then return true end end end return false end
@@ -705,7 +917,7 @@ local function proximoPontoVarredura()
 	return lista[1]
 end
 local function debugVarredura()
-	print("🔍 DEBUG AUTO VARRER v11.1")
+	print("🔍 DEBUG AUTO VARRER v12.8")
 	local pasta = acharPastaVarredura()
 	if not pasta then print("❌ workspace.LocaisVarrer NÃO encontrado!") else
 		print("✅ workspace.LocaisVarrer: " .. pasta:GetFullName())
@@ -741,7 +953,7 @@ local function detectAdm(p)
 	return false,nil
 end
 
--- INTERFACE (RESPONSIVA CORRIGIDA)
+-- INTERFACE (RESPONSIVA E LIMPA)
 local ScreenGui=Instance.new("ScreenGui")ScreenGui.Name="SharkMenu_UI"ScreenGui.ResetOnSpawn=false ScreenGui.IgnoreGuiInset=true ScreenGui.Parent=CoreGui
 
 local function Notif(txt,cor,dur)
@@ -761,12 +973,8 @@ Main.Position=UDim2.new(0.5,0,0.5,0)Main.AnchorPoint=Vector2.new(0.5,0.5)
 Main.BackgroundColor3=FUNDO Main.BorderSizePixel=0 Main.Parent=ScreenGui
 local uiScale = Instance.new("UISizeConstraint", Main)
 uiScale.MaxSize = Vector2.new(940, 600)
-uiScale.MinSize = Vector2.new(320, 480) -- CORRIGIDO AQUI
+uiScale.MinSize = Vector2.new(320, 480)
 corner(Main,12)stroke(Main,AMARELO,1.5,0.6)grad(Main,FUNDO,Color3.fromRGB(15,12,5),90)
-
-local L=Instance.new("Frame")L.Size=UDim2.new(0,220,1,-20)L.Position=UDim2.new(0,10,0,10)L.BackgroundColor3=PAINEL L.BorderSizePixel=0 L.Parent=Main corner(L,10)
-local LT=Instance.new("TextLabel")LT.Size=UDim2.new(1,-20,0,30)LT.Position=UDim2.new(0,10,0,10)LT.BackgroundTransparency=1 LT.Text="🚗 Lista de Veículos (0)"LT.TextColor3=TEXTO LT.TextSize=13 LT.Font=Enum.Font.GothamBold LT.TextXAlignment=Enum.TextXAlignment.Left LT.Parent=L
-local LS=Instance.new("TextBox")LS.Size=UDim2.new(1,-20,0,32)LS.Position=UDim2.new(0,10,0,45)LS.BackgroundColor3=INPUT LS.BorderSizePixel=0 LS.Text=""LS.PlaceholderText="🔍 Pesquisar..."LS.PlaceholderColor3=SUB LS.TextColor3=TEXTO LS.TextSize=12 LS.Font=Enum.Font.Gotham LS.Parent=L corner(LS,8)stroke(LS,BORDA,1,0.4)
 
 local R=Instance.new("Frame")R.Size=UDim2.new(0,220,1,-20)R.Position=UDim2.new(1,-230,0,10)R.BackgroundColor3=PAINEL R.BorderSizePixel=0 R.Parent=Main corner(R,10)
 local RT=Instance.new("TextLabel")RT.Size=UDim2.new(1,-20,0,30)RT.Position=UDim2.new(0,10,0,10)RT.BackgroundTransparency=1 RT.Text="👥 Lista de Jogadores (0)"RT.TextColor3=TEXTO RT.TextSize=13 RT.Font=Enum.Font.GothamBold RT.TextXAlignment=Enum.TextXAlignment.Left RT.Parent=R
@@ -774,7 +982,7 @@ local RS=Instance.new("TextBox")RS.Size=UDim2.new(1,-20,0,32)RS.Position=UDim2.n
 local RScroll=Instance.new("ScrollingFrame")RScroll.Size=UDim2.new(1,-10,1,-90)RScroll.Position=UDim2.new(0,5,0,80)RScroll.BackgroundTransparency=1 RScroll.BorderSizePixel=0 RScroll.ScrollBarThickness=3 RScroll.ScrollBarImageColor3=AMARELO RScroll.CanvasSize=UDim2.new(0,0,0,0)RScroll.AutomaticCanvasSize=Enum.AutomaticSize.Y RScroll.Parent=R
 local RList=Instance.new("UIListLayout")RList.Padding=UDim.new(0,4)RList.Parent=RScroll
 
-local C=Instance.new("Frame")C.Size=UDim2.new(1,-460,1,-20)C.Position=UDim2.new(0,240,0,10)C.BackgroundColor3=PAINEL C.BorderSizePixel=0 C.Parent=Main corner(C,10)
+local C=Instance.new("Frame")C.Size=UDim2.new(1,-240,1,-20)C.Position=UDim2.new(0,10,0,10)C.BackgroundColor3=PAINEL C.BorderSizePixel=0 C.Parent=Main corner(C,10)
 local Header=Instance.new("Frame")Header.Size=UDim2.new(1,0,0,78)Header.BackgroundColor3=INPUT Header.BackgroundTransparency=0.3 Header.BorderSizePixel=0 Header.Parent=C corner(Header,10)
 local DragBar=Instance.new("Frame")DragBar.Size=UDim2.new(0,40,0,3)DragBar.Position=UDim2.new(0.5,-20,0,4)DragBar.BackgroundColor3=BORDA DragBar.BorderSizePixel=0 DragBar.Parent=Header corner(DragBar,2)
 
@@ -787,6 +995,31 @@ local OnDot=Instance.new("Frame")OnDot.Size=UDim2.new(0,8,0,8)OnDot.Position=UDi
 local OnText=Instance.new("TextLabel")OnText.Size=UDim2.new(1,-22,1,0)OnText.Position=UDim2.new(0,22,0,0)OnText.BackgroundTransparency=1 OnText.Text="OK • ONLINE"OnText.Font=Enum.Font.GothamBold OnText.TextSize=9 OnText.TextColor3=VERDE_NEON OnText.TextXAlignment=Enum.TextXAlignment.Left OnText.Parent=OnInd
 
 task.spawn(function()while OnInd.Parent do task.wait(1)pcall(function()Tw(OnDot,{BackgroundTransparency=0.6},0.5)task.wait(0.5)Tw(OnDot,{BackgroundTransparency=0},0.5)end)end end)
+
+-- CONTADOR DE FPS E PING
+local StatsLabel = Instance.new("TextLabel")
+StatsLabel.Size = UDim2.new(0, 100, 0, 14)
+StatsLabel.Position = UDim2.new(1, -110, 0, 62)
+StatsLabel.BackgroundTransparency = 1
+StatsLabel.Text = "Ping: -- | FPS: --"
+StatsLabel.Font = Enum.Font.Code
+StatsLabel.TextSize = 10
+StatsLabel.TextColor3 = SUB
+StatsLabel.TextXAlignment = Enum.TextXAlignment.Right
+StatsLabel.Parent = Header
+
+task.spawn(function()
+    while task.wait(1) do
+        local ping = math.floor(lp:GetNetworkPing() * 1000)
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
+        StatsLabel.Text = string.format("Ping: %dms | FPS: %d", ping, fps)
+        if ping > 150 or fps < 30 then
+            StatsLabel.TextColor3 = VERMELHO
+        else
+            StatsLabel.TextColor3 = VERDE
+        end
+    end
+end)
 
 local CloseBtn=Instance.new("TextButton")CloseBtn.Size=UDim2.new(0,30,0,30)CloseBtn.Position=UDim2.new(1,-40,0.5,-15)CloseBtn.BackgroundColor3=INPUT CloseBtn.Text="✕"CloseBtn.Font=Enum.Font.GothamBold CloseBtn.TextSize=14 CloseBtn.TextColor3=VERMELHO CloseBtn.BorderSizePixel=0 CloseBtn.AutoButtonColor=false CloseBtn.Parent=Header corner(CloseBtn,8)stroke(CloseBtn,BORDA,1,0.4)
 local MinBtn=Instance.new("TextButton")MinBtn.Size=UDim2.new(0,30,0,30)MinBtn.Position=UDim2.new(1,-76,0.5,-15)MinBtn.BackgroundColor3=INPUT MinBtn.Text="−"MinBtn.Font=Enum.Font.GothamBold MinBtn.TextSize=18 MinBtn.TextColor3=AMARELO MinBtn.BorderSizePixel=0 MinBtn.AutoButtonColor=false MinBtn.Parent=Header corner(MinBtn,8)stroke(MinBtn,BORDA,1,0.4)
@@ -937,11 +1170,35 @@ tabs["Jogador"]=function()
 	statL("🆔 UserId: "..lp.UserId)
 	local h=HUM()statL("❤️ Vida: "..(h and math.floor(h.Health)or"?").." / "..(h and math.floor(h.MaxHealth)or"?"),VERDE)
 	statL("🔑 "..(_G.SailentNome or "?").." ["..(_G.SailentNivel or "?").."]",CIANO)
+	
+	secao("🚑 Sistema de Revive", VERDE)
+	toggle("🚑 Auto Reviver", CFG.autoReviver, VERDE, function(s) CFG.autoReviver = s saveCfg() end)
+	toggle("⚡ TP Rápido para Maca", CFG.macaTP, AZUL, function(s) CFG.macaTP = s saveCfg() end)
+	slider("⏱️ Tempo na Maca (Seg)", 1, 30, CFG.macaTempo or 5, VERDE, function(v) CFG.macaTempo = v saveCfg() end)
+	botao("📍 Salvar Posição Atual da Maca", LARANJA, function()
+		local hrp = HRP()
+		if hrp then
+			CFG.macaPos = {x=hrp.Position.X, y=hrp.Position.Y, z=hrp.Position.Z}
+			saveCfg()
+			Notif("📍 Maca salva nas configs!", LARANJA, 2)
+		end
+	end)
+	statL("Coord. atual: "..(CFG.macaPos and string.format("%.1f, %.1f, %.1f",CFG.macaPos.x,CFG.macaPos.y,CFG.macaPos.z) or "N/A"), SUB)
+
+	secao("🚨 PROTEÇÃO SUPREMA",VERMELHO2)
+	toggle("🛡️ Anti-Staff (Server Hop)", CFG.protecaoStaff, VERMELHO2, function(s) 
+		CFG.protecaoStaff = s 
+		if s then Notif("🛡️ Proteção Staff ATIVADA!", VERMELHO2, 2) else Notif("⚠️ Proteção DESATIVADA", AMARELO, 2) end
+		saveCfg() 
+	end)
+	statL("Se um admin entrar, você será movido para outro servidor.", SUB)
+
 	secao("🛡️ Lista Admin (servidor)",VERMELHO2)
 	local admL=statL("Status: DESATIVADA",SUB)
 	local function atual()if CFG.listaAdmin then local ct=0 for _,p in ipairs(Players:GetPlayers())do if p~=lp then local o=detectAdm(p)if o then ct=ct+1 end end end admL.Text="Status: ● ATIVA • "..ct.." admin(s)"admL.TextColor3=VERMELHO2 else admL.Text="Status: DESATIVADA"admL.TextColor3=SUB end end
 	toggle("🛡️ Ativar Lista Admin",CFG.listaAdmin,VERMELHO2,function(s)CFG.listaAdmin=s AdminP.Visible=s if s then atualizarAdmins()Notif("🛡️ ATIVADA",VERMELHO2,2)else Notif("🛡️ DESATIVADA",AMARELO,1.5)end atual()saveCfg()end)
 	botao("🔄 Atualizar Lista Admin",VERMELHO2,function()if CFG.listaAdmin then atualizarAdmins()atual()Notif("🔄 Atualizado!",VERMELHO2,1.5)else Notif("⚠️ Ative primeiro!",AMARELO,1.5)end end)
+	
 	secao("⚡ Ações Rápidas",VERMELHO)
 	botao("🔄 Resetar Personagem",VERMELHO,function()
 		local c=lp.Character
@@ -1003,6 +1260,19 @@ tabs["Visual"]=function()
 		end
 		saveCfg()
 	end)
+	toggle("🌞 Fullbright (Luz)", CFG.fullbright, AMARELO, function(s)
+		CFG.fullbright = s
+		if s then
+			Lighting.Ambient = Color3.fromRGB(178, 178, 178)
+			Lighting.OutdoorAmbient = Color3.fromRGB(178, 178, 178)
+			Lighting.Brightness = 3
+		else
+			Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+			Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+			Lighting.Brightness = 1
+		end
+		saveCfg()
+	end)
 	botao("🌫️ Remover Névoa",AMARELO,function()Lighting.FogEnd=100000 Lighting.FogStart=0 Notif("🌫️ OK!",AMARELO)end)
 	botao("☀️ Meio-dia",AMARELO,function()Lighting.ClockTime=12 Notif("☀️ OK!",AMARELO)end)
 	botao("🌙 Meia-noite",AMARELO,function()Lighting.ClockTime=0 Notif("🌙 OK!",AMARELO)end)
@@ -1017,10 +1287,29 @@ end
 
 tabs["Exploits"]=function()
 	secao("🐛 Exploits Rápidos",CIANO)
+	toggle("🔄 Auto-Rejoin (Anti-Kick)",CFG.autoRejoin,AZUL,function(s)CFG.autoRejoin=s saveCfg()end)
 	toggle("🖱️ Click TP (Tocar p/ ir)",CFG.clickTP,AZUL,function(s)CFG.clickTP = s saveCfg()end)
+	toggle("🦘 Pulo Infinito",CFG.infiniteJump,VERDE,function(s)CFG.infiniteJump = s saveCfg()end)
+	toggle("🤸 Anti-Ragdoll (Não cair)",CFG.antiRagdoll,VERDE,function(s)CFG.antiRagdoll = s saveCfg()end)
 	toggle("❄️ Freeze Player", false, CIANO, function(s)
 		local hrp = HRP()
 		if hrp then hrp.Anchored = s end
+	end)
+	toggle("⚡ Fast Farm (Rápido)",CFG.fastFarm,AMARELO2,function(s)CFG.fastFarm = s saveCfg()end)
+
+	secao("🚗 Anti-Despawn (Manter Carro)",LARANJA)
+	local carBox = inputVal(Content, "Nome do carro (Ex: Lixeiro)", function() end)
+	carBox.Text = CFG.carroNome
+	carBox.FocusLost:Connect(function()
+		CFG.carroNome = carBox.Text
+		saveCfg()
+		Notif("🚗 Carro definido: "..CFG.carroNome, LARANJA)
+	end)
+	slider("⏱️ Tempo p/ Sentar (Min)", 5, 30, CFG.carroTempo, LARANJA, function(v) CFG.carroTempo = v saveCfg() end)
+	toggle("🔄 Ativar Manter Carro Vivo", CFG.antiDespawn, LARANJA, function(s)
+		CFG.antiDespawn = s
+		if s then Notif("🚗 Anti-Despawn ON", LARANJA) else Notif("🚗 Anti-Despawn OFF", AMARELO) end
+		saveCfg()
 	end)
 
 	local gID={min=false}
@@ -1041,12 +1330,12 @@ tabs["Exploits"]=function()
 			if tr and pos then
 				irPara(pos,25)
 				if myRun~=gRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				gS.Text="📤 Entregando..."
 				local p=getPrompt(tr)
 				if p then
 					pcall(function()fireproximityprompt(p)end)
-					task.wait(0.5)
+					task.wait(CFG.fastFarm and 0.2 or 0.5)
 					if not temLixo()then GariSt.e=GariSt.e+1 Notif("📤 Entregue!",AMARELO,1.5)end
 				end
 			else gS.Text="⚠️ Sem traseira"task.wait(1.5)end
@@ -1056,12 +1345,12 @@ tabs["Exploits"]=function()
 			if l then
 				irPara(l.Position,25)
 				if myRun~=gRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				gS.Text="📥 Coletando..."
 				local p=getPrompt(l)
 				if p then
 					pcall(function()fireproximityprompt(p)end)
-					task.wait(0.5)
+					task.wait(CFG.fastFarm and 0.2 or 0.5)
 					if temLixo()then GariSt.c=GariSt.c+1 lixosUsados[l]=true Notif("📥 Coletado!",VERDE,1.2)end
 				end
 			else gS.Text="⚠️ Sem lixo"task.wait(1.5)end
@@ -1081,7 +1370,7 @@ tabs["Exploits"]=function()
 				while gOn and myRun==gRun do
 					local ok,e=pcall(cicloG,myRun)
 					if not ok then gS.Text="⚠️ "..tostring(e):sub(1,38)gS.TextColor3=VERMELHO task.wait(2)end
-					task.wait(0.3)
+					task.wait(CFG.fastFarm and 0.1 or 0.3)
 				end
 			end)
 		else
@@ -1095,80 +1384,203 @@ tabs["Exploits"]=function()
 	task.spawn(function()while sG and sG.Parent do task.wait(1)pcall(function()sG.Text=rg()end)end end)
 
 	local eID={min=false}
-	local eB=secaoCol(Content,"SAILENT ELETRICISTA","Auto Eletricista v3.2","⚡",LARANJA,eID)
+	local eB=secaoCol(Content,"SAILENT ELETRICISTA","Auto Eletricista v3.5","⚡",LARANJA,eID)
 	local eS=statL("Status: PARADO",SUB,eB)
 	local eSt=statL("⚡ Postes: 0/0",SUB,eB)
+	
+	-- BARRA DE PROGRESSO DO ELETRICISTA
+	local eBarBg = Instance.new("Frame")
+	eBarBg.Size = UDim2.new(1,0,0,16)
+	eBarBg.BackgroundColor3 = INPUT
+	eBarBg.BorderSizePixel = 0
+	eBarBg.Parent = eB
+	corner(eBarBg, 7)
+	stroke(eBarBg, BORDA, 1, 0.5)
+
+	local eBarFill = Instance.new("Frame")
+	eBarFill.Size = UDim2.new(0,0,1,0)
+	eBarFill.BackgroundColor3 = LARANJA
+	eBarFill.BorderSizePixel = 0
+	eBarFill.Parent = eBarBg
+	corner(eBarFill, 7)
+	grad(eBarFill, LARANJA, AMARELO, 0)
+
+	local eBarText = Instance.new("TextLabel")
+	eBarText.Size = UDim2.new(1,0,1,0)
+	eBarText.BackgroundTransparency = 1
+	eBarText.Text = ""
+	eBarText.Font = Enum.Font.GothamBold
+	eBarText.TextSize = 11
+	eBarText.TextColor3 = TEXTO
+	eBarText.TextXAlignment = Enum.TextXAlignment.Center
+	eBarText.Parent = eBarBg
+
+	slider("⏱️ Tempo no Poste (Seg)", 0, 600, CFG.esperaPoste or 180, LARANJA, function(v) CFG.esperaPoste = v saveCfg() end, eB)
+
 	local eOn=false eRun=0
 
 	local function cicloE(myRun)
 		if not HRP()then eS.Text="⏳"task.wait(1)return end
 		eS.TextColor3=LARANJA
+		
 		if not temEscada()then
 			local carro=acharCarro()
 			if carro then
 				eS.Text="📥 Indo pegar escada..."
 				irPara(carro:GetPivot().Position,20)
 				if myRun~=eRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				eS.Text="📥 Pegando escada..."
 				local p=promEscada()
-				if p then pcall(function()fireproximityprompt(p)end)task.wait(1.0)end
-				task.wait(0.3)
+				if p then pcall(function()fireproximityprompt(p)end)task.wait(CFG.fastFarm and 0.5 or 1.0)end
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				equipEscada()
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				eS.Text="✅ Escada equipada!"
 				Notif("🪜 Escada!",LARANJA,1.5)
 			else eS.Text="⚠️ Carro não encontrado"task.wait(2)end
 			return
 		end
-		eS.Text="🔎 Procurando poste..."
-		local info=proxPoste()
+
+		local info = proxPoste()
 		if not info then
 			eS.Text="⚠️ Sem poste"
-			local total=contarPostes()
-			local marc=0 for _ in pairs(postesOK)do marc=marc+1 end
-			if marc>=total and total>0 then postesOK={}Notif("✅ Todos! Resetando...",AZUL,2.5)end
 			task.wait(2)
 			return
 		end
+		
 		eS.Text="📥 Indo pro poste..."
 		irPara(info.pos+Vector3.new(0,0,-4),25)
 		if myRun~=eRun then return end
-		task.wait(0.3)
+		task.wait(CFG.fastFarm and 0.1 or 0.3)
+		
+		local posteModel = nil
+		local p=Workspace:FindFirstChild("Complementos")
+		local po=p and p:FindFirstChild("Postes")
+		if po then
+			local hrp = HRP()
+			local md = 25
+			for _, pt in ipairs(po:GetChildren()) do
+				if pt.Name == "Poste" then
+					local m = pt:FindFirstChild("Model")
+					local im = m and m:FindFirstChild("Model")
+					if im then
+						local r = im:FindFirstChild("HumanoidRootPart") or im.PrimaryPart
+						local pos = r and r.Position
+						if not pos then
+							local firstPart = im:FindFirstChildWhichIsA("BasePart")
+							if firstPart then pos = firstPart.Position end
+						end
+						if pos and (pos - info.pos).Magnitude < md then
+							md = (pos - info.pos).Magnitude
+							posteModel = pt
+						end
+					end
+				end
+			end
+		end
+		
+		if not posteModel then
+			eS.Text="⚠️ Poste sumiu"
+			task.wait(2)
+			return
+		end
+
 		eS.Text="🪜 Colocando escada..."
-		local pl=promPoste(info.poste,"place")
-		if pl then pcall(function()fireproximityprompt(pl)end)task.wait(0.8)end
+		local pl=promPoste(posteModel,"place")
+		if pl then pcall(function()fireproximityprompt(pl)end)task.wait(CFG.fastFarm and 0.4 or 0.8)end
+		
 		eS.Text="🪜 Subindo..."
 		local hrp=HRP()
-		if hrp and info.poste then
+		local pInv = nil
+		local weld = nil
+		
+		if hrp and posteModel then
 			local maxY=info.pos.Y
-			local m=info.poste:FindFirstChild("Model")
+			local m=posteModel:FindFirstChild("Model")
 			local im=m and m:FindFirstChild("Model")
 			if im then for _,d in ipairs(im:GetDescendants())do if d:IsA("BasePart")and d.Position.Y>maxY then maxY=d.Position.Y end end end
+			
 			local alvo=Vector3.new(info.pos.X,maxY+3,info.pos.Z)
-			local pInv=Instance.new("Part")
+			
+			-- Cria a plataforma invisível
+			pInv=Instance.new("Part")
 			pInv.Name="PartSuporte_Temp"
 			pInv.Size=Vector3.new(6,1,6)
 			pInv.Position=alvo
 			pInv.Anchored=true
-			pInv.CanCollide=false
+			pInv.CanCollide=true -- Colisão ativada para segurança física
 			pInv.Transparency=1
-			pInv.Parent=info.poste
-			pcall(function()hrp.CFrame=CFrame.new(alvo+Vector3.new(0,3,0))end)
-			task.wait(0.3)
-			info.pInv=pInv
+			pInv.Parent=posteModel
+			
+			-- Teleporta para cima da plataforma
+			pcall(function()hrp.CFrame=CFrame.new(alvo+Vector3.new(0,3.5,0))end)
+			task.wait(0.2)
+			
+			-- SOLDANDO O PLAYER NA PLATAFORMA (ANTI-DETECÇÃO DE FLY)
+			weld = Instance.new("WeldConstraint")
+			weld.Part0 = hrp
+			weld.Part1 = pInv
+			weld.Parent = hrp
+			
+			local hum = HUM()
+			if hum then hum.PlatformStand = true end
+			task.wait(0.1)
 		end
-		task.wait(0.5)
+		
+		task.wait(CFG.fastFarm and 0.2 or 0.5)
 		eS.Text="🔧 Consertando..."
-		local pr=promPoste(info.poste,"repair",true)
+		local pr=promPoste(posteModel,"repair",true)
 		if pr then
 			pcall(function()fireproximityprompt(pr)end)
 			local t0=tick()
 			while tick()-t0<7 do if not pr.Enabled then break end task.wait(0.15)end
-			task.wait(0.3)
+			task.wait(CFG.fastFarm and 0.1 or 0.3)
 		end
+		
+		-- NOVA ESPERA NO POSTE (SOLDADO E TOTALMENTE PARADO)
+		local tempoEspera = tonumber(CFG.esperaPoste) or 180
+		if tempoEspera > 0 then
+			local tInicio = tick()
+			while tick() - tInicio < tempoEspera do
+				if myRun ~= eRun then
+					-- Se cancelar, quebra a solda
+					if weld then weld:Destroy() end
+					local hum = HUM()
+					if hum then hum.PlatformStand = false end
+					if pInv then pInv:Destroy() end
+					if eBarFill then eBarFill.Size = UDim2.new(0,0,1,0) end
+					if eBarText then eBarText.Text = "" end
+					return
+				end
+				
+				-- Se o player morrer, quebra o loop de espera para não bugar
+				if not HRP() or not HUM() then break end
+				
+				local restante = math.max(0, tempoEspera - (tick() - tInicio))
+				local pct = 1 - (restante / tempoEspera)
+				
+				if eBarFill then eBarFill.Size = UDim2.new(pct, 0, 1, 0) end
+				if eBarText then 
+					eBarText.Text = string.format("⏳ %02d:%02d (Parado no Poste)", math.floor(restante / 60), math.floor(restante % 60)) 
+				end
+				eS.Text = "⏳ Parado no poste..."
+				
+				task.wait(0.1)
+			end
+			
+			if eBarFill then eBarFill.Size = UDim2.new(0,0,1,0) end
+			if eBarText then eBarText.Text = "" end
+		end
+		
+		-- DESFAZ A SOLDA
+		if weld then weld:Destroy() end
+		local hum2 = HUM()
+		if hum2 then hum2.PlatformStand = false end
+		
 		eS.Text="⬇️ Descendo..."
-		if info.pInv then pcall(function()info.pInv:Destroy()end)end
+		if pInv then pcall(function()pInv:Destroy()end)end
+		
 		local hrp2=HRP()
 		if hrp2 then
 			local chaoY=info.pos.Y
@@ -1179,14 +1591,17 @@ tabs["Exploits"]=function()
 				tent=tent+1
 			end
 		end
-		task.wait(0.3)
-		postesOK[info.poste]=true
+		task.wait(CFG.fastFarm and 0.1 or 0.3)
+		
 		EletSt.e=EletSt.e+1
+		
+		if info.saved and info.index then
+			postesConcluidos[info.index] = true
+		end
+		
 		local total=contarPostes()
 		eSt.Text="⚡ Postes: "..EletSt.e.."/"..total
-		Notif("⚡ Poste #"..EletSt.e.."!",LARANJA,1.5)
-		local marc=0 for _ in pairs(postesOK)do marc=marc+1 end
-		if marc>=total and total>0 then postesOK={}Notif("✅ Todos! Reiniciando ciclo...",AZUL,2.5)end
+		Notif("⚡ Poste #"..EletSt.e.." Finalizado!",LARANJA,1.5)
 	end
 
 	toggle("⚡ Ativar Sailent Eletricista",CFG.autoEletricista,LARANJA,function(s)
@@ -1201,12 +1616,18 @@ tabs["Exploits"]=function()
 				while eOn and myRun==eRun do
 					local ok,err=pcall(cicloE,myRun)
 					if not ok then eS.Text="⚠️ "..tostring(err):sub(1,38)eS.TextColor3=VERMELHO task.wait(2)end
-					task.wait(0.3)
+					task.wait(CFG.fastFarm and 0.1 or 0.3)
 				end
 			end)
 		else
 			if CFG.noclip then noclipOff()end
 			eS.Text="Status: PARADO"eS.TextColor3=SUB
+			-- Desancora no stop geral
+			local h=HRP()
+			if h then h.Anchored = false end
+			local hum=HUM()
+			if hum then hum.PlatformStand = false end
+			
 			Notif("⚡ Eletricista DESATIVADO",AMARELO,1.5)
 			local h=HUM()if h then h.WalkSpeed=16 end
 		end
@@ -1228,7 +1649,7 @@ tabs["Exploits"]=function()
 				pS.Text="📤 Indo..."
 				irPara(info.pos,90)
 				if myRun~=pRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				pS.Text="📤 Entregando..."
 				pS.TextColor3=VERDE
 				local pr=promPizza("Entregar Pedido")
@@ -1238,7 +1659,7 @@ tabs["Exploits"]=function()
 						if not temPizza()then break end
 						if myRun~=pRun then return end
 						pcall(function()fireproximityprompt(pr)end)
-						task.wait(4)
+						task.wait(CFG.fastFarm and 1 or 4)
 					end
 				end
 				if not temPizza()then
@@ -1263,10 +1684,10 @@ tabs["Exploits"]=function()
 					pS.Text="📥 Indo pegar..."
 					irPara(p,90)
 					if myRun~=pRun then return end
-					task.wait(0.3)
+					task.wait(CFG.fastFarm and 0.1 or 0.3)
 					pS.Text="📥 Pegando..."
 					pcall(function()fireproximityprompt(pr)end)
-					task.wait(1.2)
+					task.wait(CFG.fastFarm and 0.5 or 1.2)
 					PizzaSt.p=PizzaSt.p+1
 					pSt.Text="📦 "..PizzaSt.p.."  🎯 "..PizzaSt.e
 					Notif("📥 Pego!",AZUL,1.2)
@@ -1287,7 +1708,7 @@ tabs["Exploits"]=function()
 				while pOn and myRun==pRun do
 					local ok,e=pcall(cicloP,myRun)
 					if not ok then pS.Text="⚠️ "..tostring(e):sub(1,38)pS.TextColor3=VERMELHO task.wait(2)end
-					task.wait(0.5)
+					task.wait(CFG.fastFarm and 0.1 or 0.5)
 				end
 			end)
 		else
@@ -1300,7 +1721,7 @@ tabs["Exploits"]=function()
 	slider("⏱️ Espera entre entregas",0,30,CFG.esperaEntrega,ROSA,function(v)CFG.esperaEntrega=v saveCfg()end,pB)
 
 	local prID={min=false}
-	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v11.1","🔓",AMARELO2,prID)
+	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v12.3","🔓",AMARELO2,prID)
 	local prS=statL("Status: PARADO",SUB,prB)
 	local vOn=false cOn=false vRun=0 cRun=0
 
@@ -1332,14 +1753,14 @@ tabs["Exploits"]=function()
 		prS.Text = "🧹 Indo (" .. math.floor(info.dist) .. "m)..."
 		irPara(info.pos, 30)
 		if myRun ~= vRun then return end
-		task.wait(0.3)
+		task.wait(CFG.fastFarm and 0.1 or 0.3)
 
 		local hrp = HRP()
 		if not hrp then return end
 		local distReal = (hrp.Position - info.pos).Magnitude
 		if distReal > 7 then
 			pcall(function() hrp.CFrame = CFrame.new(info.pos + Vector3.new(0, 3.5, 0)) end)
-			task.wait(0.4)
+			task.wait(CFG.fastFarm and 0.1 or 0.4)
 		end
 
 		prS.Text = "🧹 Varrendo..."
@@ -1374,9 +1795,9 @@ tabs["Exploits"]=function()
 			if p then
 				irPara(p.Parent.Position,25)
 				if myRun~=cRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				pcall(function()fireproximityprompt(p)end)
-				task.wait(0.6)
+				task.wait(CFG.fastFarm and 0.3 or 0.6)
 				PrisaoSt.e=PrisaoSt.e+1
 				Notif("📤 Entregue!",AZUL,1.5)
 			end
@@ -1385,9 +1806,9 @@ tabs["Exploits"]=function()
 			if p then
 				irPara(p.Parent.Position,25)
 				if myRun~=cRun then return end
-				task.wait(0.3)
+				task.wait(CFG.fastFarm and 0.1 or 0.3)
 				pcall(function()fireproximityprompt(p)end)
-				task.wait(0.6)
+				task.wait(CFG.fastFarm and 0.3 or 0.6)
 				PrisaoSt.c=PrisaoSt.c+1
 				Notif("📥 Caixa!",VERDE,1.2)
 			end
@@ -1408,7 +1829,7 @@ tabs["Exploits"]=function()
 						prS.Text = "⚠️ Erro: "..tostring(err):sub(1,30)
 						prS.TextColor3 = VERMELHO
 					end
-					task.wait(0.3) 
+					task.wait(CFG.fastFarm and 0.1 or 0.3) 
 				end 
 			end)
 		else
@@ -1425,7 +1846,7 @@ tabs["Exploits"]=function()
 			local myRun=cRun
 			if CFG.noclip then noclipOn()end
 			Notif("📦 Caixa ON",AZUL,1.5)
-			task.spawn(function()while cOn and myRun==cRun do pcall(cicloC,myRun)task.wait(0.5)end end)
+			task.spawn(function()while cOn and myRun==cRun do pcall(cicloC,myRun)task.wait(CFG.fastFarm and 0.1 or 0.5)end end)
 		else
 			if not vOn and CFG.noclip then noclipOff()end
 		end
@@ -1450,21 +1871,25 @@ tabs["Exploits"]=function()
 		gRun=gRun+1 eRun=eRun+1 pRun=pRun+1 vRun=vRun+1 cRun=cRun+1
 		noclipOff()
 		gS.Text="PARADO"eS.Text="PARADO"pS.Text="PARADO"prS.Text="PARADO"
-		local h=HUM()if h then h.WalkSpeed=16 end
+		if eBarFill then eBarFill.Size=UDim2.new(0,0,1,0) end
+		if eBarText then eBarText.Text="" end
+		
+		-- Desancora no stop geral
+		local h=HRP()
+		if h then h.Anchored = false end
+		local hum=HUM()
+		if hum then 
+			hum.PlatformStand = false
+			hum.WalkSpeed=16 
+		end
+		
 		Notif("🛑 Tudo parado!",VERMELHO,2)
 	end)
 end
 
 tabs["Privates"]=function()
 	secao("🔒 Área Privada",ROXO)
-	
-	secao("🚗 Puxar Carro",CIANO)
-	local carroSt = statL("Status: Em desenvolvimento",SUB)
-	botao("🚗 Puxar Carro (Em breve)",CIANO,function()
-		Notif("⚠️ Puxar Carro está em desenvolvimento!",AMARELO,3)
-	end)
-	statL("Aguarde futuras atualizações...",SUB)
-
+	statL("Em breve...",SUB)
 	secao("💬 Loja",Color3.fromRGB(88,101,242))
 	botao("💬 Entrar no Discord",Color3.fromRGB(88,101,242),function()
 		pcall(function()if setclipboard then setclipboard(DISCORD_LINK)end end)
