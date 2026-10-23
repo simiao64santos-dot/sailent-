@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="SAILENT HUB — Painel privado de scripts">
-<title>⚡ SAILENT HUB</title>
+<title>⚡ SHARK HUB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -26,6 +26,7 @@
 		--yellow: #fbbf24;
 		--purple: #a78bfa;
 		--red: #f87171;
+		--discord: #5865F2;
 		--shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 		--shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.4);
 	}
@@ -92,9 +93,7 @@
 		border-radius: 14px;
 		flex-wrap: wrap;
 	}
-	.search-wrap {
-		flex: 1; min-width: 220px; position: relative;
-	}
+	.search-wrap { flex: 1; min-width: 220px; position: relative; }
 	.search-wrap::before {
 		content: '🔍'; position: absolute; left: 14px; top: 50%;
 		transform: translateY(-50%); font-size: 13px; opacity: 0.5;
@@ -109,7 +108,8 @@
 	}
 	.search::placeholder { color: var(--sub-2); }
 	.search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 158, 255, 0.12); }
-	.filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+	
+	.filter-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 	.filter-btn {
 		padding: 9px 14px; background: var(--bg-2);
 		border: 1px solid var(--border); border-radius: 8px;
@@ -122,6 +122,19 @@
 		background: rgba(124, 158, 255, 0.12);
 		color: var(--accent); border-color: rgba(124, 158, 255, 0.4);
 	}
+
+	/* Botões de Ação do Toolbar */
+	.action-btn {
+		padding: 9px 14px; border: none; border-radius: 8px;
+		font-size: 12px; font-weight: 600; cursor: pointer;
+		display: flex; align-items: center; gap: 6px;
+		transition: all 0.2s;
+	}
+	.btn-discord { background: rgba(88, 101, 242, 0.15); color: #a5b4fc; border: 1px solid rgba(88, 101, 242, 0.4); }
+	.btn-discord:hover { background: var(--discord); color: white; }
+	.btn-help { background: rgba(251, 191, 36, 0.1); color: var(--yellow); border: 1px solid rgba(251, 191, 36, 0.3); }
+	.btn-help:hover { background: var(--yellow); color: #000; }
+
 	.count-badge {
 		font-size: 11px; color: var(--sub-2); font-family: 'JetBrains Mono', monospace;
 		padding: 4px 8px; background: var(--bg-2); border-radius: 6px;
@@ -231,18 +244,9 @@
 		transition: all 0.15s;
 	}
 	.tag:hover { background: rgba(124, 158, 255, 0.15); }
-	.tag.gold {
-		background: rgba(251, 191, 36, 0.10); color: var(--yellow);
-		border-color: rgba(251, 191, 36, 0.3);
-	}
-	.tag.green {
-		background: rgba(74, 222, 128, 0.10); color: var(--green);
-		border-color: rgba(74, 222, 128, 0.3);
-	}
-	.tag.purple {
-		background: rgba(167, 139, 250, 0.10); color: var(--purple);
-		border-color: rgba(167, 139, 250, 0.3);
-	}
+	.tag.gold { background: rgba(251, 191, 36, 0.10); color: var(--yellow); border-color: rgba(251, 191, 36, 0.3); }
+	.tag.green { background: rgba(74, 222, 128, 0.10); color: var(--green); border-color: rgba(74, 222, 128, 0.3); }
+	.tag.purple { background: rgba(167, 139, 250, 0.10); color: var(--purple); border-color: rgba(167, 139, 250, 0.3); }
 
 	.code-preview {
 		background: #05050a;
@@ -268,7 +272,7 @@
 	.code-preview .arg { color: var(--green); }
 	.code-preview .url { color: var(--accent); }
 
-	.actions { display: flex; gap: 8px; }
+	.actions { display: flex; gap: 8px; margin-top: auto; }
 	.btn {
 		padding: 12px 16px; border: none; border-radius: 10px;
 		font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
@@ -320,6 +324,7 @@
 	}
 	.toast.show { transform: translateY(0); opacity: 1; }
 	.toast.error { background: var(--red); box-shadow: 0 12px 42px rgba(248, 113, 113, 0.4); }
+	.toast.discord { background: var(--discord); box-shadow: 0 12px 42px rgba(88, 101, 242, 0.4); color: #fff; }
 
 	/* ===== FOOTER ===== */
 	footer {
@@ -329,6 +334,10 @@
 	}
 	footer b { color: var(--accent); font-weight: 700; }
 	footer .dot { opacity: 0.3; margin: 0 8px; }
+	footer .admin-link {
+		color: var(--sub-2); text-decoration: none; transition: color 0.2s;
+	}
+	footer .admin-link:hover { color: var(--red); }
 
 	/* ===== RESPONSIVE ===== */
 	@media (max-width: 760px) {
@@ -354,7 +363,7 @@
 		<p class="subtitle">Painel privado de scripts • by becks &amp; kevim</p>
 		<div class="badges">
 			<span class="badge pulse">Sistema online</span>
-			<span class="badge auth">🛡️ Auth via auth.lua</span>
+			<span class="badge auth">🛡️ Anti-Cheat Bypass</span>
 			<span class="badge key">🔑 Key unificada</span>
 		</div>
 	</header>
@@ -368,6 +377,13 @@
 			<button class="filter-btn" data-filter="vip">👑 VIP</button>
 			<button class="filter-btn" data-filter="auto">🤖 Auto</button>
 		</div>
+		
+		<!-- Novos Botões -->
+		<div style="display:flex; gap:8px;">
+			<button class="action-btn btn-help" id="btnHelp">❓ Como Usar</button>
+			<button class="action-btn btn-discord" id="btnDiscord">💬 Discord</button>
+		</div>
+
 		<span class="count-badge" id="count">5 scripts</span>
 	</div>
 
@@ -384,6 +400,8 @@
 		Auth + Key compartilhada
 		<span class="dot">•</span>
 		por becks &amp; kevim
+		<br><br>
+		<a href="admin.html" class="admin-link">Acessar Painel Admin (Staff)</a>
 	</footer>
 </div>
 
@@ -396,6 +414,7 @@ const CONFIG = {
 	USER: "simiao64santos-dot",
 	REPO: "sailent-",
 	BRANCH: "main",
+	DISCORD: "https://discord.gg/955U6r5RAQ" // Link do Discord
 };
 
 const SCRIPTS = [
@@ -404,7 +423,7 @@ const SCRIPTS = [
 		icon: "🦈",
 		name: "Shark Menu",
 		version: "v10.8",
-		file: "sailent.lua",
+		file: "shark.lua",
 		desc: "MENU DEFINITIVO! Sistema de key com HWID bind, live tracking, kick e ban. Inclui Aimbot, God Mode, Anti-Kick, Auto Gari, Eletricista, Pizza, Prisão (com slider) e Puxar Carro (Em breve).",
 		color: "#4ade80",
 		vip: true,
@@ -464,12 +483,11 @@ const SCRIPTS = [
 	}
 ];
 
-// ===== HELPERS (SIMPLES E PURO) =====
+// ===== HELPERS =====
 function buildURL(file) {
 	return `https://raw.githubusercontent.com/${CONFIG.USER}/${CONFIG.REPO}/refs/heads/${CONFIG.BRANCH}/${file}`;
 }
 
-// EXATAMENTE COMO VOCÊ PEDIU: loadstring(game:HttpGet("URL"))()
 function buildLoadstring(file) {
 	return `loadstring(game:HttpGet("${buildURL(file)}"))()`;
 }
@@ -527,7 +545,8 @@ function renderCards() {
 				).join("")}
 			</div>
 			<div class="code-preview">
-				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))()
+				<span class="cmd">loadstring</span>(<span class="arg">game:HttpGet</span>(<span class="url">"${escapeHtml(url)}"</span>))() <br>
+				<span style="color:var(--green); font-size:10px;">[Protegido]</span>
 			</div>
 			<div class="actions">
 				<button class="btn btn-copy" data-copy="${encodeURIComponent(load)}">📋 Copiar Loadstring</button>
@@ -580,13 +599,18 @@ function updateCount(visible) {
 // ===== TOAST =====
 const toastEl = document.getElementById("toast");
 let toastTimer;
-function showToast(msg, isError = false) {
+function showToast(msg, isError = false, isDiscord = false) {
 	toastEl.textContent = msg;
-	toastEl.className = "toast show" + (isError ? " error" : "");
+	toastEl.className = "toast show";
+	if (isError) toastEl.classList.add("error");
+	else if (isDiscord) toastEl.classList.add("discord");
+	
 	clearTimeout(toastTimer);
 	toastTimer = setTimeout(() => {
-		toastEl.className = "toast" + (isError ? " error" : "");
-	}, 2200);
+		toastEl.className = "toast";
+		if (isError) toastEl.classList.add("error");
+		else if (isDiscord) toastEl.classList.add("discord");
+	}, 2500);
 }
 
 // ===== COPIAR =====
@@ -642,6 +666,21 @@ document.addEventListener("click", async (e) => {
 		filterBtn.classList.add("active");
 		currentFilter = filterBtn.dataset.filter;
 		applyFilters();
+		return;
+	}
+
+	// Ação do Botão Discord
+	if (e.target.closest("#btnDiscord")) {
+		const ok = await copyText(CONFIG.DISCORD);
+		if (ok) showToast("💬 Discord copiado! Cole no navegador.", false, true);
+		else window.open(CONFIG.DISCORD, "_blank");
+		return;
+	}
+
+	// Ação do Botão Ajuda
+	if (e.target.closest("#btnHelp")) {
+		alert("💡 COMO USAR O SAILENT HUB:\n\n1. Clique em '📋 Copiar Loadstring' no script desejado.\n2. Abra o seu Executor (Delta, Fluxus, etc).\n3. Cole o código na caixa de texto.\n4. Clique em 'Execute'.\n5. A interface do menu vai abrir no jogo!\n\n⚠️ IMPORTANTE: Coloque a Key quando pedir. A Key é salva automaticamente no seu dispositivo.");
+		return;
 	}
 });
 
