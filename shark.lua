@@ -1,5 +1,5 @@
 -- =======================================================
--- SHARK MENU v10.8 COMPLETO
+-- SHARK MENU v10.9 COMPLETO + INTEGRAÇÃO ADMIN
 -- Auth + HWID Bind + Live + Kick + Ban + Aimbot + Scripts
 -- Criado por: becks & kevim
 -- =======================================================
@@ -7,7 +7,7 @@
 local FIREBASE_URL = "https://sailent-c8150-default-rtdb.firebaseio.com"
 local GITHUB_KEYS = "https://raw.githubusercontent.com/simiao64santos-dot/sailent-/refs/heads/main/keys.json"
 local SCRIPT_NAME = "Shark Menu"
-local SCRIPT_VER = "10.8"
+local SCRIPT_VER = "10.9"
 local DISCORD_LINK = "https://discord.gg/955U6r5RAQ"
 
 local CoreGui = game:GetService("CoreGui")
@@ -19,6 +19,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
 local lp = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = lp:GetMouse()
@@ -131,6 +132,18 @@ local function validarKey(key)
 	if entry.expira and entry.expira<agora and entry.expira<99999999999 then return false,"⏰ Expirada"end
 	if entry.status and entry.status~="ativa"then return false,"🚫 Desativada"end
 
+	-- 🛑 VERIFICA SE O SCRIPT FOI DESATIVADO NO PAINEL ADMIN
+	local scriptDesativado = reqGet(FIREBASE_URL.."/disabled_scripts/shark.lua.json")
+	if scriptDesativado == true then
+		return false, "🛑 O Shark Menu foi DESATIVADO pelo admin."
+	end
+
+	-- 🛑 VERIFICA SE A KEY FOI DESATIVADA NO PAINEL ADMIN
+	local keyDesativada = reqGet(FIREBASE_URL.."/disabled_keys/"..hash..".json")
+	if keyDesativada == true then
+		return false, "🛑 Esta KEY foi DESATIVADA pelo admin."
+	end
+
 	local ban=reqGet(FIREBASE_URL.."/bans/"..meuHWID..".json")
 	if ban and type(ban)=="table"and(ban.reason or ban.bannedAt)then
 		return false,"⛔ Banido\nMotivo: "..(ban.reason or "N/A")
@@ -151,6 +164,23 @@ end
 
 local function heartbeat()
 	local uid=tostring(lp.UserId)
+	
+	-- 📢 PUXA O AVISO GLOBAL DO PAINEL ADMIN
+	local avisoGlobal = reqGet(FIREBASE_URL.."/global/broadcast.json")
+	if avisoGlobal and avisoGlobal.msg then
+		local msgId = avisoGlobal.time
+		if _G.UltimoAviso ~= msgId then
+			_G.UltimoAviso = msgId
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {
+					Title = "📢 AVISO DO ADMIN",
+					Text = avisoGlobal.msg,
+					Duration = 10
+				})
+			end)
+		end
+	end
+
 	reqPut(FIREBASE_URL.."/online/"..uid..".json",{
 		name=lp.Name,userId=lp.UserId,hwid=getHWID(),script=SCRIPT_NAME,
 		scriptVer=SCRIPT_VER,nivel=_G.SailentNivel or "normal",
@@ -588,7 +618,7 @@ end
 local function temPizza()local d=Workspace:FindFirstChild(lp.Name)return d and d:FindFirstChild("PizzaTemplate")~=nil end
 
 -- =======================================================
--- PRISÃO HELPERS — AUTO VARRER v10.8
+-- PRISÃO HELPERS — AUTO VARRER v10.9
 -- =======================================================
 local PrisaoSt={v=0,c=0,e=0,i=tick()}
 
@@ -658,7 +688,7 @@ end
 
 local function debugVarredura()
 	print("═══════════════════════════════════════")
-	print("🔍 DEBUG AUTO VARRER v10.8 (Vassoura)")
+	print("🔍 DEBUG AUTO VARRER v10.9 (Vassoura)")
 	print("═══════════════════════════════════════")
 	local pasta = acharPastaVarredura()
 	if not pasta then
@@ -1242,7 +1272,7 @@ tabs["Exploits"]=function()
 	slider("⏱️ Espera entre entregas",0,30,CFG.esperaEntrega,ROSA,function(v)CFG.esperaEntrega=v saveCfg()end,pB)
 
 	local prID={min=false}
-	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v10.8","🔓",AMARELO2,prID)
+	local prB=secaoCol(Content,"SAILENT PRISÃO","Auto Prisão v10.9","🔓",AMARELO2,prID)
 	local prS=statL("Status: PARADO",SUB,prB)
 	local vOn=false cOn=false vRun=0 cRun=0
 
